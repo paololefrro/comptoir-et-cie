@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://paololefrro.github.io/comptoir-et-cie/sitemap.xml
+Sitemap: https://www.comptoir-et-cie.fr/sitemap.xml
