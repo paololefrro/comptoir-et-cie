@@ -119,7 +119,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 /* ---------- Panel ---------- */
 .panel{background:var(--card);border-radius:24px;box-shadow:var(--shadow);border:2px solid var(--line);display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 110px);position:sticky;top:12px;overflow:hidden}
 @media (max-width:1060px){.panel{max-height:none;position:static}}
-.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:8px;border-bottom:2px solid var(--line);background:var(--card-2)}
+.tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:8px;border-bottom:2px solid var(--line);background:var(--card-2)}
 .tab{min-width:0;border:0;background:transparent;font-weight:900;font-size:.76rem;color:var(--ink-2);padding:7px 9px 6px;border-radius:13px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px}
 .tab .ti{font-size:1.25rem;line-height:1.1}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent);box-shadow:0 3px 0 var(--accent-2)}
@@ -321,6 +321,22 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .cloud-box p{margin:0}
 .cloud-row{display:flex;flex-wrap:wrap;gap:8px}
 .cloud-row .txt{flex:1 1 180px}
+.bk-list{display:flex;flex-direction:column;gap:9px}
+.bk-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;font-size:.86rem;align-items:baseline}
+.bk-row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.bk-row .bar{grid-column:1/-1;height:7px;flex:none}
+.bk-in .bar i{background:var(--pist)}
+.bk-out .bar i{background:var(--bad)}
+.bk-sub{color:var(--ink-2);font-size:.76rem;font-weight:700;margin:0}
+.seg{display:flex;gap:4px;background:var(--card-2);border-radius:12px;padding:3px;border:2px solid var(--line)}
+.seg button{flex:1;border:0;background:transparent;font-weight:900;font-size:.82rem;color:var(--ink-2);padding:7px 8px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.stat.money{cursor:pointer}
+.chef{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;background:var(--gold-soft);border:2px solid var(--gold)}
+.chef p{margin:0}
+.chk{display:flex;gap:8px;align-items:center;font-weight:700;font-size:.86rem;cursor:pointer}
+.chk input{accent-color:var(--accent);width:18px;height:18px;flex:none}
+@media (max-width:560px){.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .save-ta{width:100%;flex:none;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;font-weight:500;resize:vertical;word-break:break-all;min-height:62px}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 @media (prefers-reduced-motion:reduce){
@@ -340,7 +356,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
       </div>
     </div>
     <div class="stats">
-      <div class="stat money" id="moneyStat" title="Trésorerie"><span aria-hidden="true">💰</span><b id="money">150 €</b></div>
+      <div class="stat money" id="moneyStat" title="Trésorerie : clique pour voir le bilan" role="button" tabindex="0"><span aria-hidden="true">💰</span><b id="money">150 €</b></div>
       <div class="stat" title="Réputation du café"><span class="stars" aria-hidden="true"><span class="s-bg">★★★★★</span><span class="s-fg" id="starsFg">★★★★★</span></span><b id="rep">3,0</b></div>
       <div class="stat" title="Abonnés sur les réseaux sociaux"><span aria-hidden="true">📱</span><b id="fol">40</b></div>
       <div class="stat xpstat" title="Expérience : chaque client servi rapporte 1 XP"><span class="xp-l">XP</span><div class="xpbar"><i id="xpFill"></i></div><small id="xpTxt">0 / 40</small></div>
@@ -377,6 +393,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
         <button class="tab" role="tab" data-tab="labo" aria-selected="false"><span class="ti">🧪</span>Labo</button>
         <button class="tab" role="tab" data-tab="equipe" aria-selected="false"><span class="ti">👥</span>Équipe</button>
         <button class="tab" role="tab" data-tab="amelio" aria-selected="false"><span class="ti">🛠️</span>Travaux</button>
+        <button class="tab" role="tab" data-tab="bilan" aria-selected="false"><span class="ti">📊</span>Bilan</button>
         <button class="tab" role="tab" data-tab="reseaux" aria-selected="false"><span class="ti">📱</span>Réseaux<span class="badge" id="rBadge" hidden>0</span></button>
         <button class="tab" role="tab" data-tab="quartier" aria-selected="false"><span class="ti">🏘️</span>Quartier</button>
         <button class="tab" role="tab" data-tab="groupe" aria-selected="false"><span class="ti">🏢</span>Groupe</button>
@@ -542,7 +559,7 @@ const EVENTS=[
  {icon:'💧',title:'Fuite dans la réserve !',text:'Un tuyau a lâché cette nuit, il faut agir vite.',
   choices:[{label:'Appeler un plombier',cost:60,fx(){return 'Réparé en un clin d’œil, rien n’est abîmé.';}},{label:'Éponger toi-même',fx(){ITEMS.forEach(i=>{const s=S.items[i.id];s.stock=Math.floor(s.stock*.7);});return 'Tu as sauvé ce que tu pouvais : 30 % du stock est perdu.';}}]},
  {icon:'🏆',title:'Concours du meilleur goûter',text:'Le quartier élit son meilleur goûter demain. Plus ta réputation est haute, plus tes chances sont bonnes.',
-  choices:[{label:'Participer',cost:40,fx(){const ch=clamp(.25+(S.rep-3)*.22+avgRecipe()*.05,.15,.85);if(Math.random()<ch){const p=Math.round(150*levelScale());S.money+=p;S.rep=clamp(S.rep+.25,1,5);confettiBurst(90);return `Victoire ! +${p} € et +0,25 ★ de réputation.`;}return 'Pas cette fois… le jury a préféré la boulangerie d’en face.';}},{label:'Passer mon tour',fx(){return 'Ce sera pour l’année prochaine.';}}]},
+  choices:[{label:'Participer',cost:40,fx(){const ch=clamp(.25+(S.rep-3)*.22+avgRecipe()*.05,.15,.85);if(Math.random()<ch){const p=Math.round(150*levelScale());S.money+=p;book('evenements',p);S.rep=clamp(S.rep+.25,1,5);confettiBurst(90);return `Victoire ! +${p} € et +0,25 ★ de réputation.`;}return 'Pas cette fois… le jury a préféré la boulangerie d’en face.';}},{label:'Passer mon tour',fx(){return 'Ce sera pour l’année prochaine.';}}]},
  {icon:'🎉',title:'Fête de quartier demain !',text:'Une foule est attendue dans ta rue. Prévois du stock et du monde au comptoir.',
   choices:[{label:'On sera prêts',fx(){addCampaign({id:'fete',name:'Fête de quartier',icon:'🎉',traffic:1.6,days:1});return '+60 % de clients demain. Remplis la réserve !';}}]},
  {icon:'🎨',title:'Une artiste du quartier',text:'Elle aimerait exposer une de ses toiles chez toi, gratuitement.',cond:()=>!S.flags.art,
@@ -550,7 +567,7 @@ const EVENTS=[
  {icon:'🔧',title:'La machine crachote',text:'Sans réparation, les boissons seront 40 % plus lentes demain.',
   choices:[{label:'Réparer',cost:55,fx(){return 'Elle ronronne comme neuve.';}},{label:'On fera avec',fx(){S.mods.slowDrinks=true;return 'Courage pour demain…';}}]},
  {icon:'💌',title:'Un mot d’un habitué',text:'« Merci pour vos cafés, ils illuminent mes matins. » Une petite enveloppe l’accompagne.',
-  choices:[{label:'Ouvrir l’enveloppe',fx(){const g=Math.round(rand(30,60)*levelScale());S.money+=g;return `+${g} € de pourboire. Ça fait chaud au cœur !`;}}]},
+  choices:[{label:'Ouvrir l’enveloppe',fx(){const g=Math.round(rand(30,60)*levelScale());S.money+=g;book('evenements',g);return `+${g} € de pourboire. Ça fait chaud au cœur !`;}}]},
  {build(){const types=['chaud','froid','sucre','brunch'].filter(t=>ITEMS.some(i=>i.type===t&&S.items[i.id].unlocked));if(!types.length||S.shortage)return null;const t=pick(types);
    return {icon:'🥛',title:'Pénurie chez les fournisseurs',text:`Plus aucune livraison de ${TYPE_PLURAL[t]} pendant 2 jours. Seul le coursier express peut encore t’en apporter, à prix d’or.`,
     choices:[{label:'Compris, je m’organise',fx(){S.shortage={type:t,days:2};return 'Garde un œil sur ton stock et utilise l’express en cas de besoin.';}}]};}},
@@ -786,7 +803,8 @@ function defaultState(){
     loans:[],history:[],news:[],rivals:RIVALS.map(r=>({id:r.id,val:r.val})),
     fr:{launched:false,rate:6,charte:'standard',list:[],cands:[],natCampaign:0,centrale:false,academie:false,lastRoy:0,prospect:{},seq:0},
     legacy:{points:0,spent:0,perks:{},ipos:0,best:0},trophies:{},login:{last:'',streak:0,total:0},missions:{day:0,list:[],bonus:false},
-    lab:{pending:null,tried:{}},sig:[],passiveDaily:0,lastSeen:0,auto:false,tierIdx:0,life:{served:0,revenue:0,missions:0}};
+    lab:{pending:null,tried:{}},sig:[],passiveDaily:0,lastSeen:0,auto:false,tierIdx:0,life:{served:0,revenue:0,missions:0},
+    book:{},bookSales:{},bookHist:[],chef:{hired:false,since:0,tasks:{carte:true,recettes:true,labo:true},reserve:2500,log:[]}};
 }
 function mergeState(d){
   const b=defaultState();const out=Object.assign(b,d);
@@ -817,6 +835,8 @@ function mergeState(d){
   out.lab=Object.assign(ds.lab,d.lab||{});if(!out.lab.tried)out.lab.tried={};
   out.sig=Array.isArray(d.sig)?d.sig:[];
   out.life=Object.assign(ds.life,d.life||{});out.life.served=Math.max(out.life.served||0,out.stats.served||0);
+  out.book=Object.assign({},d.book||{});out.bookSales=Object.assign({},d.bookSales||{});if(!Array.isArray(out.bookHist))out.bookHist=[];
+  out.chef=Object.assign(ds.chef,d.chef||{});out.chef.tasks=Object.assign({carte:true,recettes:true,labo:true},(d.chef&&d.chef.tasks)||{});if(!Array.isArray(out.chef.log))out.chef.log=[];
   Object.keys(di).forEach(k=>{if(k.startsWith('sig_'))out.items[k]=di[k];});
   if(!Array.isArray(out.candidates)||!out.candidates.length)out.candidates=genCandidates(out);
   return out;
@@ -840,7 +860,7 @@ const unlockedCount=()=>ITEMS.filter(i=>S.items[i.id].unlocked).length;
 const maxStations=()=>Math.min(5,2+S.upg.comptoir);
 const stockCap=()=>STOCK_CAP[Math.min(S.upg.reserve,STOCK_CAP.length-1)];
 const rentCost=()=>15+12*(S.level-1);
-const salaryTotal=()=>S.staff.reduce((s,m)=>s+m.salary,0);
+const salaryTotal=()=>S.staff.reduce((s,m)=>s+m.salary,0)+(S.chef&&S.chef.hired?CHEF.salary:0);
 const levelScale=()=>1+.6*(S.level-1);
 const campCost=c=>Math.round(c.cost*(1+.5*(S.level-1)));
 const avgRecipe=()=>{const u=ITEMS.filter(i=>S.items[i.id].unlocked);return u.reduce((a,i)=>a+S.items[i.id].recipe,0)/Math.max(1,u.length);};
@@ -902,7 +922,7 @@ const Snd={ctx:null,last:{},
 function repUpdate(stars,a){S.rep=clamp(S.rep+(stars-S.rep)*a,1,5);}
 function addXP(n){S.xp+=n;while(S.level<LEVELS.length&&S.xp>=LEVELS[S.level].xp){S.level++;onLevelUp();}}
 function onLevelUp(){
-  const L=LEVELS[S.level-1];const bonus=50*S.level;S.money+=bonus;
+  const L=LEVELS[S.level-1];const bonus=50*S.level;S.money+=bonus;book('recompenses',bonus);
   showBanner(`Niveau ${S.level} !`,`${L.name} · +${bonus} €`);confettiBurst(150);Snd.level();
   const nu=ITEMS.filter(i=>i.lvl===S.level).map(i=>i.emoji).join(' ');
   if(nu)toast(`🔓 Nouvelles recettes à débloquer : ${nu}`,'gold');
@@ -1047,9 +1067,10 @@ function serve(c,i){
   const tipMult=(m?TRAITS[m.trait].tips:1)*(S.upg.tpe?1.15:1);
   const tip=sat>.45?Math.round(price*(.04+sat*.14)*tipMult*10)/10:0;
   const gainP=price*incomeMult();
+  book('ventes',gainP);c.order.forEach(o=>bookSale(o.id,o.price*incomeMult()));
   S.money+=gainP;R.day.revenue+=gainP;S.stats.revenue+=gainP;S.life.revenue=(S.life.revenue||0)+gainP;S.life.served=(S.life.served||0)+1;
   floatTxt('+'+pr(gainP),c.x,c.y-128,GOLD,17);
-  if(!seat&&tip>0){S.money+=tip;R.day.tips+=tip;floatTxt('+'+pr(tip)+' de pourboire',c.x,c.y-108,GOLD,11);}
+  if(!seat&&tip>0){S.money+=tip;R.day.tips+=tip;book('pourboires',tip);floatTxt('+'+pr(tip)+' de pourboire',c.x,c.y-108,GOLD,11);}
   c.tip=seat?tip:0;
   const stars=1+4*sat;
   repUpdate(stars,c.type==='critique'?.3:.035);
@@ -1067,13 +1088,13 @@ function serve(c,i){
 }
 function leaveSeat(c){
   const s=c.seat;if(s)s.occ=null;c.seat=null;
-  if(c.state==='terrace'){if(c.tip>0){S.money+=c.tip;R.day.tips+=c.tip;floatTxt('+'+pr(c.tip),s.x,s.y-30,GOLD,12);}c.gone=true;return;}
+  if(c.state==='terrace'){if(c.tip>0){S.money+=c.tip;R.day.tips+=c.tip;book('pourboires',c.tip);floatTxt('+'+pr(c.tip),s.x,s.y-30,GOLD,12);}c.gone=true;return;}
   if(c.tip>0)R.coins.push({x:s.tx+s.side*12,y:s.ty-33,sy:s.ty+.2,v:c.tip,t:0});
   c.state='leaving';
 }
 function collectCoin(k,clicked){
   if(k.done)return;k.done=true;const v=clicked?Math.round(k.v*1.5*10)/10:k.v;
-  S.money+=v;R.day.tips+=v;
+  S.money+=v;R.day.tips+=v;book('pourboires',v);
   floatTxt('+'+pr(v)+(clicked?' ✨':''),k.x,k.y-14,GOLD,clicked?15:12);
   if(clicked){Snd.coin();sparkle(k.x,k.y,9,'#f0ad3c');R.day.coinsClicked++;}
 }
@@ -1156,11 +1177,11 @@ function orderStock(id,q,silent){
 function orderAllCost(){const cap=stockCap();return ITEMS.reduce((a,it)=>{const s=S.items[it.id];if(!onMenu(it)||blocked(it))return a;return a+Math.max(0,cap-s.stock-pendingQty(it.id))*unitCost(it);},0);}
 function orderAll(silent){let n=0;ITEMS.forEach(it=>{if(onMenu(it)&&orderStock(it.id,9999,true))n++;});if(n&&!silent)toast(`🧾 ${n} commande${n>1?'s':''} passée${n>1?'s':''} : livraison ${deliveryWhen()}.`);return n;}
 function expressStock(id,q){const it=ITEM[id],s=S.items[id];q=Math.min(q,stockCap()-s.stock);if(q<=0)return false;const cost=Math.round(q*unitCost(it,true)*100)/100;if(!spend(cost,'stock'))return false;s.stock+=q;toast(`🛵 Coursier express : ${q} ${it.emoji} livrés tout de suite !`);return true;}
-function cancelOrder(id){if(R.phase!=='closed')return;const i=S.orders.findIndex(o=>o.id===id);if(i<0)return;const o=S.orders[i];S.orders.splice(i,1);S.money+=o.cost;S.ledger.stock-=o.cost;toast('Commande annulée et remboursée.');saveSoon();}
+function cancelOrder(id){if(R.phase!=='closed')return;const i=S.orders.findIndex(o=>o.id===id);if(i<0)return;const o=S.orders[i];S.orders.splice(i,1);S.money+=o.cost;S.ledger.stock-=o.cost;book('stock',o.cost);toast('Commande annulée et remboursée.');saveSoon();}
 function applyDelivery(orders,ratio){
   const cap=stockCap();const lines=[];let refund=0;
   orders.forEach(o=>{const it=ITEM[o.id],s=S.items[o.id];const q=Math.round(o.qty*ratio);s.stock=Math.min(cap,s.stock+q);if(q<o.qty)refund+=o.cost*(1-q/o.qty);lines.push(`${q} ${it.emoji}`);});
-  if(refund>0){refund=Math.round(refund*100)/100;S.money+=refund;S.ledger.stock-=refund;}
+  if(refund>0){refund=Math.round(refund*100)/100;S.money+=refund;S.ledger.stock-=refund;book('stock',refund);}
   R.truck={x:WIN.x-50};
   return {lines,refund};
 }
@@ -1313,7 +1334,7 @@ function openLocation(qid){
 }
 function sellLocation(id){
   const l=S.firm.locations.find(x=>x.id===id);if(!l)return;const v=Math.round(locValue(l)*.7);
-  S.money+=v;S.firm.locations=S.firm.locations.filter(x=>x!==l);
+  S.money+=v;book('cessions',v);S.firm.locations=S.firm.locations.filter(x=>x!==l);
   if(l.from){const c=S.comps.find(x=>x.id===l.from);if(c){c.owned=false;c.cash=1500;c.rep=l.rep;c.trouble=0;}}
   R.confirmSell=null;toast(`🏷️ ${l.name} vendu pour ${eur(v,0)}.`);pushNews(`🏷️ ${S.firm.name} cède ${l.name}.`);saveSoon();renderPanel();
 }
@@ -1328,9 +1349,9 @@ function createFirm(){
 function takeLoan(id){
   const L=LOANS.find(x=>x.id===id);if(!L||S.loans.some(l=>l.id===id)||S.level<L.req||(L.firm&&!S.firm.created))return;
   const total=Math.round(L.amount*(1+L.rate));S.loans.push({id,left:total,daily:Math.round(total/L.days*100)/100,days:L.days});
-  S.money+=L.amount;Snd.coin();toast(`🏦 ${L.name} accordé : +${eur(L.amount,0)}`,'gold');saveSoon();renderPanel();
+  S.money+=L.amount;book('emprunts',L.amount);Snd.coin();toast(`🏦 ${L.name} accordé : +${eur(L.amount,0)}`,'gold');saveSoon();renderPanel();
 }
-function repayLoan(id){const l=S.loans.find(x=>x.id===id);if(!l)return;if(S.money<l.left){toast('Pas assez de trésorerie pour tout rembourser.','bad');return;}S.money-=l.left;S.loans=S.loans.filter(x=>x!==l);toast('✅ Emprunt remboursé !');saveSoon();renderPanel();}
+function repayLoan(id){const l=S.loans.find(x=>x.id===id);if(!l)return;if(S.money<l.left){toast('Pas assez de trésorerie pour tout rembourser.','bad');return;}S.money-=l.left;book('remboursements',-l.left);S.loans=S.loans.filter(x=>x!==l);toast('✅ Emprunt remboursé !');saveSoon();renderPanel();}
 const loanDebt=()=>S.loans.reduce((a,l)=>a+l.left,0);
 function payLoans(){let paid=0;S.loans.forEach(l=>{const p=Math.min(l.daily,l.left);l.left=Math.round((l.left-p)*100)/100;l.days--;paid+=p;});S.loans=S.loans.filter(l=>l.left>.01);S.money-=paid;return paid;}
 function firmValue(){const locs=S.firm.locations.reduce((a,l)=>a+locValue(l),0)+S.fr.list.reduce((a,f)=>a+(f.last||40)*50,0);return Math.round(Math.max(0,S.money)+locs+S.social.followers*.8+S.rep*1500+4000*(1+.5*(S.level-1))-loanDebt());}
@@ -1342,6 +1363,92 @@ function ranking(){
 }
 const myRank=()=>ranking().findIndex(x=>x.me)+1;
 function evolveRivals(){S.rivals.forEach(r=>{const d=RIVALS.find(x=>x.id===r.id);if(d)r.val=Math.round(r.val*(1+d.g*rand(.3,1.7)));});}
+
+/* ---------- Bilan détaillé : chaque euro qui entre ou sort ---------- */
+const BOOK={
+ ventes:{i:'☕',l:'Ventes au comptoir'},pourboires:{i:'🪙',l:'Pourboires'},succursales:{i:'🏢',l:'Succursales (bénéfice net)'},royalties:{i:'🗺️',l:'Royalties de la franchise'},
+ droits:{i:'✍️',l:'Droits d’entrée des franchisés'},recompenses:{i:'🎁',l:'Récompenses (missions, objectifs, niveaux)'},absence:{i:'🌙',l:'Gains pendant ton absence'},
+ evenements:{i:'🎲',l:'Événements du soir'},emprunts:{i:'🏦',l:'Emprunts reçus'},cessions:{i:'🏷️',l:'Ventes d’adresses'},triche:{i:'🔐',l:'Codes secrets'},
+ stock:{i:'📦',l:'Achats de stock'},express:{i:'🛵',l:'Livraisons express'},salaires:{i:'👥',l:'Salaires'},loyer:{i:'🏠',l:'Loyer'},
+ reseau:{i:'📡',l:'Animation du réseau de franchise'},remboursements:{i:'🏦',l:'Remboursements d’emprunt'},carte:{i:'🍽️',l:'Nouveaux produits et recettes'},
+ travaux:{i:'🛠️',l:'Améliorations'},pub:{i:'📣',l:'Publicité et réseaux sociaux'},equipe:{i:'🎉',l:'Primes et embauches'},rachats:{i:'🤝',l:'Rachats de concurrents'},
+ adresses:{i:'🏙️',l:'Ouvertures, rénovations et gérance'},societe:{i:'🏛️',l:'Création de la société'},labo:{i:'🧪',l:'Labo de création'},
+ franchise:{i:'🗺️',l:'Services de la franchise'},invest:{i:'💼',l:'Autres investissements'},
+};
+const CAT_BY_ACT={express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
+function book(cat,amt){if(!amt||!isFinite(amt)||!S.book)return;S.book[cat]=(S.book[cat]||0)+amt;R.bookVer=(R.bookVer||0)+1;}
+function bookSale(id,v){const b=S.bookSales[id]||(S.bookSales[id]={n:0,v:0});b.n++;b.v+=v;}
+function bilanData(p){
+  if(p==='yesterday'){const h=S.bookHist[S.bookHist.length-1];return h?{book:h.book,sales:h.sales,lost:h.lost,avg:h.avg,label:`Journée du jour ${h.day}, salaires et loyer compris`}:null;}
+  if(p==='week'){
+    const H=S.bookHist.slice(-7);if(!H.length)return null;
+    const bk={},sales={},lost={attente:0,file:0,prix:0,rupture:0};let rev=0,served=0;
+    H.forEach(h=>{Object.entries(h.book||{}).forEach(([k,v])=>bk[k]=(bk[k]||0)+v);Object.entries(h.sales||{}).forEach(([k,v])=>{const b=sales[k]||(sales[k]={n:0,v:0});b.n+=v.n;b.v+=v.v;});Object.keys(lost).forEach(k=>lost[k]+=(h.lost&&h.lost[k])||0);served+=h.served||0;rev+=(h.avg||0)*(h.served||0);});
+    return {book:bk,sales,lost,avg:served?rev/served:0,label:`${H.length} dernier${H.length>1?'s':''} jour${H.length>1?'s':''} (du jour ${H[0].day} au jour ${H[H.length-1].day})`};
+  }
+  const d=R.day,open=R.phase!=='closed';
+  return {book:S.book,sales:S.bookSales,lost:open?{attente:d.impatient,file:d.full,prix:d.price,rupture:Math.max(0,d.lost-d.impatient-d.full-d.price)}:{},avg:open&&d.served?d.revenue/d.served:0,
+    label:open?`Jour ${S.day} en cours. Salaires et loyer sont payés ce soir, à la fermeture.`:`Avant l’ouverture du jour ${S.day} : achats et dépenses du soir.`};
+}
+function bilanTips(D,tin,tout,L){
+  const b=D.book,t=[],g=k=>Math.abs(b[k]||0);
+  if(g('express')>Math.max(20,tout*.1))t.push('🛵 Les livraisons express te coûtent cher : commande plus de stock le soir, ou prends le contrat fournisseur (onglet Travaux).');
+  if(tin>0&&g('salaires')>tin*.45)t.push('👥 Les salaires pèsent lourd face à tes entrées : vérifie que chaque poste sert vraiment, ou attire plus de clients avec la pub.');
+  if((L.attente||0)+(L.file||0)>=5)t.push('⏱️ Beaucoup de clients partent à cause de l’attente : recrute, agrandis le comptoir ou améliore la machine espresso.');
+  if((L.prix||0)>=3)t.push('💸 Des clients trouvent tes prix trop élevés : baisse un peu les produits marqués « Un peu cher » dans l’onglet Carte.');
+  if((L.rupture||0)>=2)t.push('📦 Des ruptures de stock te font perdre des ventes : commande plus, ou agrandis la réserve.');
+  if(tin>0&&g('remboursements')>tin*.3)t.push('🏦 Tes remboursements d’emprunt sont lourds : évite d’en reprendre un tout de suite.');
+  if(tin>0&&g('loyer')>tin*.3)t.push('🏠 Le loyer mange une grosse part de tes entrées : il te faut plus de clients pour le rentabiliser.');
+  if(!t.length&&tin>tout)t.push('👏 Ton café est rentable sur cette période. Continue comme ça !');
+  return t;
+}
+function tabBilan(){
+  const P=R.bilanP||'today';const D=bilanData(P);
+  let h=`<div class="sec-head"><div><h3>Bilan</h3><p class="muted small">D’où vient ton argent, et où il part.</p></div></div>`;
+  h+=`<div class="seg" role="group" aria-label="Période du bilan">${[['today','Aujourd’hui'],['yesterday','Hier'],['week','7 jours']].map(([k,l])=>`<button type="button" data-act="bilanp" data-id="${k}" aria-pressed="${P===k}">${l}</button>`).join('')}</div>`;
+  if(!D)return h+`<p class="hint">Pas encore de données pour cette période : termine au moins une journée.</p>`;
+  const ent=Object.entries(D.book||{}).filter(([,v])=>v>.004).sort((a,b)=>b[1]-a[1]);
+  const sor=Object.entries(D.book||{}).filter(([,v])=>v<-.004).sort((a,b)=>a[1]-b[1]);
+  const tin=ent.reduce((a,[,v])=>a+v,0),tout=sor.reduce((a,[,v])=>a-v,0),net=tin-tout;
+  h+=`<p class="muted small">${D.label}</p><div class="statgrid"><div><b class="v-pos">+${money(tin)}</b><span>entrées</span></div><div><b class="v-neg">−${money(tout)}</b><span>sorties</span></div><div><b class="${net>=0?'v-pos':'v-neg'}">${net>=0?'+':'−'}${money(Math.abs(net))}</b><span>résultat</span></div><div><b>${money(S.money)}</b><span>en caisse maintenant</span></div></div>`;
+  const mx=Math.max(1,...ent.map(([,v])=>v),...sor.map(([,v])=>-v));
+  const row=(k,v,cls)=>{const c=BOOK[k]||{i:'•',l:k};const pct=Math.round(Math.abs(v)/Math.max(.01,v>0?tin:tout)*100);return `<div class="bk-row ${cls}"><span>${c.i} ${c.l} <span class="bk-sub">${pct} %</span></span><b class="${v>=0?'v-pos':'v-neg'}">${v>=0?'+':'−'}${eur(Math.abs(v))}</b><div class="bar"><i style="width:${(Math.abs(v)/mx*100).toFixed(1)}%"></i></div></div>`;};
+  h+=`<h4>💚 D’où vient l’argent</h4>`+(ent.length?`<div class="bk-list">${ent.map(([k,v])=>row(k,v,'bk-in')).join('')}</div>`:'<p class="muted small">Aucune entrée sur cette période.</p>');
+  h+=`<h4>❤️ Où part l’argent</h4>`+(sor.length?`<div class="bk-list">${sor.map(([k,v])=>row(k,v,'bk-out')).join('')}</div>`:'<p class="muted small">Aucune dépense sur cette période.</p>');
+  const prods=Object.entries(D.sales||{}).filter(([id])=>ITEM[id]).sort((a,b)=>b[1].v-a[1].v);
+  if(prods.length){const pm=prods[0][1].v||1;h+=`<h4>☕ Ventes par produit</h4><div class="bk-list">${prods.slice(0,12).map(([id,b])=>{const it=ITEM[id];const marge=b.v-b.n*unitCost(it);return `<div class="bk-row bk-in"><span>${it.emoji} ${it.short} <span class="bk-sub">× ${b.n}</span></span><b>${eur(b.v)}</b><div class="bar"><i style="width:${(b.v/pm*100).toFixed(1)}%"></i></div><span class="bk-sub">marge estimée ${eur(marge)} (${Math.round(marge/Math.max(.01,b.v)*100)} %)</span></div>`;}).join('')}</div>`;}
+  const L=D.lost||{};const nLost=(L.attente||0)+(L.file||0)+(L.prix||0)+(L.rupture||0);
+  if(nLost){const avg=D.avg||avgTicket();h+=`<h4>💸 Manque à gagner</h4><p class="muted small">${nLost} client${nLost>1?'s':''} reparti${nLost>1?'s':''} sans rien acheter, soit environ <b>${eur(nLost*avg,0)}</b> de ventes perdues.</p><div class="tbreak">${[['attente','⏱️ Attente trop longue'],['file','🚪 File trop longue en entrant'],['prix','💸 Prix trop élevés'],['rupture','📦 Produit en rupture']].filter(([k])=>L[k]).map(([k,l])=>`<div><span>${l} · ${L[k]}</span><b class="v-neg">≈ −${eur(L[k]*avg,0)}</b></div>`).join('')}</div>`;}
+  const tips=bilanTips(D,tin,tout,L);if(tips.length)h+=`<h4>💡 Conseils</h4><ul class="advice">${tips.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  return h;
+}
+
+/* ---------- Responsable de la carte (délégation) ---------- */
+const CHEF={hire:3000,salary:150,req:4};
+function chefHtml(){
+  const C=S.chef;
+  if(!C.hired){const ok=S.level>=CHEF.req;return `<div class="chef"><div class="item-top"><b>🧑‍🍳 Responsable de la carte</b><span class="chip">${CHEF.salary} € par jour</span></div><p class="small">Chaque soir après la fermeture, cette personne ajoute les nouveaux produits à la carte, améliore les recettes jusqu’à ★★★ et lance des tests au labo. Tu n’as plus à t’en occuper. Elle garde toujours en caisse la réserve que tu choisis.</p><div class="btns">${ok?`<button class="btn btn-primary btn-sm" data-act="chefhire" data-cost="${CHEF.hire}">Embaucher · ${costTxt(CHEF.hire)}</button>`:`<span class="tag lock">🔒 Niveau ${CHEF.req} (${LEVELS[CHEF.req-1].name})</span>`}</div></div>`;}
+  const box=(k,l)=>`<label class="chk"><input type="checkbox" id="chefT-${k}" ${C.tasks[k]?'checked':''}> ${l}</label>`;
+  return `<div class="chef"><div class="item-top"><b>🧑‍🍳 Responsable de la carte</b><span class="tag ok">En poste depuis le jour ${C.since||'?'}</span><span class="chip">${CHEF.salary} € par jour</span></div>
+   <p class="small">Travaille chaque soir, après la fermeture. Coche ce que tu lui confies :</p>
+   ${box('carte','Ajouter les nouveaux produits à la carte')}${box('recettes','Améliorer les recettes jusqu’à ★★★ (les plus vendues d’abord)')}${box('labo','Faire des tests au labo et garder les recettes de ★★★ et plus')}
+   <div class="price-row"><label class="lbl" for="chefReserve" style="width:auto">Toujours garder</label><select id="chefReserve" class="txt">${[0,1000,2500,5000,10000,25000,50000].map(v=>`<option value="${v}" ${C.reserve===v?'selected':''}>${eur(v,0)} en caisse</option>`).join('')}</select></div>
+   ${C.log.length?`<p class="bk-sub">${C.log.slice(0,4).map(l=>`Jour ${l.day} · ${esc(l.text)}`).join('<br>')}</p>`:'<p class="bk-sub">Aucune action pour l’instant : premier passage ce soir.</p>'}
+   <div class="btns"><button class="btn btn-sm" data-act="cheffire">Remercier</button></div></div>`;
+}
+function chefRun(news){
+  const C=S.chef;if(!C||!C.hired)return;
+  const done=[];const room=()=>S.money-C.reserve;
+  if(C.tasks.carte){R.cat='carte';BASE_ITEMS.filter(i=>!S.items[i.id].unlocked&&S.level>=i.lvl&&inSeason(i)).sort((a,b)=>a.unlock-b.unlock).forEach(it=>{if(it.unlock<=room()&&spend(it.unlock,'invest')){const s=S.items[it.id];s.unlocked=true;s.stock=Math.max(s.stock,10);done.push(`ajout de ${it.emoji} ${it.short}`);}});}
+  if(C.tasks.recettes){R.cat='carte';ITEMS.filter(i=>!i.sig&&S.items[i.id].unlocked&&S.items[i.id].recipe<3).sort((a,b)=>(S.items[b.id].sold||0)-(S.items[a.id].sold||0)).forEach(it=>{const s=S.items[it.id];const c=recipeCost(it,s.recipe);if(c<=room()&&spend(c,'invest')){s.recipe++;done.push(`${it.emoji} ${it.short} ${'★'.repeat(s.recipe)}`);}});}
+  if(C.tasks.labo&&S.level>=3&&!S.lab.pending&&S.sig.length<5&&labCost()<=room()){
+    const untried=[];LAB_BASES.forEach(b=>LAB_TWISTS.forEach(t=>{if(!S.lab.tried[b.id+':'+t.id])untried.push([b.id,t.id]);}));
+    if(untried.length){const good=untried.filter(([b,t])=>(COMBO[b+':'+t]||0)>=4);const pc=good.length&&Math.random()<.6?pick(good):pick(untried);R.cat='labo';
+      if(spend(labCost(),'invest')){S.lab.pending={base:pc[0],twist:pc[1],by:'chef'};done.push(`test au labo : ${LB[pc[0]].name} ${LT[pc[1]].name}`);}}
+  }
+  R.cat=null;
+  if(done.length){news.push(`🧑‍🍳 Responsable de la carte : ${done.join(' · ')}.`);C.log.unshift({day:S.day,text:done.join(' · ')});if(C.log.length>8)C.log.length=8;}
+}
 
 /* ---------- Saisons, carte, maîtrise ---------- */
 const perk=id=>(S.legacy&&S.legacy.perks&&S.legacy.perks[id])||0;
@@ -1374,9 +1481,9 @@ function genMissions(){
 }
 function missionProg(m,force){if(m.done)return m.n;if(m.end)return 0;if(R.phase==='closed'&&!force)return m.id==='post'?S.social.posts:0;return MT[m.id]?MT[m.id].prog(m):0;}
 function rewardMission(m){
-  m.done=true;S.money+=m.reward;addXP(10);S.life.missions=(S.life.missions||0)+1;
+  m.done=true;S.money+=m.reward;book('recompenses',m.reward);addXP(10);S.life.missions=(S.life.missions||0)+1;
   toast(`🎯 Mission réussie : ${m.text} (+${costTxt(m.reward)})`,'gold');Snd.bell();
-  if(!S.missions.bonus&&S.missions.list.every(x=>x.done)){S.missions.bonus=true;const b=Math.round(150*levelScale());S.money+=b;addXP(25);toastLater(`🎁 Coffre du jour : toutes les missions réussies ! +${costTxt(b)}`,'gold',900);confettiBurst(120);}
+  if(!S.missions.bonus&&S.missions.list.every(x=>x.done)){S.missions.bonus=true;const b=Math.round(150*levelScale());S.money+=b;book('recompenses',b);addXP(25);toastLater(`🎁 Coffre du jour : toutes les missions réussies ! +${costTxt(b)}`,'gold',900);confettiBurst(120);}
   saveSoon();
 }
 function checkMissions(force){if(S.missions.day!==S.day)return;S.missions.list.forEach(m=>{if(!m.done&&!m.end&&missionProg(m,force)>=m.n)rewardMission(m);});}
@@ -1435,7 +1542,7 @@ function frAccept(id){
   S.fr.cands=S.fr.cands.filter(x=>x!==c);
   if(frCount(c.city)>=city.slots){toast(`${city.name} est déjà complet.`,'bad');renderPanel();return;}
   S.fr.list.push({id:'F'+(S.fr.seq=(S.fr.seq||0)+1),city:c.city,owner:c.owner,quality:c.quality,sat:70,day:S.day,last:0});
-  S.money+=c.fee;addXP(30);toast(`✍️ ${c.owner} ouvre un Petit Comptoir à ${city.name} ! +${eur(c.fee,0)}`,'gold');confettiBurst(90);Snd.coin();
+  S.money+=c.fee;book('droits',c.fee);addXP(30);toast(`✍️ ${c.owner} ouvre un Petit Comptoir à ${city.name} ! +${eur(c.fee,0)}`,'gold');confettiBurst(90);Snd.coin();
   pushNews(`🗺️ Nouveau Petit Comptoir à ${city.name}.`);checkTier();saveSoon();renderPanel();
 }
 function frProspect(cid){const c=CITY[cid];if(!c||!cityOpen(c)||frCount(cid)>=c.slots||S.fr.prospect[cid]===S.day)return;if(!spend(prospectCost(c),'invest'))return;S.fr.prospect[cid]=S.day;toast(`📣 Prospection lancée à ${c.name} : réponses au prochain bilan du soir.`);saveSoon();renderPanel();}
@@ -1506,7 +1613,7 @@ function createSig(b,t,st){
   S.items[id]={unlocked:true,price:base,stock:10,recipe:1,sold:(S.items[id]&&S.items[id].sold)||0};
   rebuildItems();
 }
-function removeSig(id){if(R.phase!=='closed')return;S.sig=S.sig.filter(x=>x.id!==id);S.orders=S.orders.filter(o=>{if(o.id===id){S.money+=o.cost;S.ledger.stock-=o.cost;return false;}return true;});delete S.items[id];rebuildItems();toast('Création retirée de la carte.');saveSoon();renderPanel();}
+function removeSig(id){if(R.phase!=='closed')return;S.sig=S.sig.filter(x=>x.id!==id);S.orders=S.orders.filter(o=>{if(o.id===id){S.money+=o.cost;S.ledger.stock-=o.cost;book('stock',o.cost);return false;}return true;});delete S.items[id];rebuildItems();toast('Création retirée de la carte.');saveSoon();renderPanel();}
 function labGo(){
   if(S.lab.pending||S.sig.length>=5||S.level<3)return;
   const b=R.labBase||'cafe',t=R.labTwist||'caramel';
@@ -1514,9 +1621,15 @@ function labGo(){
   if(!spend(labCost(),'invest'))return;
   S.lab.pending={base:b,twist:t};toast('🧪 Les tests commencent : résultat demain matin, après le bilan du soir.');saveSoon();renderPanel();
 }
-function labNight(){
-  if(!S.lab.pending)return;const {base,twist}=S.lab.pending;S.lab.pending=null;
+function labNight(news){
+  if(!S.lab.pending)return;const {base,twist,by}=S.lab.pending;S.lab.pending=null;
   const st=comboStars(base,twist);S.lab.tried[base+':'+twist]=st;const name=`${LB[base].name} ${LT[twist].name}`;
+  if(by==='chef'){
+    const stars='★'.repeat(st)+'☆'.repeat(5-st);
+    if(st>=3&&S.sig.length<5){createSig(base,twist,st);news.push(`🧪 Labo : ${LB[base].emoji} ${name} ${stars}, ajouté à la carte par ton responsable.`);}
+    else news.push(`🧪 Labo : ${name} ${stars}, recette jugée trop faible et mise de côté.`);
+    return;
+  }
   const verdict=['','Raté… les testeurs ont grimacé.','Bof, c’est mangeable sans plus.','Pas mal du tout, les clients devraient aimer.','Excellente recette, un futur best-seller !','Un chef-d’œuvre ! Les testeurs en redemandent.'][st];
   R.evQueue.push({icon:'🧪',title:`${LB[base].emoji} ${name} : ${'★'.repeat(st)}${'☆'.repeat(5-st)}`,text:`${verdict} ${st>=4?'Elle se vendra cher et partira vite.':st<=2?'Tu peux quand même la proposer, à toi de voir.':''}`,
     choices:[{label:'Ajouter à la carte',fx(){createSig(base,twist,st);return `${name} rejoint ta carte avec 10 portions offertes !`;}},{label:'Jeter la recette',fx(){return 'La recette reste notée dans ton carnet.';}}]});
@@ -1567,7 +1680,7 @@ function doIPO(){
 function todayKey(t){const d=t?new Date(t):new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function checkDaily(){const k=todayKey(),L=S.login;if(L.last===k)return null;L.streak=L.last===todayKey(Date.now()-864e5)?L.streak+1:1;L.last=k;L.total=(L.total||0)+1;saveSoon();return {streak:L.streak,idx:(L.streak-1)%7};}
 function dailyLabel(r){const s=1+.5*(S.level-1);const p=[];if(r.money)p.push(eur(Math.round(r.money*s),0));if(r.followers)p.push(`+${Math.round(r.followers*s)} abonnés`);if(r.xp)p.push(`+${r.xp} XP`);if(r.camp)p.push('des flyers offerts');return p.join(' · ');}
-function applyDaily(r){const s=1+.5*(S.level-1);if(r.money)S.money+=Math.round(r.money*s);if(r.followers)S.social.followers+=Math.round(r.followers*s);if(r.xp)addXP(r.xp);if(r.camp)addCampaign({id:'flyers',name:'Flyers dans le quartier',icon:'📄',traffic:1.2,days:1});Snd.coin();confettiBurst(70);saveSoon();renderPanel();}
+function applyDaily(r){const s=1+.5*(S.level-1);if(r.money){const g=Math.round(r.money*s);S.money+=g;book('recompenses',g);}if(r.followers)S.social.followers+=Math.round(r.followers*s);if(r.xp)addXP(r.xp);if(r.camp)addCampaign({id:'flyers',name:'Flyers dans le quartier',icon:'📄',traffic:1.2,days:1});Snd.coin();confettiBurst(70);saveSoon();renderPanel();}
 function showDaily(dl,next){
   const idx=dl.idx;
   openModal(`<div class="modal-head"><span class="modal-ic">📅</span><div><p class="eyebrow">Récompense quotidienne</p><h2>${dl.streak>1?`${dl.streak} jours d’affilée !`:'Content de te revoir !'}</h2></div></div><div class="drow">${DAILY.map((r,i)=>`<div class="dbox ${i<idx?'past':i===idx?'cur':''}"><span aria-hidden="true">${r.icon}</span><b>J${i+1}</b></div>`).join('')}</div><p class="ev-text">Aujourd’hui : <b>${dailyLabel(DAILY[idx])}</b></p><p class="muted small">Reviens demain pour la suite. Le 7e jour, un coffre doré t’attend.</p><button class="btn btn-gold btn-lg" data-modal-ok>🎁 Récupérer</button>`,()=>{applyDaily(DAILY[idx]);if(next)next();});
@@ -1575,7 +1688,7 @@ function showDaily(dl,next){
 function fmtDur(h){const m=Math.round(h*60);return m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`;}
 function computeOffline(){if(!S.lastSeen)return null;const mins=(Date.now()-S.lastSeen)/60000;if(mins<10)return null;const hours=Math.min(mins/60,12);const gain=Math.round(Math.max(0,S.passiveDaily||0)*hours*.5+12*S.level*hours);const fol=Math.round(S.fr.list.length*hours*3+hours*2);if(gain<1)return null;return {hours,gain,fol,capped:mins/60>12};}
 function showOffline(off,next){
-  openModal(`<div class="modal-head"><span class="modal-ic">🌙</span><div><p class="eyebrow">Pendant ton absence · ${fmtDur(off.hours)}${off.capped?' (max 12 h)':''}</p><h2>Bon retour !</h2></div></div><div class="big-profit pos">+${eur(off.gain,0)}</div><p class="ev-text center">${S.firm.locations.length||S.fr.list.length?'Tes adresses et tes franchisés ont continué à tourner.':'Les habitués ont laissé des pourboires dans la boîte aux lettres.'} +${off.fol} abonnés.</p><button class="btn btn-gold btn-lg" data-modal-ok>💰 Récupérer</button>`,()=>{S.money+=off.gain;S.social.followers+=off.fol;Snd.coin();confettiBurst(60);saveSoon();if(next)next();});
+  openModal(`<div class="modal-head"><span class="modal-ic">🌙</span><div><p class="eyebrow">Pendant ton absence · ${fmtDur(off.hours)}${off.capped?' (max 12 h)':''}</p><h2>Bon retour !</h2></div></div><div class="big-profit pos">+${eur(off.gain,0)}</div><p class="ev-text center">${S.firm.locations.length||S.fr.list.length?'Tes adresses et tes franchisés ont continué à tourner.':'Les habitués ont laissé des pourboires dans la boîte aux lettres.'} +${off.fol} abonnés.</p><button class="btn btn-gold btn-lg" data-modal-ok>💰 Récupérer</button>`,()=>{S.money+=off.gain;book('absence',off.gain);S.social.followers+=off.fol;Snd.coin();confettiBurst(60);saveSoon();if(next)next();});
 }
 function startupModals(){
   const q=[];
@@ -1609,7 +1722,7 @@ function openCheat(){
   $('#cheatForm').addEventListener('submit',e=>{
     e.preventDefault();const inp=$('#cheatIn'),msg=$('#cheatMsg');const c=CHEATS[normCode(inp.value)];
     if(!c){msg.textContent='❌ Code inconnu. Essaie encore !';Snd.init();Snd.sad();return;}
-    c.f();S.flags.cheats=(S.flags.cheats||0)+1;msg.textContent=`✅ Code activé : ${c.d} !`;inp.value='';
+    const mb=S.money;c.f();book('triche',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;msg.textContent=`✅ Code activé : ${c.d} !`;inp.value='';
     Snd.init();Snd.level();confettiBurst(90);syncStations();syncSeats();saveSoon();renderPanel();updateHud();
   });
 }
@@ -1700,7 +1813,7 @@ function updateMorale(news){
 }
 function givePrime(name){const m=S.staff.find(x=>x.name===name);if(!m||m.primeDay===S.day)return;if(!spend(m.salary,'invest'))return;m.morale=clamp((m.morale??80)+30,0,100);m.primeDay=S.day;toast(`🎉 Prime versée : ${m.name} a le sourire !`);renderPanel();}
 function endDay(){
-  R.phase='closed';
+  R.phase='closed';R.cat=null;
   R.coins.forEach(k=>collectCoin(k,false));R.coins=[];
   if(R.lateDelivery){applyDelivery(R.lateDelivery.orders,R.lateDelivery.ratio);R.lateDelivery=null;}
   const news=[];
@@ -1710,6 +1823,7 @@ function endDay(){
   R.evQueue=[];
   const frr=franchiseDay(news);
   S.money+=locs+frr.roy-frr.support-salaries-rent;
+  book('salaires',-salaries);book('loyer',-rent);book('remboursements',-loans);book('succursales',locs);book('royalties',frr.roy);book('reseau',-frr.support);
   S.staff.forEach(m=>m.days++);
   const d=R.day;
   const waste=perish();
@@ -1722,6 +1836,8 @@ function endDay(){
   const record=d.revenue>S.stats.bestDay&&S.stats.days>0;
   S.stats.bestDay=Math.max(S.stats.bestDay,d.revenue);S.stats.days++;
   S.history.push({day:S.day,sales:d.revenue,profit:Math.round(sm.profit)});if(S.history.length>21)S.history.shift();
+  S.bookHist.push({day:S.day,book:S.book,sales:S.bookSales,lost:{attente:d.impatient,file:d.full,prix:d.price,rupture:Math.max(0,d.lost-d.impatient-d.full-d.price)},avg:d.served?d.revenue/d.served:0,served:d.served});
+  if(S.bookHist.length>14)S.bookHist.shift();S.book={};S.bookSales={};R.bookVer=(R.bookVer||0)+1;
   if(sm.wd==='Dimanche')sm.week=S.history.slice(-7).reduce((a,h)=>a+h.sales,0);
   S.ledger={stock:0,invest:0};
   S.campaigns.forEach(c=>c.days--);S.campaigns=S.campaigns.filter(c=>c.days>0);
@@ -1737,7 +1853,7 @@ function endDay(){
   S.day++;S.weather=S.forecast;S.forecast=rollWeather();
   so.trend=pick(BASE_ITEMS.filter(inSeason)).id;addFeed({who:'trend',text:`#TendanceDuJour : ${ITEM[so.trend].emoji} ${ITEM[so.trend].name}`,likes:0});
   S.candidates=genCandidates(S);
-  genMissions();genFranchiseCands(news);labNight();seasonNews(news);
+  genMissions();genFranchiseCands(news);labNight(news);chefRun(news);seasonNews(news);
   S.passiveDaily=Math.round(locs+frr.roy-frr.support);checkTier();
   sm.autoOrder=0;if(S.upg.fournisseur){const b=S.money;orderAll(true);sm.autoOrder=b-S.money;}
   news.forEach(t=>pushNews(t,sm.day));sm.news=news;
@@ -2197,6 +2313,7 @@ function showSummary(sm,next){
     ${sm.loans>0?`<div><span>Remboursement d’emprunt</span><b class="neg">−${eur(sm.loans)}</b></div>`:''}
     <div class="tot"><span>Bénéfice</span><b class="${good?'pos':'neg'}">${good?'+':'−'}${eur(Math.abs(sm.profit))}</b></div>
   </div>
+  <p class="muted small">📊 Le détail, catégorie par catégorie et produit par produit, est dans l’onglet Bilan. Tu peux aussi cliquer sur ton argent, en haut.</p>
   ${sm.misN?`<p class="muted small">🎯 Missions du jour réussies : ${sm.mis} / ${sm.misN}${sm.mis===sm.misN?' · coffre ouvert 🎁':''}</p>`:''}
   ${sm.waste.n?`<p class="muted small">🗑️ Invendus jetés cette nuit : ${sm.waste.n} portions (${eur(sm.waste.val)}).</p>`:''}
   ${sm.followers?`<p class="muted small">📱 +${fmtK(sm.followers)} abonnés aujourd’hui, ${fmtK(S.social.followers)} au total.</p>`:''}
@@ -2225,7 +2342,7 @@ function showEventCard(ev,next){
   openModal(`<div class="modal-head"><span class="modal-ic">${ev.icon}</span><div><p class="eyebrow">Ce soir au café</p><h2>${ev.title}</h2></div></div>
    <p class="ev-text">${ev.text}</p>
    <div class="choices">${choices.map((ch,i)=>`<button class="btn ${i===0?'btn-primary':''} btn-lg" data-choice="${i}" ${ch.c&&S.money<ch.c?'disabled':''}>${ch.label}${ch.c?` · −${costTxt(ch.c)}`:''}</button>`).join('')}</div>`,null,i=>{
-    const ch=choices[i];if(!ch)return;if(ch.c){if(S.money<ch.c)return;S.money-=ch.c;if(ch.raw==null)S.ledger.invest+=ch.c;}
+    const ch=choices[i];if(!ch)return;if(ch.c){if(S.money<ch.c)return;S.money-=ch.c;book('evenements',-ch.c);if(ch.raw==null)S.ledger.invest+=ch.c;}
     const res=ch.fx?ch.fx():'';Snd.buy();saveSoon();
     openModal(`<div class="modal-head"><span class="modal-ic">${ev.icon}</span><div><p class="eyebrow">Ce soir au café</p><h2>${ev.title}</h2></div></div><p class="ev-text">${res||'C’est noté.'}</p><button class="btn btn-primary btn-lg" data-modal-ok>Continuer</button>`,next);if(autoOn())autoClick('[data-modal-ok]',2500);
   });
@@ -2234,7 +2351,7 @@ function showEventCard(ev,next){
 
 /* Panneau de gestion */
 let tab='carte';
-function spend(cost,kind){if(S.money+1e-9<cost)return false;S.money-=cost;S.ledger[kind]=(S.ledger[kind]||0)+cost;Snd.buy();saveSoon();return true;}
+function spend(cost,kind){if(S.money+1e-9<cost)return false;S.money-=cost;S.ledger[kind]=(S.ledger[kind]||0)+cost;book(R.cat||(kind==='stock'?'stock':'invest'),-cost);Snd.buy();saveSoon();return true;}
 function itemRow(it){
   const s=S.items[it.id];
   const mn=Math.max(.5,Math.round(it.base*.6*10)/10),mx=Math.round(it.base*2.2*10)/10;
@@ -2285,6 +2402,7 @@ function tabEquipe(){
   const max=maxStations(),used=1+S.staff.length,free=used<max,open=R.phase!=='closed';
   let h=`<div class="sec-head"><div><h3>L’équipe</h3><p class="muted small">Postes au comptoir : ${used} / ${max}</p></div></div>`;
   h+=`<div class="charges"><span>Charges payées chaque soir</span><b>Loyer ${eur(rentCost(),0)} · Salaires ${eur(salaryTotal(),0)}</b></div>`;
+  h+=chefHtml();
   h+=`<div class="member me"><span class="avatar" style="background:#e2456b">★</span><div class="grow"><div class="item-top"><b>Toi</b><span class="chip">👑 Aux commandes</span></div><p class="muted small">Clique sur les commandes au comptoir pour les préparer plus vite.</p></div></div>`;
   S.staff.forEach(m=>{const T=TRAITS[m.trait];const bonus=Math.round((staffSpeed(m)/T.speed-1)*100);
     h+=`<div class="member"><span class="avatar" style="background:${m.look.shirt}">${m.name[0]}</span><div class="grow"><div class="item-top"><b>${m.name}</b><span class="chip">${T.icon} ${T.label}</span></div><p class="muted small">${m.salary} € par jour · ${m.days} j d’ancienneté${bonus?` (${bonus>0?'+':''}${bonus} % de vitesse)`:''}</p>${(()=>{const mo=Math.round(m.morale??80);const me=mo>75?'😃':mo>50?'🙂':mo>30?'😐':'😟';return `<div class="stock-row"><span class="lbl">Moral</span><div class="bar"><i class="${mo<35?'low':''}" style="width:${mo}%"></i></div><span class="num">${me} ${mo}</span></div>`;})()}<div class="btns"><button class="btn btn-sm" data-act="prime" data-id="${m.name}" data-cost="${m.salary}" ${m.primeDay===S.day?'data-lock="1"':''} title="+30 de moral">🎉 Prime · ${m.salary} €</button><button class="btn btn-sm" data-act="fire" data-id="${m.name}" ${open?'disabled':''} title="${open?'Possible après la fermeture':'Mettre fin au contrat'}">Remercier</button></div></div></div>`;});
@@ -2432,7 +2550,8 @@ function settingsHtml(){
 }
 function renderPanel(){
   const body=$('#tabBody');const st=body.scrollTop;
-  const TABS={carte:tabCarte,appro:tabAppro,labo:tabLabo,equipe:tabEquipe,amelio:tabAmelio,reseaux:tabReseaux,quartier:tabQuartier,groupe:tabGroupe,franchise:tabFranchise,obj:tabObj};
+  const TABS={carte:tabCarte,appro:tabAppro,labo:tabLabo,equipe:tabEquipe,amelio:tabAmelio,bilan:tabBilan,reseaux:tabReseaux,quartier:tabQuartier,groupe:tabGroupe,franchise:tabFranchise,obj:tabObj};
+  R.bilanVer=R.bookVer;R.bilanT=performance.now();
   body.innerHTML=(TABS[tab]||tabCarte)()+settingsHtml();
   R.feedVer=S.social.ver;
   body.scrollTop=st;
@@ -2464,6 +2583,8 @@ function refreshPanel(){
   } else if(tab==='reseaux'){
     if(R.feedVer!==S.social.ver){R.feedVer=S.social.ver;const f=body.querySelector('.feed');if(f)f.innerHTML=S.social.feed.slice(0,18).map(feedCard).join('');}
     const fb=body.querySelector('.fol-big b');if(fb){const tx=fmtK(S.social.followers);if(fb.textContent!==tx)fb.textContent=tx;}
+  } else if(tab==='bilan'){
+    if(R.bookVer!==R.bilanVer&&performance.now()-(R.bilanT||0)>1500)renderPanel();
   } else if(tab==='groupe'){
     const fv=body.querySelector('[data-fv]');if(fv){const tx=money(firmValue());if(fv.textContent!==tx)fv.textContent=tx;}
   } else if(tab==='obj'){
@@ -2482,6 +2603,7 @@ function checkQuests(){
   if(ch){updateBadge();if(tab==='obj')renderPanel();saveSoon();}
 }
 function act(a,el){
+  R.cat=CAT_BY_ACT[a]||null;
   const id=el.dataset.id;const it=id?ITEM[id]:null;const cap=stockCap();
   switch(a){
     case 'order10':orderStock(id,10);break;
@@ -2517,6 +2639,9 @@ function act(a,el){
     case 'perk':{const p=PERKS.find(x=>x.id===id);const lv=perk(id);const cost=lv+1;if(!p||lv>=p.max||S.legacy.points-S.legacy.spent<cost)return;S.legacy.perks[id]=lv+1;S.legacy.spent+=cost;toast(`${p.icon} ${p.name} : niveau ${lv+1} !`,'gold');Snd.level();saveSoon();renderPanel();break;}
     case 'auto':S.auto=!S.auto;toast(S.auto?'⏩ Mode continu activé : les journées s’enchaînent toutes seules.':'Mode continu désactivé.');saveSoon();renderPanel();break;
     case 'savebox':openSaveBox();break;
+    case 'bilanp':R.bilanP=id;renderPanel();break;
+    case 'chefhire':{if(S.chef.hired||S.level<CHEF.req)return;if(spend(CHEF.hire,'invest')){S.chef.hired=true;S.chef.since=S.day;toast('🧑‍🍳 La carte est entre de bonnes mains : premier passage ce soir !','gold');confettiBurst(80);renderPanel();}break;}
+    case 'cheffire':S.chef.hired=false;toast('Tu reprends la carte en main.');saveSoon();renderPanel();break;
     case 'loan':takeLoan(id);break;
     case 'repay':repayLoan(id);break;
     case 'unlock':{if(S.level<it.lvl)return;if(spend(it.unlock,'invest')){const s=S.items[id];s.unlocked=true;s.stock=Math.max(s.stock,10);toast(`${it.emoji} ${it.name} arrive à la carte !`,'gold');confettiBurst(70);renderPanel();}break;}
@@ -2525,13 +2650,13 @@ function act(a,el){
     case 'fire':{if(R.phase!=='closed')return;S.staff=S.staff.filter(m=>m.name!==id);syncStations();toast(`${id} quitte l’équipe. Bonne continuation !`);saveSoon();renderPanel();break;}
     case 'upg':{const u=UPG[id];const lvl=S.upg[id];if(lvl>=u.costs.length||S.level<u.req[lvl])return;if(spend(u.costs[lvl],'invest')){S.upg[id]++;syncSeats();toast(`${u.icon} ${u.name} : ${u.costs.length>1?`niveau ${S.upg[id]}`:'c’est installé'} !`,'gold');confettiBurst(60);renderPanel();}break;}
     case 'camp':{const c=CAMPAIGNS.find(x=>x.id===id);if(!c||S.campaigns.some(x=>x.id===id))return;if(spend(campCost(c),'invest')){addCampaign({id:c.id,name:c.name,icon:c.icon,traffic:c.traffic,days:c.days});if(c.rep)S.rep=clamp(S.rep+c.rep,1,5);toast(`${c.icon} ${c.name} : c’est parti !`);renderPanel();}break;}
-    case 'claim':{const i=+el.dataset.i;const q=QUESTS[i];if(!q||!S.quests.done[i]||S.quests.claimed[i])return;S.quests.claimed[i]=true;S.money+=q.reward;Snd.level();confettiBurst(110);toast(`🎁 +${costTxt(q.reward)} de récompense !`,'gold');saveSoon();renderPanel();break;}
+    case 'claim':{const i=+el.dataset.i;const q=QUESTS[i];if(!q||!S.quests.done[i]||S.quests.claimed[i])return;S.quests.claimed[i]=true;S.money+=q.reward;book('recompenses',q.reward);Snd.level();confettiBurst(110);toast(`🎁 +${costTxt(q.reward)} de récompense !`,'gold');saveSoon();renderPanel();break;}
     case 'sound':S.sound=!S.sound;Snd.init();saveSoon();renderPanel();break;
     case 'reset':R.confirmReset=true;renderPanel();break;
     case 'reset-no':R.confirmReset=false;renderPanel();break;
     case 'reset-yes':{try{localStorage.removeItem(SAVE_KEY);}catch(e){}S.sig=[];rebuildItems();S=defaultState();S.candidates=genCandidates(S);rebuildItems();initRuntime();seedFeed();genMissions();tab='carte';renderPanel();updateHud();setSpeedUI();showWelcome();break;}
   }
-  refreshPanel();updateHud();
+  R.cat=null;refreshPanel();updateHud();
 }
 function floatStock(el){const r=el.getBoundingClientRect();void r;toastOnce('stock','📦 Livré !');}
 let lastToastKey={};function toastOnce(k,m){const n=performance.now();if(lastToastKey[k]&&n-lastToastKey[k]<1500)return;lastToastKey[k]=n;toast(m);}
@@ -2566,10 +2691,15 @@ function setSpeedUI(){document.querySelectorAll('.speed button').forEach(b=>b.se
 function bindUI(){
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;R.confirmReset=false;R.confirmSell=null;R.confirmIpo=false;renderPanel();$('#tabBody').scrollTop=0;}));
   $('#tabBody').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;Snd.init();act(b.dataset.act,b);});
-  $('#tabBody').addEventListener('change',e=>{const t=e.target;if(t.id==='postItem')R.postItem=t.value;if(t.id==='labBase'||t.id==='labTwist'){R[t.id]=t.value;renderPanel();}});
+  $('#tabBody').addEventListener('change',e=>{const t=e.target;if(t.id==='postItem')R.postItem=t.value;
+    if(t.id&&t.id.startsWith('chefT-')){S.chef.tasks[t.id.slice(6)]=t.checked;saveSoon();}
+    if(t.id==='chefReserve'){S.chef.reserve=+t.value;saveSoon();}if(t.id==='labBase'||t.id==='labTwist'){R[t.id]=t.value;renderPanel();}});
   $('#tabBody').addEventListener('input',e=>{if(e.target.id==='firmName'){R.firmName=e.target.value;return;}if(e.target.id==='frRate'){S.fr.rate=+e.target.value;const v=$('#frRateV');if(v)v.textContent=S.fr.rate+' %';const hh=$('#frRateHint');if(hh)hh.textContent=rateHint();saveSoon();return;}const id=e.target.dataset&&e.target.dataset.price;if(!id)return;S.items[id].price=Math.round(+e.target.value*10)/10;updatePriceUI(id);saveSoon();});
   document.querySelectorAll('.speed button').forEach(b=>b.addEventListener('click',()=>{R.speed=+b.dataset.speed;if(R.speed>0)S.speed=R.speed;setSpeedUI();saveSoon();}));
   $('#openBtn').addEventListener('click',()=>openDay());
+  const goBilan=()=>{tab='bilan';R.bilanP='today';renderPanel();const p=document.querySelector('.panel');if(p&&p.scrollIntoView)p.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
+  $('#moneyStat').addEventListener('click',goBilan);
+  $('#moneyStat').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goBilan();}});
   let taps=[];$('.logo').addEventListener('click',()=>{const n=Date.now();taps=taps.filter(t=>n-t<1600);taps.push(n);if(taps.length>=5&&$('#modal').hidden){taps=[];openCheat();}});
   $('#modal').addEventListener('click',e=>{const ok=e.target.closest('[data-modal-ok]');if(ok){closeModal();const cb=modalOk;modalOk=null;modalChoice=null;if(cb)cb();updateHud();return;}const ch=e.target.closest('[data-choice]');if(ch&&!ch.disabled&&modalChoice)modalChoice(+ch.dataset.choice);});
   cv.addEventListener('pointerdown',e=>{
