@@ -10,6 +10,8 @@
     "content": ""
   },
   "adPreview": false,
+  "supabaseUrl": "",
+  "supabaseAnonKey": "",
   "editorName": "",
   "contactEmail": "",
   "hostName": "GitHub, Inc. (service GitHub Pages)",

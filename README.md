@@ -46,6 +46,19 @@ La partie s'enregistre toute seule dans le navigateur. Le bouton **💾 Sauvegar
 - de télécharger un fichier (sur le site en ligne seulement) ;
 - de recharger une partie à partir d'un code ou d'un fichier, pour changer d'appareil ou restaurer une partie.
 
+### Sauvegarde en ligne avec compte (Supabase, gratuit)
+
+Le joueur se connecte avec son e-mail : il reçoit un lien de connexion, sans mot de passe. Sa partie part ensuite en ligne chaque soir, et il la retrouve sur tous ses appareils.
+
+1. Crée un compte sur https://supabase.com, puis un projet. Choisis une région en Europe (par exemple Paris ou Francfort).
+2. Ouvre **SQL Editor → New query**, colle le contenu de `supabase.sql`, puis clique sur **Run**.
+3. Ouvre **Authentication → URL Configuration**. Renseigne dans **Site URL** l'adresse du site (par exemple `https://www.comptoir-et-cie.fr`), puis ajoute la même adresse dans **Redirect URLs**.
+4. Ouvre **Project Settings → API**. Copie la **Project URL** dans `"supabaseUrl"` et la clé **anon public** dans `"supabaseAnonKey"` de `config.json`, puis lance `node build.js`.
+
+La clé « anon » est faite pour être publique. Ce sont les règles du fichier `supabase.sql` qui empêchent chaque joueur de voir les parties des autres. Ne mets jamais la clé « service_role » dans le site.
+
+Tant que ces deux champs sont vides, la sauvegarde en ligne n'apparaît pas : seuls le code et le fichier de sauvegarde sont proposés.
+
 ## Mise en ligne avec GitHub Pages (gratuit)
 
 1. Crée un compte sur https://github.com, puis un dépôt **public** nommé `comptoir-et-cie`.

@@ -14,6 +14,10 @@ const preview = process.argv.includes('--preview') || !!cfg.adPreview;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const url = String(cfg.siteUrl || '').trim().replace(/\/+$/, '');
 const client = String(cfg.adsenseClient || '').trim();
+const cloudUrl = String(cfg.supabaseUrl || '').trim().replace(/\/+$/, '');
+const cloudKey = String(cfg.supabaseAnonKey || '').trim();
+const cloud = !!(cloudUrl && cloudKey);
+const CLOUD_HEAD = cloud ? '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>' : '';
 const year = new Date().getFullYear();
 const todo = txt => `<mark>[à compléter : ${txt}]</mark>`;
 
@@ -95,7 +99,7 @@ const FOOTER = `<footer class="site-footer">
   ${client ? '<button type="button" id="cookiePrefs">Gérer mes cookies</button>' : ''}
 </footer>`;
 
-const SITE_CONFIG = { adsenseClient: client, adSlots: cfg.adSlots || {}, adPreview: preview };
+const SITE_CONFIG = { adsenseClient: client, adSlots: cfg.adSlots || {}, adPreview: preview, cloud: cloud ? { url: cloudUrl, key: cloudKey } : null };
 
 const AD_SCRIPT = `<script>
 (function(){
@@ -145,7 +149,7 @@ const ABOUT = `<section class="site-content" id="a-propos" aria-labelledby="abou
   <h3>Faut-il créer un compte ?</h3>
   <p>Non. Tu joues directement dans ton navigateur.</p>
   <h3>Ma partie est-elle sauvegardée ?</h3>
-  <p>Oui, automatiquement, dans ton navigateur. Pour la mettre à l’abri ou la continuer sur un autre appareil, ouvre le bouton « 💾 Sauvegarde » en bas du panneau de gestion : tu peux copier un code ou télécharger un fichier, puis le recharger quand tu veux.</p>
+  <p>Oui, automatiquement, dans ton navigateur. Pour la mettre à l’abri ou la continuer sur un autre appareil, ouvre le bouton « 💾 Sauvegarde » en bas du panneau de gestion : tu peux copier un code ou télécharger un fichier, puis le recharger quand tu veux.${cloud ? ' Tu peux aussi te connecter avec ton e-mail pour retrouver ta partie en ligne sur tous tes appareils.' : ''}</p>
   <h3>Le jeu marche-t-il sur téléphone ?</h3>
   <p>Oui. La salle du café et le panneau de gestion s’adaptent à la taille de l’écran.</p>
   <h3>Puis-je jouer plus vite ?</h3>
@@ -158,6 +162,7 @@ const index = `<!doctype html>
 <head>
 ${head(cfg.title || cfg.siteName, cfg.description, '/')}
 <script>window.SITE_CONFIG=${JSON.stringify(SITE_CONFIG)};</script>
+${CLOUD_HEAD}
 ${gameStyle}
 ${SITE_CSS}
 </head>
@@ -201,7 +206,9 @@ const privacy = page('Politique de confidentialité', 'Comment ' + cfg.siteName 
 <h2>Responsable du traitement</h2>
 <p>${editor}. Contact : ${contact}.</p>
 <h2>Sauvegarde de ta partie</h2>
-<p>Ta progression est enregistrée dans le stockage local de ton navigateur (« localStorage »). Ces données restent sur ton appareil, ne nous sont jamais envoyées et servent uniquement à faire fonctionner le jeu. Tu peux les effacer avec le bouton « Nouvelle partie » ou en vidant les données du site dans ton navigateur.</p>
+<p>Ta progression est enregistrée dans le stockage local de ton navigateur (« localStorage »). Ces données restent sur ton appareil et servent uniquement à faire fonctionner le jeu. Tu peux les effacer avec le bouton « Nouvelle partie » ou en vidant les données du site dans ton navigateur.</p>
+${cloud ? `<h2>Sauvegarde en ligne (facultative)</h2>
+<p>Si tu choisis de te connecter pour sauvegarder ta partie en ligne, nous conservons ton adresse e-mail (pour t’envoyer le lien de connexion) et les données de ta partie. Elles sont hébergées par Supabase et ne servent qu’à te permettre de retrouver ta partie. Tu peux supprimer ta sauvegarde en ligne à tout moment depuis la fenêtre « 💾 Sauvegarde ». Pour supprimer aussi ton compte, écris-nous à l’adresse ci-dessus.</p>` : ''}
 <h2>Publicité</h2>
 <p>Le site affiche des annonces fournies par Google AdSense. Google et ses partenaires peuvent utiliser des cookies pour afficher des annonces, éventuellement personnalisées en fonction de tes visites sur ce site et sur d’autres sites. Lors de ta première visite, un message te permet d’accepter ou de refuser ces cookies. Tu peux changer d’avis à tout moment avec le lien « Gérer mes cookies » en bas de la page du jeu.</p>
 <p>Pour en savoir plus sur l’utilisation des données par Google : <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">policies.google.com/technologies/partner-sites</a>. Tu peux aussi gérer la personnalisation des annonces sur <a href="https://adssettings.google.com" rel="noopener" target="_blank">adssettings.google.com</a>.</p>

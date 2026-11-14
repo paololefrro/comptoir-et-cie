@@ -19,7 +19,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800;900&family=Pacifico&display=swap">
 
-<script>window.SITE_CONFIG={"adsenseClient":"","adSlots":{"game":"","bottom":"","content":""},"adPreview":false};</script>
+<script>window.SITE_CONFIG={"adsenseClient":"","adSlots":{"game":"","bottom":"","content":""},"adPreview":false,"cloud":null};</script>
+
 <style>
 /* Mise en page : la salle du café (canvas vivant) à gauche, le carnet de gestion à droite ; empilés sur téléphone.
    Direction : façade de café parisien — murs pistache, boiseries vert bouteille, damier noir et crème, laiton, framboise. */
@@ -334,6 +335,10 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .cheat-form{display:flex;flex-direction:column;gap:8px}
 .cheat-form .txt{font-family:var(--font-display);font-size:1.3rem;letter-spacing:2px;text-transform:uppercase;text-align:center;padding:10px}
 .logo{cursor:default;user-select:none;-webkit-user-select:none}
+.cloud-box{display:flex;flex-direction:column;gap:8px;background:var(--pist-soft);border-radius:16px;padding:12px}
+.cloud-box p{margin:0}
+.cloud-row{display:flex;flex-wrap:wrap;gap:8px}
+.cloud-row .txt{flex:1 1 180px}
 .save-ta{width:100%;flex:none;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;font-weight:500;resize:vertical;word-break:break-all;min-height:62px}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 @media (prefers-reduced-motion:reduce){
@@ -1668,6 +1673,7 @@ function openSaveBox(){
   <label class="lbl-full" for="saveIn">Charger une partie</label>
   <textarea id="saveIn" class="txt save-ta" rows="3" placeholder="Colle ici un code de sauvegarde"></textarea>
   <div class="btns"><label class="btn" for="saveFile">📂 Choisir un fichier</label><input type="file" id="saveFile" accept=".json,.txt,application/json,text/plain" hidden><button class="btn btn-gold" type="button" id="saveLoad">Charger cette partie</button></div>
+  ${Cloud.on()?cloudBoxHtml():''}
   <p class="muted small" id="saveMsg" aria-live="polite" style="margin:0"></p>
   <button class="btn btn-lg" type="button" data-modal-ok>Fermer</button>`);
   const msg=$('#saveMsg'),out=$('#saveOut'),inp=$('#saveIn');let armed=false;
@@ -1681,6 +1687,47 @@ function openSaveBox(){
     if(!armed){armed=true;msg.textContent=`⚠️ Ta partie actuelle sera remplacée par celle du jour ${d.day||'?'} (${money(d.money)}). Clique encore pour confirmer.`;return;}
     try{loadSave(d);closeModal();toast('💾 Partie chargée !','gold');confettiBurst(80);}catch(e){msg.textContent='❌ Impossible de charger cette sauvegarde.';}
   });
+  if(Cloud.on())bindCloudBox(msg);
+}
+
+/* ---------- Sauvegarde en ligne avec compte (site uniquement, via Supabase) ---------- */
+const Cloud={sb:null,user:null,meta:null,
+  init(){
+    const C=window.SITE_CONFIG&&window.SITE_CONFIG.cloud;if(!C||!C.url||!C.key||!window.supabase)return;
+    try{this.sb=window.supabase.createClient(C.url,C.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});}catch(e){this.sb=null;return;}
+    this.sb.auth.getSession().then(({data})=>{this.user=data&&data.session?data.session.user:null;if(this.user)this.fetchMeta();}).catch(()=>{});
+    this.sb.auth.onAuthStateChange((ev,session)=>{const was=this.user;this.user=session?session.user:null;if(this.user&&!was){toast(`☁️ Connecté : ${this.user.email}`,'gold');this.fetchMeta();}});
+  },
+  on(){return !!this.sb;},
+  async login(email){const {error}=await this.sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;},
+  async logout(){await this.sb.auth.signOut();this.user=null;this.meta=null;},
+  async push(silent){
+    if(!this.user)return false;save();
+    const row={user_id:this.user.id,data:S,day:S.day,money:Math.round(S.money),updated_at:new Date().toISOString()};
+    const {error}=await this.sb.from('saves').upsert(row);
+    if(error){if(!silent)toast('☁️ La sauvegarde en ligne a échoué. Réessaie dans un instant.','bad');return false;}
+    this.meta={day:row.day,money:row.money,updated_at:row.updated_at};if(!silent)toast('☁️ Partie enregistrée en ligne !','gold');return true;
+  },
+  async pull(){const {data,error}=await this.sb.from('saves').select('data,day,money,updated_at').eq('user_id',this.user.id).maybeSingle();if(error)throw error;return data;},
+  async remove(){const {error}=await this.sb.from('saves').delete().eq('user_id',this.user.id);if(error)throw error;this.meta=null;},
+  async fetchMeta(){try{const {data}=await this.sb.from('saves').select('day,money,updated_at').eq('user_id',this.user.id).maybeSingle();this.meta=data||null;}catch(e){}},
+};
+function cloudBoxHtml(){
+  if(!Cloud.user)return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecte-toi avec ton e-mail pour retrouver ta partie sur tous tes appareils. Pas de mot de passe : tu reçois un lien de connexion.</p><div class="cloud-row"><input type="email" id="cloudEmail" class="txt" placeholder="ton@email.fr" autocomplete="email" aria-label="Ton adresse e-mail"><button class="btn btn-primary" type="button" id="cloudLogin">Recevoir le lien</button></div></div>`;
+  const m=Cloud.meta;const when=m&&m.updated_at?new Date(m.updated_at).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecté : <b>${esc(Cloud.user.email||'')}</b>. ${m?`Dernière sauvegarde en ligne : jour ${m.day}, ${money(m.money||0)} (${when}).`:'Aucune partie en ligne pour l’instant.'} Ta partie part aussi toute seule en ligne chaque soir.</p><div class="cloud-row"><button class="btn btn-primary" type="button" id="cloudPush">☁️ Enregistrer maintenant</button><button class="btn btn-gold" type="button" id="cloudPull" ${m?'':'disabled'}>Récupérer ma partie en ligne</button></div><div class="cloud-row"><button class="btn btn-sm" type="button" id="cloudOut">Se déconnecter</button><button class="btn btn-sm" type="button" id="cloudDel" ${m?'':'disabled'}>Supprimer ma sauvegarde en ligne</button></div></div>`;
+}
+function bindCloudBox(msg){
+  const q=id=>document.getElementById(id);let armPull=false,armDel=false;
+  const li=q('cloudLogin');if(li)li.addEventListener('click',async()=>{const em=(q('cloudEmail').value||'').trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='❌ Cette adresse e-mail ne semble pas valide.';return;}li.disabled=true;msg.textContent='Envoi du lien…';try{await Cloud.login(em);msg.textContent='📧 Lien envoyé ! Ouvre l’e-mail sur cet appareil et clique sur le lien pour te connecter.';}catch(e){msg.textContent='❌ Impossible d’envoyer le lien pour le moment. Réessaie dans quelques minutes.';li.disabled=false;}});
+  const pu=q('cloudPush');if(pu)pu.addEventListener('click',async()=>{pu.disabled=true;msg.textContent='Envoi en cours…';const ok=await Cloud.push(true);msg.textContent=ok?'✅ Partie enregistrée en ligne.':'❌ La sauvegarde en ligne a échoué. Réessaie dans un instant.';pu.disabled=false;});
+  const pl=q('cloudPull');if(pl)pl.addEventListener('click',async()=>{
+    if(!armPull){const m=Cloud.meta;armPull=true;msg.textContent=`⚠️ Ta partie actuelle sera remplacée par ta partie en ligne (jour ${m?m.day:'?'}). Clique encore pour confirmer.`;return;}
+    pl.disabled=true;try{const row=await Cloud.pull();if(!row||!row.data)throw 0;loadSave(row.data);closeModal();toast('☁️ Partie en ligne récupérée !','gold');confettiBurst(80);}catch(e){msg.textContent='❌ Impossible de récupérer la partie en ligne.';pl.disabled=false;armPull=false;}});
+  const lo=q('cloudOut');if(lo)lo.addEventListener('click',async()=>{await Cloud.logout();closeModal();toast('Déconnecté de la sauvegarde en ligne.');});
+  const de=q('cloudDel');if(de)de.addEventListener('click',async()=>{
+    if(!armDel){armDel=true;msg.textContent='⚠️ Ta sauvegarde en ligne sera effacée définitivement (ta partie sur cet appareil est conservée). Clique encore pour confirmer.';return;}
+    try{await Cloud.remove();closeModal();toast('Sauvegarde en ligne supprimée.');}catch(e){msg.textContent='❌ La suppression a échoué.';armDel=false;}});
 }
 
 /* ---------- Moral de l'équipe ---------- */
@@ -1735,6 +1782,7 @@ function endDay(){
   news.forEach(t=>pushNews(t,sm.day));sm.news=news;
   sm.record=record;
   save();renderPanel();updateHud();
+  if(Cloud.user)Cloud.push(true).catch(()=>{});
   showSummary(sm,()=>maybeEvent(()=>{renderPanel();updateHud();save();if(autoOn())setTimeout(()=>{if(R.phase==='closed'&&$('#modal').hidden&&autoOn())openDay();},2500);}));
 }
 function addCampaign(c){const ex=S.campaigns.find(x=>x.id===c.id);if(ex)ex.days=Math.max(ex.days,c.days);else S.campaigns.push(Object.assign({},c));}
@@ -2596,6 +2644,7 @@ function start(data){
   if(S.missions.day!==S.day||!S.missions.list.length)genMissions();
   initRuntime();bindUI();
   if(!S.social.feed.length)seedFeed();
+  Cloud.init();
   try{document.fonts&&document.fonts.load('20px Pacifico');document.fonts&&document.fonts.load('900 12px Nunito');document.fonts&&document.fonts.load('40px "Lilita One"');}catch(e){}
   renderPanel();updateHud();setSpeedUI();
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
