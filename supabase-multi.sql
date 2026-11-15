@@ -564,3 +564,37 @@ revoke all on function public.admin_mod_overview(), public.admin_mod_message(big
   public.admin_mod_ban(uuid, int), public.admin_mod_profile(uuid, boolean) from public, anon;
 grant execute on function public.admin_mod_overview(), public.admin_mod_message(bigint, boolean),
   public.admin_mod_ban(uuid, int), public.admin_mod_profile(uuid, boolean) to authenticated;
+
+-- 14. Cadeaux de compte (offerts par l'équipe, appliqués à la connexion) ---
+--     Pour offrir un boost au maximum à un compte :
+--     insert into public.gifts (user_id, kind, note)
+--       select id, 'max', 'Cadeau de l’équipe' from auth.users where email = 'adresse@exemple.fr';
+create table if not exists public.gifts (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  kind       text not null check (kind in ('max')),
+  note       text check (char_length(note) <= 120),
+  created_at timestamptz not null default now(),
+  claimed_at timestamptz
+);
+alter table public.gifts enable row level security;
+revoke all on public.gifts from anon, authenticated;
+
+create or replace function public.claim_gifts()
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  res jsonb;
+begin
+  if auth.uid() is null then return '[]'::jsonb; end if;
+  with c as (
+    update public.gifts set claimed_at = now()
+    where user_id = auth.uid() and claimed_at is null
+    returning kind, note
+  )
+  select coalesce(jsonb_agg(jsonb_build_object('kind', kind, 'note', note)), '[]'::jsonb) into res from c;
+  return res;
+end $$;
+revoke all on function public.claim_gifts() from public, anon;
+grant execute on function public.claim_gifts() to authenticated;

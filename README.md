@@ -29,6 +29,7 @@ Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à c
 
 | Code | Effet |
 | --- | --- |
+| `TOUTAUMAX` | Tout au maximum : niveau, améliorations, carte ★★★, labo, équipe, adresses, rachats et franchise mondiale |
 | `PLUIEDOR` | +10 000 € |
 | `MILLIONNAIRE` | +1 000 000 € |
 | `FOULE` | Deux fois plus de clients pendant 3 jours |
@@ -40,6 +41,17 @@ Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à c
 | `EQUIPEDREVE` | Comptoir agrandi au maximum, équipe au moral maximal |
 | `FRANCHISEXPRESS` | Crée la société, lance la franchise et fait venir 5 candidats |
 | `FONDATEUR` | +5 parts de fondateur |
+
+### Cadeaux de compte
+
+Pour offrir un boost au maximum à un joueur connecté avec son e-mail, exécute dans **SQL Editor** :
+
+```sql
+insert into public.gifts (user_id, kind, note)
+  select id, 'max', 'Cadeau de l’équipe' from auth.users where email = 'adresse@exemple.fr';
+```
+
+Le boost s’applique tout seul la prochaine fois que la personne ouvre le jeu connectée à ce compte. Comme un code secret, il place la partie hors classement.
 
 ## Sauvegarde des joueurs
 

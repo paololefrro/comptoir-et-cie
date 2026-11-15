@@ -1741,7 +1741,54 @@ const autoOn=()=>!!(S.auto&&S.upg.brasdroit);
 function autoClick(sel,ms){const tok=R.modalTok;setTimeout(()=>{if(R.modalTok!==tok||$('#modal').hidden)return;const b=$('#modalCard').querySelector(sel);if(b&&!b.disabled)b.click();},ms);}
 
 /* ---------- Codes secrets (5 clics rapides sur la tasse du logo) ---------- */
+// Met toute la partie au maximum (code TOUTAUMAX et cadeaux de compte)
+function maxOut(){
+  S.level=LEVELS.length;S.xp=Math.max(S.xp,LEVELS[LEVELS.length-1].xp);
+  S.money=Math.max(S.money,1e7);S.rep=5;S.social.followers=Math.max(S.social.followers,1e6);
+  UPGRADES.forEach(u=>{S.upg[u.id]=u.costs.length;});
+  // Labo : toutes les associations testées, une création 5 ★ par base sur la carte
+  LAB_BASES.forEach(b=>LAB_TWISTS.forEach(t=>{S.lab.tried[b.id+':'+t.id]=comboStars(b.id,t.id);}));S.lab.pending=null;
+  S.sig.forEach(s=>{delete S.items[s.id];});S.sig=[];
+  const bases=new Set();Object.keys(S.lab.tried).filter(k=>S.lab.tried[k]>=5).forEach(k=>{const [b,t]=k.split(':');if(bases.has(b)||S.sig.length>=5)return;bases.add(b);createSig(b,t,5);});
+  // Carte complète : recettes ★★★, maîtrise or et réserve pleine
+  rebuildItems();const cap=STOCK_CAP[STOCK_CAP.length-1];
+  ITEMS.forEach(it=>{const s=S.items[it.id];s.unlocked=true;s.off=false;s.recipe=3;s.sold=Math.max(s.sold||0,MASTERY[3]);s.stock=Math.max(s.stock||0,cap);});
+  // Équipe complète de stars au moral maximum, et responsable de la carte
+  const want=maxStations()-1,T=TRAITS.star;
+  while(S.staff.length<want){const c=genCandidates(S)[0];S.staff.push(Object.assign(c,{trait:'star',salary:Math.round((T.sal[0]+T.sal[1])/2),days:30,morale:100}));}
+  S.staff.forEach(m=>{m.morale=100;});
+  if(!S.chef.hired){S.chef.hired=true;S.chef.since=S.day;}
+  // Société : toutes les adresses ouvertes et rénovées, tous les concurrents rachetés
+  if(!S.firm.created){S.firm.created=true;S.firm.createdDay=S.day;}
+  QUARTIERS.forEach(q=>{if(!S.firm.locations.some(l=>l.qid===q.id))S.firm.locations.push(newLocation({name:`Le Petit Comptoir ${q.short}`,icon:q.icon,quartier:q.name,kind:'new',potential:q.potential,rent:q.rent,qid:q.id}));});
+  S.comps.forEach(c=>{if(c.owned||c.closed)return;const def=COMP[c.id];c.owned=true;S.firm.locations.push(newLocation({name:def.name,icon:def.icon,quartier:'Ton quartier',kind:'rachat',potential:c.size>1?.85*c.size:1,rent:40*c.size,rep:c.rep,from:c.id}));});
+  S.firm.locations.forEach(l=>{l.level=5;l.rep=5;});
+  // Franchise : toutes les villes complètes, avec des franchisés excellents
+  S.fr.launched=true;S.fr.centrale=true;S.fr.academie=true;S.fr.cands=[];
+  CITIES.forEach(c=>{while(S.fr.list.filter(f=>f.city===c.id).length<c.slots)S.fr.list.push({id:'F'+(S.fr.seq=(S.fr.seq||0)+1),city:c.id,owner:pick(NAMES)+' '+pick(SURNAMES),quality:1.35,sat:100,day:S.day,last:0});});
+  // Héritage, objectifs, exploits et finances
+  PERKS.forEach(p=>{S.legacy.perks[p.id]=p.max;});
+  QUESTS.forEach((q,i)=>{S.quests.done[i]=true;S.quests.claimed[i]=true;});
+  Object.assign(S.flags,{critic:true,perfect:true,viral:true,art:true});
+  S.life.served=Math.max(S.life.served||0,10000);S.life.missions=Math.max(S.life.missions||0,50);
+  S.stats.bestDay=Math.max(S.stats.bestDay,3000);S.login.streak=Math.max(S.login.streak||0,7);
+  S.loans=[];
+  syncStations();syncSeats();checkTier();checkTrophies();
+}
+// Cadeaux de compte offerts depuis Supabase (table gifts), appliqués à la connexion
+async function claimGifts(){
+  if(!Cloud.linked())return;
+  let gifts=[];try{gifts=await mpRpc('claim_gifts')||[];}catch(e){return;}
+  gifts.forEach(g=>{
+    if(g.kind!=='max')return;
+    const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;
+    showBanner('👑 Compte boosté !','Tout est au maximum');confettiBurst(220);Snd.level();
+    toast('👑 '+(g.note||'Ton compte a été boosté au maximum !'),'gold');
+  });
+  if(gifts.some(g=>g.kind==='max')){save();renderPanel();updateHud();Cloud.push(true).catch(()=>{});if(MP.me){MP.lastPub=0;mpPublish(true);}}
+}
 const CHEATS={
+ TOUTAUMAX:{d:'Tout au maximum : niveau, carte ★★★, labo, équipe, adresses et franchise mondiale',f(){maxOut();}},
  PLUIEDOR:{d:'+10 000 € en caisse',f(){S.money+=10000;}},
  MILLIONNAIRE:{d:'+1 000 000 € en caisse',f(){S.money+=1e6;}},
  FOULE:{d:'Deux fois plus de clients pendant 3 jours',f(){addCampaign({id:'triche',name:'Foule en délire',icon:'🤯',traffic:2,days:3});}},
@@ -1929,7 +1976,7 @@ async function mpPublish(quiet,pseudo,firm,emoji){
     return r&&r.error?r.error:false;
   }catch(e){if(!quiet)toast('🌍 La mise à jour de ta vitrine a échoué. Réessaie dans un instant.','bad');return false;}
 }
-function mpOnAuth(){if(!mpOn()||MP.joining)return;mpRefreshMe(false).then(()=>{if(tab==='monde')renderPanel();});}
+function mpOnAuth(){if(!mpOn()||MP.joining)return;claimGifts().then(()=>mpRefreshMe(false)).then(()=>{if(tab==='monde')renderPanel();});}
 function mpAfterDay(){if(!MP.me)return;MP.lastPub=0;mpPublish(true).then(()=>{if(tab==='monde')renderPanel();});}
 async function mpInit(){
   const tb=document.querySelector('.tab[data-tab="monde"]');if(tb)tb.hidden=!mpOn();
@@ -1945,6 +1992,7 @@ async function mpInit(){
   $('#tabBody').addEventListener('focusin',e=>{if(e.target.id==='mpChatIn')MP.focusChat=true;});
   $('#tabBody').addEventListener('focusout',e=>{if(e.target.id==='mpChatIn'&&e.relatedTarget)MP.focusChat=false;});
   try{const {data}=await Cloud.sb.auth.getSession();Cloud.user=data&&data.session?data.session.user:null;}catch(e){}
+  await claimGifts();
   await mpRefreshMe(true);
   MP.ready=true;if(tab==='monde')renderPanel();
   setInterval(()=>{if(MP.me&&tab==='monde'&&MP.view==='chat'&&!document.hidden)mpLoadChat();},8000);
