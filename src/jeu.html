@@ -371,6 +371,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .cu-card{background:var(--gold-soft)}
 .cu-group{display:flex;flex-direction:column;gap:6px}
 .cu-group>b{font-size:.92rem}
+.cu-price{font-size:.75rem;font-weight:900;color:var(--ink-2);background:var(--card-2);border-radius:99px;padding:1px 7px;margin-left:4px}
 .cu-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
 .cu-sw{display:flex;align-items:center;gap:7px;font:inherit;font-size:.76rem;font-weight:800;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:5px 8px;cursor:pointer;text-align:left;line-height:1.15;min-width:0}
 .cu-sw i{width:24px;height:24px;flex:none;border-radius:7px;border:1.5px solid rgba(0,0,0,.2)}
@@ -2007,31 +2008,60 @@ function updateMorale(news){
   syncStations();
 }
 function givePrime(name){const m=S.staff.find(x=>x.name===name);if(!m||m.primeDay===S.day)return;if(!spend(m.salary,'invest'))return;m.morale=clamp((m.morale??80)+30,0,100);m.primeDay=S.day;toast(`🎉 Prime versée : ${m.name} a le sourire !`);renderPanel();}
-/* ---------- Personnalisation de la boutique ---------- */
+/* ---------- Personnalisation de la boutique (aperçu libre, travaux payés à la validation) ---------- */
 const CU_SWATCH={wall:[0,1],wains:[0,2],floor:[0,1],counter:[0,3],enseigne:[0,2]};
+const CU_PRICE={wall:60,wains:50,floor:80,counter:70,enseigne:40,accent:20,sign:30};
+let cuDraft=null,cuBound=false;
+const cuId=(src,k)=>{const g=CUSTOM[k],id=src&&src[k];return (g.opts.find(o=>o.id===id)||g.opts[0]).id;};
+const cuSignOf=src=>((src&&src.sign)||'').trim();
+function cuChanges(){const ch=CUSTOM_KEYS.filter(k=>cuId(cuDraft,k)!==cuId(S.custom,k));if(cuSignOf(cuDraft)!==cuSignOf(S.custom))ch.push('sign');return ch;}
+const cuCost=()=>cuChanges().reduce((a,k)=>a+CU_PRICE[k],0);
+function cuFoot(){
+  const b=$('#cuApply'),t=$('#cuCost');if(!b||!t)return;
+  const n=cuChanges().length,cost=cuCost(),short=S.money+1e-9<cost;
+  b.disabled=!n||short;b.textContent=n?`✓ Valider · ${money(cost)}`:'✓ Valider';
+  t.textContent=!n?'Essaie les couleurs librement : rien n’est payé tant que tu n’as pas validé.'
+    :short?`Il te manque ${money(cost-S.money)} pour ces travaux.`:`${n} changement${n>1?'s':''} : ${money(cost)} de travaux.`;
+}
+function cuApply(){
+  const n=cuChanges().length,cost=cuCost();
+  if(!n){closeModal();return;}
+  if(S.money+1e-9<cost){toast(`Il te manque ${money(cost-S.money)} pour ces travaux.`,'bad');return;}
+  S.money-=cost;book('travaux',-cost);
+  const nm=cuSignOf(cuDraft);S.custom=Object.assign({},cuDraft);if(nm)S.custom.sign=nm;else delete S.custom.sign;
+  closeModal();Snd.coin();confettiBurst(60);toast(`🎨 Ta boutique fait peau neuve ! −${money(cost)}`,'gold');
+  saveSoon();updateHud();renderPanel();if(MP.me){MP.lastPub=0;mpPublish(true);}
+}
 function cuSwatch(k,o){
-  const cur=custOpt(k).id===o.id,lock=o.req&&S.level<o.req;
+  const cur=cuId(cuDraft,k)===o.id,lock=o.req&&S.level<o.req;
   const c=Array.isArray(o.c)?CU_SWATCH[k].map(i=>o.c[i]):[o.c,o.c];
   return `<button type="button" class="cu-sw" data-cu="${k}" data-v="${o.id}" aria-pressed="${cur}" ${lock?'disabled':''} title="${esc(o.name)}${lock?' · débloqué au niveau '+o.req:''}"><i style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></i><span>${esc(o.name)}${lock?`<small>🔒 niveau ${o.req}</small>`:''}</span></button>`;
 }
-function cuPreview(){const cv2=$('#cuCv');if(!cv2)return;const w=cv2.clientWidth||480,dpr=Math.min(window.devicePixelRatio||1,2);cv2.width=Math.round(w*dpr);cv2.height=Math.round(w*H/W*dpr);mpPaintVisit(cv2,{firm_name:signName(),snapshot:mySnapshot()});}
-let cuBound=false;
+function cuPreview(){
+  const cv2=$('#cuCv');if(!cv2||!cuDraft)return;const w=cv2.clientWidth||480,dpr=Math.min(window.devicePixelRatio||1,2);
+  cv2.width=Math.round(w*dpr);cv2.height=Math.round(w*H/W*dpr);
+  const snap=Object.assign(mySnapshot(),{custom:CUSTOM_KEYS.reduce((x,k)=>(x[k]=cuId(cuDraft,k),x),{})});
+  mpPaintVisit(cv2,{firm_name:cuSignOf(cuDraft)||'Le Petit Comptoir',snapshot:snap});
+  cuFoot();
+}
 function openCustom(){
-  if(!S.custom)S.custom={};
+  if(!S.custom)S.custom={};cuDraft=Object.assign({},S.custom);
   openModal(`<div class="modal-head"><span class="modal-ic">🎨</span><div><p class="eyebrow">Ma boutique</p><h2>Personnalise ton café</h2></div></div>
   <canvas class="visit-cv" id="cuCv" role="img" aria-label="Aperçu de ta boutique"></canvas>
-  <div class="cu-group"><label class="lbl-full" for="cuSign">Nom sur l’enseigne</label><input id="cuSign" class="txt" maxlength="26" value="${esc(S.custom.sign||'')}" placeholder="Le Petit Comptoir" autocomplete="off"></div>
-  ${CUSTOM_KEYS.map(k=>{const g=CUSTOM[k];return `<div class="cu-group"><b>${g.icon} ${g.label}</b>${g.hint?`<span class="muted small">${g.hint}</span>`:''}<div class="cu-row" role="group" aria-label="${esc(g.label)}">${g.opts.map(o=>cuSwatch(k,o)).join('')}</div></div>`;}).join('')}
+  <div class="cu-group"><label class="lbl-full" for="cuSign">Nom sur l’enseigne · ${money(CU_PRICE.sign)}</label><input id="cuSign" class="txt" maxlength="26" value="${esc(S.custom.sign||'')}" placeholder="Le Petit Comptoir" autocomplete="off"></div>
+  ${CUSTOM_KEYS.map(k=>{const g=CUSTOM[k];return `<div class="cu-group"><b>${g.icon} ${g.label} <span class="cu-price">${money(CU_PRICE[k])}</span></b>${g.hint?`<span class="muted small">${g.hint}</span>`:''}<div class="cu-row" role="group" aria-label="${esc(g.label)}">${g.opts.map(o=>cuSwatch(k,o)).join('')}</div></div>`;}).join('')}
   ${S.upg.enseigne?'<p class="muted small" style="margin:0">💡 Ton enseigne néon garde ses couleurs lumineuses : la teinte choisie s’applique sans le néon.</p>':''}
-  <div class="btns"><button class="btn btn-primary" type="button" data-modal-ok>✓ Terminé</button><button class="btn btn-sm" type="button" data-cu-reset>Revenir au style d’origine</button></div>`,
-  ()=>{saveSoon();updateHud();if(MP.me){MP.lastPub=0;mpPublish(true);}});
+  <p class="muted small" id="cuCost" aria-live="polite" style="margin:0"></p>
+  <div class="btns"><button class="btn btn-primary" type="button" id="cuApply" data-cu-apply disabled>✓ Valider</button><button class="btn" type="button" data-modal-ok>Annuler</button><button class="btn btn-sm" type="button" data-cu-reset>Style d’origine</button></div>`);
   if(!cuBound){cuBound=true;
     $('#modal').addEventListener('click',e=>{
+      if(!cuDraft||!$('#cuCv'))return;
       const b=e.target.closest('[data-cu]');
-      if(b&&!b.disabled){S.custom[b.dataset.cu]=b.dataset.v;b.parentElement.querySelectorAll('.cu-sw').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));Snd.init();cuPreview();saveSoon();return;}
-      if(e.target.closest('[data-cu-reset]')){const sg=S.custom.sign;S.custom={};if(sg)S.custom.sign=sg;$('#modalCard').querySelectorAll('.cu-sw').forEach(x=>{const k=x.dataset.cu;x.setAttribute('aria-pressed',String(CUSTOM[k].opts[0].id===x.dataset.v));});cuPreview();saveSoon();}
+      if(b&&!b.disabled){cuDraft[b.dataset.cu]=b.dataset.v;b.parentElement.querySelectorAll('.cu-sw').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));Snd.init();cuPreview();return;}
+      if(e.target.closest('[data-cu-reset]')){const sg=cuDraft.sign;cuDraft={};if(sg)cuDraft.sign=sg;$('#modalCard').querySelectorAll('.cu-sw').forEach(x=>{const k=x.dataset.cu;x.setAttribute('aria-pressed',String(CUSTOM[k].opts[0].id===x.dataset.v));});cuPreview();return;}
+      const ap=e.target.closest('[data-cu-apply]');if(ap&&!ap.disabled)cuApply();
     });
-    $('#modal').addEventListener('input',e=>{if(e.target.id!=='cuSign')return;S.custom.sign=e.target.value.replace(/[<>{}]/g,'').slice(0,26);cuPreview();updateHud();saveSoon();});
+    $('#modal').addEventListener('input',e=>{if(e.target.id!=='cuSign'||!cuDraft)return;cuDraft.sign=e.target.value.replace(/[<>{}]/g,'').slice(0,26);cuPreview();});
   }
   requestAnimationFrame(cuPreview);
 }
@@ -3174,7 +3204,7 @@ function tabEquipe(){
 }
 function tabAmelio(){
   let h=`<div class="sec-head"><div><h3>Améliorations</h3><p class="muted small">Chaque achat se voit dans la salle.</p></div></div>`;
-  h+=`<div class="upg cu-card"><div class="upg-ic" aria-hidden="true">🎨</div><div class="grow"><b>Ma boutique</b><p class="muted small">Couleurs des murs, du sol, du comptoir, de l’enseigne et nom du café : fais-en une boutique à ton goût. C’est gratuit et modifiable à tout moment.</p></div><button class="btn btn-gold btn-sm" data-act="custom">Personnaliser</button></div>`;
+  h+=`<div class="upg cu-card"><div class="upg-ic" aria-hidden="true">🎨</div><div class="grow"><b>Ma boutique</b><p class="muted small">Couleurs des murs, du sol, du comptoir, de l’enseigne et nom du café : fais-en une boutique à ton goût. L’aperçu est libre, et les travaux coûtent de 20 à 80 €.</p></div><button class="btn btn-gold btn-sm" data-act="custom">Personnaliser</button></div>`;
   UPGRADES.forEach(u=>{const lvl=S.upg[u.id],max=u.costs.length,done=lvl>=max;const cost=done?0:u.costs[lvl],req=done?0:u.req[lvl];const can=S.level>=req;
     const pips=max>1?`<span class="pips" aria-label="Niveau ${lvl} sur ${max}">${Array.from({length:max},(_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('')}</span>`:'';
     h+=`<div class="upg ${done?'done':''}"><div class="upg-ic" aria-hidden="true">${u.icon}</div><div class="grow"><div class="item-top"><b>${u.name}</b>${pips}</div><p class="muted small">${u.desc}</p></div>${done?'<span class="tag ok">✓ Max</span>':can?`<button class="btn btn-primary btn-sm" data-act="upg" data-id="${u.id}" data-cost="${cost}">${costTxt(cost)}</button>`:`<span class="tag lock">🔒 Niv. ${req}</span>`}</div>`;});

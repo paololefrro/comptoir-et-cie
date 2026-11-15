@@ -26,7 +26,7 @@ Pour le tester sur ton ordinateur, lance `node serve.js`, puis ouvre http://loca
 ## Tutoriel et personnalisation
 
 - **Tutoriel** : à la première visite, l'accueil propose un tour guidé en 11 étapes. Chaque zone de l'écran est mise en lumière avec une bulle d'explication, et on navigue avec les flèches du clavier ou Échap. Le bouton **🧭 Tuto**, en bas du panneau de gestion, permet de le revoir.
-- **Ma boutique** : en haut de l'onglet Travaux, le bouton **Personnaliser** permet de choisir le nom sur l'enseigne et les teintes des murs, du lambris et de la porte, du sol, du comptoir et de l'enseigne, ainsi que la couleur de la maison (liseré du comptoir et tenue). C'est gratuit, avec un aperçu en direct. Certaines teintes se débloquent avec le niveau. Les autres joueurs voient ces couleurs quand ils visitent le café dans le multijoueur, mais l'enseigne y affiche le nom choisi pour le multijoueur, qui est modéré.
+- **Ma boutique** : en haut de l'onglet Travaux, le bouton **Personnaliser** permet de choisir le nom sur l'enseigne et les teintes des murs, du lambris et de la porte, du sol, du comptoir et de l'enseigne, ainsi que la couleur de la maison (liseré du comptoir et tenue). L'aperçu en direct est libre, et les travaux se paient à la validation : couleur de la maison 20 €, nom de l'enseigne 30 €, style d'enseigne 40 €, lambris 50 €, murs 60 €, comptoir 70 €, sol 80 €. Certaines teintes se débloquent avec le niveau. Les autres joueurs voient ces couleurs quand ils visitent le café dans le multijoueur, mais l'enseigne y affiche le nom choisi pour le multijoueur, qui est modéré.
 
 ## Codes secrets
 
