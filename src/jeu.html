@@ -1412,7 +1412,7 @@ function tabBilan(){
   const tin=ent.reduce((a,[,v])=>a+v,0),tout=sor.reduce((a,[,v])=>a-v,0),net=tin-tout;
   h+=`<p class="muted small">${D.label}</p><div class="statgrid"><div><b class="v-pos">+${money(tin)}</b><span>entrées</span></div><div><b class="v-neg">−${money(tout)}</b><span>sorties</span></div><div><b class="${net>=0?'v-pos':'v-neg'}">${net>=0?'+':'−'}${money(Math.abs(net))}</b><span>résultat</span></div><div><b>${money(S.money)}</b><span>en caisse maintenant</span></div></div>`;
   const mx=Math.max(1,...ent.map(([,v])=>v),...sor.map(([,v])=>-v));
-  const row=(k,v,cls)=>{const c=BOOK[k]||{i:'•',l:k};const pct=Math.round(Math.abs(v)/Math.max(.01,v>0?tin:tout)*100);return `<div class="bk-row ${cls}"><span>${c.i} ${c.l} <span class="bk-sub">${pct} %</span></span><b class="${v>=0?'v-pos':'v-neg'}">${v>=0?'+':'−'}${eur(Math.abs(v))}</b><div class="bar"><i style="width:${(Math.abs(v)/mx*100).toFixed(1)}%"></i></div></div>`;};
+  const row=(k,v,cls)=>{const c=BOOK[k]||{i:'•',l:k};const pct=Math.round(Math.abs(v)/Math.max(.01,v>0?tin:tout)*100);return `<div class="bk-row ${cls}"><span>${c.i} ${c.l} <span class="bk-sub">${pct<1?'< 1':pct} %</span></span><b class="${v>=0?'v-pos':'v-neg'}">${v>=0?'+':'−'}${eur(Math.abs(v))}</b><div class="bar"><i style="width:${(Math.abs(v)/mx*100).toFixed(1)}%"></i></div></div>`;};
   h+=`<h4>💚 D’où vient l’argent</h4>`+(ent.length?`<div class="bk-list">${ent.map(([k,v])=>row(k,v,'bk-in')).join('')}</div>`:'<p class="muted small">Aucune entrée sur cette période.</p>');
   h+=`<h4>❤️ Où part l’argent</h4>`+(sor.length?`<div class="bk-list">${sor.map(([k,v])=>row(k,v,'bk-out')).join('')}</div>`:'<p class="muted small">Aucune dépense sur cette période.</p>');
   const prods=Object.entries(D.sales||{}).filter(([id])=>ITEM[id]).sort((a,b)=>b[1].v-a[1].v);
@@ -1438,15 +1438,17 @@ function chefHtml(){
 }
 function chefRun(news){
   const C=S.chef;if(!C||!C.hired)return;
-  const done=[];const room=()=>S.money-C.reserve;
-  if(C.tasks.carte){R.cat='carte';BASE_ITEMS.filter(i=>!S.items[i.id].unlocked&&S.level>=i.lvl&&inSeason(i)).sort((a,b)=>a.unlock-b.unlock).forEach(it=>{if(it.unlock<=room()&&spend(it.unlock,'invest')){const s=S.items[it.id];s.unlocked=true;s.stock=Math.max(s.stock,10);done.push(`ajout de ${it.emoji} ${it.short}`);}});}
-  if(C.tasks.recettes){R.cat='carte';ITEMS.filter(i=>!i.sig&&S.items[i.id].unlocked&&S.items[i.id].recipe<3).sort((a,b)=>(S.items[b.id].sold||0)-(S.items[a.id].sold||0)).forEach(it=>{const s=S.items[it.id];const c=recipeCost(it,s.recipe);if(c<=room()&&spend(c,'invest')){s.recipe++;done.push(`${it.emoji} ${it.short} ${'★'.repeat(s.recipe)}`);}});}
+  const done=[],added=[],upg=[];const room=()=>S.money-C.reserve;
+  if(C.tasks.carte){R.cat='carte';BASE_ITEMS.filter(i=>!S.items[i.id].unlocked&&S.level>=i.lvl&&inSeason(i)).sort((a,b)=>a.unlock-b.unlock).forEach(it=>{if(it.unlock<=room()&&spend(it.unlock,'invest')){const s=S.items[it.id];s.unlocked=true;s.stock=Math.max(s.stock,10);added.push(it.emoji);}});}
+  if(C.tasks.recettes){R.cat='carte';ITEMS.filter(i=>!i.sig&&S.items[i.id].unlocked&&S.items[i.id].recipe<3).sort((a,b)=>(S.items[b.id].sold||0)-(S.items[a.id].sold||0)).forEach(it=>{const s=S.items[it.id];const c=recipeCost(it,s.recipe);if(c<=room()&&spend(c,'invest')){s.recipe++;upg.push(it.emoji+'★'.repeat(s.recipe));}});}
   if(C.tasks.labo&&S.level>=3&&!S.lab.pending&&S.sig.length<5&&labCost()<=room()){
     const untried=[];LAB_BASES.forEach(b=>LAB_TWISTS.forEach(t=>{if(!S.lab.tried[b.id+':'+t.id])untried.push([b.id,t.id]);}));
     if(untried.length){const good=untried.filter(([b,t])=>(COMBO[b+':'+t]||0)>=4);const pc=good.length&&Math.random()<.6?pick(good):pick(untried);R.cat='labo';
       if(spend(labCost(),'invest')){S.lab.pending={base:pc[0],twist:pc[1],by:'chef'};done.push(`test au labo : ${LB[pc[0]].name} ${LT[pc[1]].name}`);}}
   }
   R.cat=null;
+  if(upg.length)done.unshift(`${upg.length} recette${upg.length>1?'s':''} améliorée${upg.length>1?'s':''} (${upg.join(' ')})`);
+  if(added.length)done.unshift(`${added.length} produit${added.length>1?'s':''} ajouté${added.length>1?'s':''} à la carte (${added.join(' ')})`);
   if(done.length){news.push(`🧑‍🍳 Responsable de la carte : ${done.join(' · ')}.`);C.log.unshift({day:S.day,text:done.join(' · ')});if(C.log.length>8)C.log.length=8;}
 }
 
