@@ -467,6 +467,17 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .mp-msg time{font-size:.72rem;color:var(--ink-2);white-space:nowrap}
 .mp-msg .rep{border:0;background:none;color:var(--ink-2);cursor:pointer;font:inherit;font-size:.78rem;padding:0 2px}
 .mp-send{display:flex;gap:6px}
+.mp-wrap{flex-wrap:wrap}
+.mp-wrap button{flex:1 1 auto}
+.mp-pair{display:flex;gap:6px;align-items:center}
+.mp-pair .mp-row{flex:1;min-width:0}
+.tag[data-mp]{cursor:pointer;font-family:inherit}
+.duel{display:flex;flex-direction:column;gap:6px;background:var(--card-2);border:2px solid transparent;border-radius:14px;padding:10px 12px}
+.duel.win{background:var(--gold-soft);border:2px dashed var(--gold)}
+.duel.past{flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:.85rem;padding:6px 10px}
+.duel-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--gold)}
+.duel-bar i{display:block;height:100%;background:var(--accent)}
+.duel-scores{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;font-variant-numeric:tabular-nums}
 .mp-edit summary{cursor:pointer;font-weight:900;font-size:.85rem;color:var(--ink-2);padding:6px 0}
 .visit-cv{display:block;width:100%;aspect-ratio:1000/520;border-radius:14px;border:2px solid var(--line);background:var(--card-2)}
 .sugg-form .txt{flex:none;width:100%}
@@ -2065,7 +2076,13 @@ function updateMorale(news){
 function givePrime(name){const m=S.staff.find(x=>x.name===name);if(!m||m.primeDay===S.day)return;if(!spend(m.salary,'invest'))return;m.morale=clamp((m.morale??80)+30,0,100);m.primeDay=S.day;toast(`🎉 Prime versée : ${m.name} a le sourire !`);renderPanel();}
 /* ---------- En ligne : vitrines, classement, visites, pourboires et terrasse (site uniquement, via Supabase) ---------- */
 const MP_EMOJIS=['☕','🥐','🍰','🧁','🍩','🍪','🧋','🍵','🫖','🥤','🍫','🌿','🌸','⭐','👑','🐱','🦊','🐻','🚀','🎵'];
-const MP={me:null,ready:false,view:'rank',kind:'value',board:null,boardT:0,dir:null,dirMode:'recent',search:'',chat:[],chatLast:0,chatT:0,chatBusy:false,draft:'',emoji:'☕',pseudo:'',firm:null,lastPub:0,joining:false,loading:{}};
+const MP={me:null,ready:false,view:'rank',kind:'value',board:null,boardT:0,dir:null,dirMode:'recent',search:'',rooms:{},curRoom:null,draft:'',emoji:'☕',pseudo:'',firm:null,lastPub:0,joining:false,loading:{},
+  duels:null,duelsT:0,near:null,clubs:null,clubsT:0,club:null,clubT:0,clubSearch:'',clubEmoji:'☕'};
+const MP_CLUB_COST=5000;
+const mpDuelPrize=()=>Math.round(mpTipValue()*20);
+const mpClubPrize=()=>Math.round(mpTipValue()*15);
+const mpRoom=r=>MP.rooms[r]||(MP.rooms[r]={list:[],last:0,t:0,busy:false});
+function mpReward(gain,xp,fans,msg){if(gain){S.money+=gain;book('recompenses',gain);}if(fans)S.social.followers+=fans;if(xp)addXP(xp);Snd.coin();confettiBurst(gain?90:25);toast(msg,'gold');saveSoon();updateHud();}
 const mpOn=()=>Cloud.on();
 async function mpRpc(fn,args){const {data,error}=await Cloud.sb.rpc(fn,args||{});if(error)throw error;return data;}
 const mpLevelName=l=>{const L=LEVELS[clamp((l||1)-1,0,LEVELS.length-1)];return L?L.name:'';};
@@ -2079,7 +2096,7 @@ function mpPayload(pseudo,firm,emoji){
     p_best_day:Math.round(S.stats.bestDay),p_items:mpUnlocked().length,p_cheats:S.flags.cheats||0,
     p_snapshot:{upg:Object.assign({},S.upg),items:mpUnlocked().map(it=>it.id).slice(0,80),staff:S.staff.slice(0,4).map(m=>m.look),art:!!S.flags.art}};
 }
-function mpBadge(){const b=$('#mBadge');if(!b)return;const n=MP.me?MP.me.tips_pending||0:0;b.hidden=!n;b.textContent=n;}
+function mpBadge(){const b=$('#mBadge');if(!b)return;const n=MP.me?(MP.me.tips_pending||0)+(MP.me.duels_todo||0):0;b.hidden=!n;b.textContent=n;}
 async function mpRefreshMe(publish){
   try{MP.me=Cloud.user?await mpRpc('mp_me'):null;}catch(e){MP.me=null;}
   if(MP.me&&publish)await mpPublish(true);
@@ -2097,17 +2114,23 @@ async function mpPublish(quiet,pseudo,firm,emoji){
   }catch(e){if(!quiet)toast('🌍 La mise à jour de ta vitrine a échoué. Réessaie dans un instant.','bad');return false;}
 }
 function mpOnAuth(){if(!mpOn()||MP.joining)return;claimGifts().then(()=>mpRefreshMe(false)).then(()=>{if(tab==='monde')renderPanel();});}
-function mpAfterDay(){if(!MP.me)return;MP.lastPub=0;mpPublish(true).then(()=>{if(tab==='monde')renderPanel();});}
+function mpAfterDay(sm){
+  if(!MP.me)return;MP.lastPub=0;
+  // Les ventes au comptoir et les clients servis du jour alimentent les défis et l'objectif du club
+  const rep=sm?mpRpc('mp_report_day',{p_day:sm.day,p_sales:Math.round(sm.sales||0),p_served:sm.served||0}).catch(()=>{}):Promise.resolve();
+  rep.then(()=>mpPublish(true)).then(()=>{MP.duels=null;MP.club=null;if(tab==='monde')renderPanel();});
+}
 async function mpInit(){
   const tb=document.querySelector('.tab[data-tab="monde"]');if(tb)tb.hidden=!mpOn();
   if(!mpOn())return;
   const onClick=e=>{const b=e.target.closest('[data-mp]');if(!b||b.disabled)return;e.preventDefault();Snd.init();mpAction(b.dataset.mp,b);};
   $('#tabBody').addEventListener('click',onClick);$('#modal').addEventListener('click',onClick);
-  $('#tabBody').addEventListener('input',e=>{const t=e.target;if(t.id==='mpChatIn')MP.draft=t.value;else if(t.id==='mpSearch')MP.search=t.value;else if(t.id==='mpPseudo')MP.pseudo=t.value;else if(t.id==='mpFirm')MP.firm=t.value;});
+  $('#tabBody').addEventListener('input',e=>{const t=e.target;if(t.id==='mpChatIn')MP.draft=t.value;else if(t.id==='mpSearch')MP.search=t.value;else if(t.id==='mpPseudo')MP.pseudo=t.value;else if(t.id==='mpFirm')MP.firm=t.value;else if(t.id==='mpClubSearch')MP.clubSearch=t.value;});
   const onSubmit=e=>{const f=e.target;if(!f.id||!f.id.startsWith('mp'))return;e.preventDefault();
-    if(f.id==='mpJoinForm')mpJoin();else if(f.id==='mpChatForm')mpSend('terrasse',f.querySelector('input'));
+    if(f.id==='mpJoinForm')mpJoin();else if(f.id==='mpChatForm')mpSend(f.dataset.room,f.querySelector('input'));
     else if(f.id==='mpSearchForm'){MP.dir=null;renderPanel();}else if(f.id==='mpBookForm')mpSend(f.dataset.room,f.querySelector('input'));
-    else if(f.id==='mpEditForm')mpSaveProfile();};
+    else if(f.id==='mpEditForm')mpSaveProfile();else if(f.id==='mpClubForm')mpClubCreate();
+    else if(f.id==='mpClubSearchForm'){MP.clubs=null;renderPanel();}};
   $('#tabBody').addEventListener('submit',onSubmit);$('#modal').addEventListener('submit',onSubmit);
   $('#tabBody').addEventListener('focusin',e=>{if(e.target.id==='mpChatIn')MP.focusChat=true;});
   $('#tabBody').addEventListener('focusout',e=>{if(e.target.id==='mpChatIn'&&e.relatedTarget)MP.focusChat=false;});
@@ -2115,7 +2138,7 @@ async function mpInit(){
   await claimGifts();
   await mpRefreshMe(true);
   MP.ready=true;if(tab==='monde')renderPanel();
-  setInterval(()=>{if(MP.me&&tab==='monde'&&MP.view==='chat'&&!document.hidden)mpLoadChat();},8000);
+  setInterval(()=>{if(MP.me&&tab==='monde'&&MP.curRoom&&!document.hidden)mpLoadChat();},8000);
 }
 async function mpLoad(key,fn){
   if(MP.loading[key])return;MP.loading[key]=true;
@@ -2124,38 +2147,56 @@ async function mpLoad(key,fn){
 }
 const mpLoadBoard=()=>mpLoad('board',async()=>{MP.boardT=Date.now();try{MP.board=await mpRpc('mp_leaderboard',{p_kind:MP.kind});}catch(e){MP.board=MP.board||[];}});
 const mpLoadDir=()=>mpLoad('dir',async()=>{try{MP.dir=await mpRpc('mp_directory',{p_mode:MP.dirMode,p_search:MP.search.trim()||null});}catch(e){MP.dir=[];}});
-async function mpLoadChat(){
-  if(MP.chatBusy)return;MP.chatBusy=true;
-  try{const rows=await mpRpc('mp_messages',{p_room:'terrasse',p_after:MP.chatLast||0});
-    MP.chatT=Date.now();
-    if(rows&&rows.length){MP.chat=MP.chat.concat(rows).slice(-80);MP.chatLast=rows[rows.length-1].id;}
-    mpPaintChat(rows&&rows.length);
+const mpLoadDuels=()=>mpLoad('duels',async()=>{MP.duelsT=Date.now();try{MP.duels=await mpRpc('mp_duels')||[];}catch(e){MP.duels=MP.duels||[];}});
+const mpLoadNear=()=>mpLoad('near',async()=>{try{MP.near=await mpRpc('mp_directory',{p_mode:'near',p_search:null})||[];}catch(e){MP.near=[];}});
+const mpLoadClubs=()=>mpLoad('clubs',async()=>{MP.clubsT=Date.now();try{MP.clubs=await mpRpc('mp_clubs',{p_search:MP.clubSearch.trim()||null})||[];}catch(e){MP.clubs=[];}});
+const mpLoadClub=()=>mpLoad('club',async()=>{MP.clubT=Date.now();try{MP.club=MP.me&&MP.me.club_id?await mpRpc('mp_club',{p_id:MP.me.club_id}):null;}catch(e){}});
+async function mpLoadChat(room){
+  room=room||MP.curRoom;if(!room)return;const st=mpRoom(room);
+  if(st.busy)return;st.busy=true;
+  try{const rows=await mpRpc('mp_messages',{p_room:room,p_after:st.last||0});
+    st.t=Date.now();
+    if(rows&&rows.length){st.list=st.list.concat(rows).slice(-80);st.last=rows[rows.length-1].id;}
+    if(MP.curRoom===room)mpPaintChat(rows&&rows.length);
   }catch(e){}
-  MP.chatBusy=false;
+  st.busy=false;
 }
 function mpPaintChat(changed){
-  const box=document.getElementById('mpChat');if(!box)return;
-  if(!changed&&box.dataset.n===String(MP.chat.length))return;
+  const box=document.getElementById('mpChat');if(!box||!MP.curRoom)return;const L=mpRoom(MP.curRoom).list;
+  if(!changed&&box.dataset.n===String(L.length))return;
   const near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
-  box.innerHTML=MP.chat.length?MP.chat.map(mpMsgHtml).join(''):'<p class="muted small">Personne n’a encore parlé. Lance la conversation !</p>';
-  box.dataset.n=MP.chat.length;
+  box.innerHTML=L.length?L.map(mpMsgHtml).join(''):'<p class="muted small">Personne n’a encore parlé. Lance la conversation !</p>';
+  box.dataset.n=L.length;
   if(near||!box.dataset.scrolled){box.scrollTop=box.scrollHeight;box.dataset.scrolled='1';}
 }
 function mpAfterRender(){
   if(!MP.ready||!mpOn())return;
-  if(!MP.me||MP.view==='rank'){if(!MP.board||Date.now()-MP.boardT>60000)mpLoadBoard();}
+  const rank=!MP.me||MP.view==='rank';
+  if(rank&&MP.kind!=='clubs'&&(!MP.board||Date.now()-MP.boardT>60000))mpLoadBoard();
+  if(rank&&MP.kind==='clubs'&&(!MP.clubs||Date.now()-MP.clubsT>60000))mpLoadClubs();
   if(MP.me&&MP.view==='cafes'&&!MP.dir)mpLoadDir();
-  if(MP.me&&MP.view==='chat'){mpPaintChat(true);if(Date.now()-MP.chatT>5000)mpLoadChat();
+  if(MP.me&&MP.view==='duels'&&(!MP.duels||Date.now()-MP.duelsT>30000))mpLoadDuels();
+  if(MP.me&&MP.view==='club'){if(MP.me.club_id){if(!MP.club||Date.now()-MP.clubT>30000)mpLoadClub();}else if(!MP.clubs)mpLoadClubs();}
+  if(MP.me&&MP.curRoom){mpPaintChat(true);if(Date.now()-mpRoom(MP.curRoom).t>5000)mpLoadChat();
     const inp=document.getElementById('mpChatIn');if(inp&&MP.focusChat){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
 }
 function mpRowHtml(r,pos,val){
   const me=MP.me&&r.id===MP.me.id;
   return `<li><button type="button" class="mp-row${me?' me':''}" data-mp="visit" data-id="${esc(r.id)}">${pos!=null?`<span class="pos">${pos<=3?['🥇','🥈','🥉'][pos-1]:pos+'.'}</span>`:''}<span class="em" aria-hidden="true">${esc(r.emoji||'☕')}</span><span class="nm"><b>${esc(r.firm_name)}</b><small>${esc(r.pseudo)} · niv. ${r.level}${r.cheater?' · 🎭 hors classement':''}</small></span><span class="val">${val}</span></button></li>`;
 }
-function mpKindVal(r){return MP.kind==='followers'?fmtK(r.followers)+' abonnés':MP.kind==='tips'?`${r.tips_total} 💝`:money(r.firm_value);}
+function mpKindVal(r){return MP.kind==='followers'?fmtK(r.followers)+' abonnés':MP.kind==='tips'?`${r.tips_total} 💝`:MP.kind==='duels'?`${r.duels_won||0} ⚔️`:money(r.firm_value);}
+function mpClubRowHtml(c){
+  const mine=MP.me&&MP.me.club_id===c.id;
+  return `<li><button type="button" class="mp-row${mine?' me':''}" data-mp="cvisit" data-id="${c.id}">${c.pos?`<span class="pos">${c.pos<=3?['🥇','🥈','🥉'][c.pos-1]:c.pos+'.'}</span>`:''}<span class="em" aria-hidden="true">${esc(c.emoji||'☕')}</span><span class="nm"><b>${esc(c.name)}</b><small>${c.members} / 20 membres${c.motto?' · '+esc(c.motto):''}</small></span><span class="val">${money(+c.value)}</span></button></li>`;
+}
 function mpBoardHtml(limit){
   let h='';
-  if(!limit)h+=`<div class="seg" role="group" aria-label="Type de classement">${[['value','💰 Valeur'],['followers','📱 Abonnés'],['tips','💝 Pourboires']].map(([k,l])=>`<button type="button" data-mp="kind" data-v="${k}" aria-pressed="${MP.kind===k}">${l}</button>`).join('')}</div>`;
+  if(!limit)h+=`<div class="seg mp-wrap" role="group" aria-label="Type de classement">${[['value','💰 Valeur'],['followers','📱 Abonnés'],['tips','💝 Pourboires'],['duels','⚔️ Duels'],['clubs','👥 Clubs']].map(([k,l])=>`<button type="button" data-mp="kind" data-v="${k}" aria-pressed="${MP.kind===k}">${l}</button>`).join('')}</div>`;
+  if(!limit&&MP.kind==='clubs'){
+    if(!MP.clubs)return h+'<p class="hint">Chargement du classement des clubs…</p>';
+    if(!MP.clubs.length)return h+'<p class="hint">Aucun club pour l’instant. Fonde le premier dans la rubrique Club !</p>';
+    return h+`<ol class="mp-list">${MP.clubs.map(mpClubRowHtml).join('')}</ol><p class="muted small">Valeur cumulée des membres classés (sans code secret, actifs ces 30 derniers jours).</p>`;
+  }
   if(!MP.board)return h+'<p class="hint">Chargement du classement…</p>';
   if(!MP.board.length)return h+'<p class="hint">Le classement est encore vide : ta vitrine peut être la toute première !</p>';
   const rows=limit?MP.board.slice(0,limit):MP.board;
@@ -2176,11 +2217,75 @@ function mpDirHtml(){
 function mpMsgHtml(m){
   return `<div class="mp-msg${m.mine?' mine':''}"><span aria-hidden="true">${esc(m.emoji||'☕')}</span><button type="button" class="who" data-mp="visit" data-id="${esc(m.author)}">${esc(m.pseudo)}</button><span class="body">${esc(m.body)}</span><time datetime="${esc(m.at)}">${mpHm(m.at)}</time>${m.mine?'':`<button type="button" class="rep" data-mp="report" data-id="${m.id}" title="Signaler ce message" aria-label="Signaler le message de ${esc(m.pseudo)}">⚑</button>`}</div>`;
 }
-function mpChatHtml(){
+function mpChatHtml(room,intro){
+  MP.curRoom=room;
   const ban=MP.me.banned_until&&new Date(MP.me.banned_until)>new Date();
-  return `<p class="muted small" style="margin:0">La terrasse, c’est le salon de tous les joueurs et joueuses. Reste sympa, et ne partage jamais d’informations personnelles : nom, adresse, téléphone, réseaux sociaux.</p>
-  <div class="mp-chat" id="mpChat" aria-live="polite" aria-label="Messages de la terrasse"></div>
-  ${ban?`<p class="hint">🚫 Tu ne peux plus écrire jusqu’au ${new Date(MP.me.banned_until).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</p>`:`<form id="mpChatForm" class="mp-send" autocomplete="off"><input id="mpChatIn" class="txt" maxlength="200" placeholder="Écris un message…" value="${esc(MP.draft)}" aria-label="Ton message"><button class="btn btn-primary btn-sm" type="submit">Envoyer</button></form><p class="muted small" id="mpChatOut" aria-live="polite" style="margin:0"></p>`}`;
+  return `<p class="muted small" style="margin:0">${intro}</p>
+  <div class="mp-chat" id="mpChat" aria-live="polite" aria-label="Messages"></div>
+  ${ban?`<p class="hint">🚫 Tu ne peux plus écrire jusqu’au ${new Date(MP.me.banned_until).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</p>`:`<form id="mpChatForm" class="mp-send" data-room="${esc(room)}" autocomplete="off"><input id="mpChatIn" class="txt" maxlength="200" placeholder="Écris un message…" value="${esc(MP.draft)}" aria-label="Ton message"><button class="btn btn-primary btn-sm" type="submit">Envoyer</button></form><p class="muted small" id="mpChatOut" aria-live="polite" style="margin:0"></p>`}`;
+}
+const mpWhen=iso=>new Date(iso).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+function mpDuelHtml(d){
+  const o=d.other,who=`${esc(o.emoji)} ${esc(o.pseudo)}`;
+  if(d.status==='done'&&!d.claimed){
+    const lab=d.won?`🏆 Victoire contre ${who} !`:d.draw?`🤝 Égalité avec ${who}`:`😅 Défaite contre ${who}`;
+    const btn=d.won?`Récupérer ${money(mpDuelPrize())}`:d.draw?`Récupérer ${money(Math.round(mpDuelPrize()*.4))}`:'Récupérer +15 XP';
+    return `<div class="duel ${d.won?'win':d.draw?'draw':'lose'}"><div class="item-top"><b>${lab}</b></div><span class="small">Toi ${money(+d.my_score)} · ${esc(o.pseudo)} ${money(+d.their_score)}</span><div class="btns"><button type="button" class="btn btn-gold btn-sm" data-mp="dclaim" data-id="${d.id}">${btn}</button></div></div>`;
+  }
+  if(d.status==='pending'&&!d.me_first)return `<div class="duel"><div class="item-top"><b>⚔️ ${who} te défie !</b>${o.cheater?'<span class="tag">🎭 codes secrets</span>':''}</div><span class="small">${esc(o.firm_name)} · niveau ${o.level}. Le défi expire 48 h après son envoi.</span><div class="btns"><button type="button" class="btn btn-primary btn-sm" data-mp="daccept" data-id="${d.id}">Accepter</button><button type="button" class="btn btn-sm" data-mp="drefuse" data-id="${d.id}">Refuser</button><button type="button" class="btn btn-sm" data-mp="visit" data-id="${esc(o.id)}">👀 Voir son café</button></div></div>`;
+  if(d.status==='pending')return `<div class="duel"><div class="item-top"><b>⏳ En attente de ${who}</b></div><span class="small">Défi envoyé ${mpWhen(d.created_at)}.</span><div class="btns"><button type="button" class="btn btn-sm" data-mp="dcancel" data-id="${d.id}">Annuler</button></div></div>`;
+  if(d.status==='active'){
+    const a=+d.my_score,b=+d.their_score,t=a+b,end=new Date(new Date(d.accepted_at).getTime()+72*3600e3).toISOString();
+    return `<div class="duel"><div class="item-top"><b>⚔️ Toi contre ${who}</b><span class="tag">${d.my_days}/${d.days} j · ${d.their_days}/${d.days} j</span></div>
+    <div class="duel-bar" role="img" aria-label="Toi ${money(a)}, ${esc(o.pseudo)} ${money(b)}"><i style="width:${t?(a/t*100).toFixed(1):50}%"></i></div>
+    <div class="duel-scores"><span>Toi : <b>${money(a)}</b></span><span>${esc(o.pseudo)} : <b>${money(b)}</b></span></div>
+    <span class="muted small">Joue tes journées ! Fin au plus tard ${mpWhen(end)}.</span></div>`;
+  }
+  const res={done:d.won?'🏆 Gagné':d.draw?'🤝 Égalité':'😅 Perdu',declined:'🙅 Refusé',expired:'⌛ Expiré',cancelled:'✖️ Annulé'}[d.status]||d.status;
+  return `<div class="duel past"><span><b>${res}</b> · ${who}</span>${d.status==='done'?`<span class="small">${money(+d.my_score)} contre ${money(+d.their_score)}</span>`:''}</div>`;
+}
+function mpDuelsHtml(){
+  let h='<p class="muted small" style="margin:0">⚔️ Duel de ventes : chacun joue 3 journées, et on additionne les ventes au comptoir de son café, sans les succursales ni la franchise. Le duel s’arrête quand vous avez joué vos 3 journées, ou au bout de 3 jours.</p>';
+  if(!MP.duels)return h+'<p class="hint">Chargement des défis…</p>';
+  const L=MP.duels,open=L.filter(d=>d.status==='pending'||d.status==='active'||(d.status==='done'&&!d.claimed)),past=L.filter(d=>!open.includes(d));
+  h+=open.length?open.map(mpDuelHtml).join(''):'<p class="hint">Aucun défi en cours. Défie un café de ta taille ci-dessous, ou depuis sa vitrine !</p>';
+  h+=`<h4>🎯 Des adversaires à ta taille</h4>`;
+  if(!MP.near)h+=`<button type="button" class="btn btn-sm" data-mp="near">🔍 Trouver des adversaires</button>`;
+  else if(!MP.near.length)h+='<p class="muted small">Personne pour l’instant : reviens quand d’autres cafés auront rejoint le multijoueur.</p>';
+  else h+=`<ol class="mp-list">${MP.near.map(r=>`<li class="mp-pair">${mpRowHtml(r,null,money(r.firm_value)).replace(/^<li>|<\/li>$/g,'')}<button type="button" class="btn btn-sm" data-mp="duel" data-id="${esc(r.id)}">⚔️ Défier</button></li>`).join('')}</ol>`;
+  if(past.length)h+=`<h4>📜 Défis récents</h4>`+past.map(mpDuelHtml).join('');
+  return h;
+}
+function mpClubFormHtml(){
+  return `<details class="mp-edit"${MP.clubs&&!MP.clubs.length?' open':''}><summary>➕ Fonder un club · ${money(MP_CLUB_COST)}, dès le niveau 3</summary>
+  <form id="mpClubForm" class="sugg-form" autocomplete="off" novalidate>
+   <label class="lbl-full" for="mpClubName">Nom du club</label><input id="mpClubName" class="txt" maxlength="30" placeholder="3 à 30 caractères">
+   <label class="lbl-full" for="mpClubMotto">Devise (facultatif)</label><input id="mpClubMotto" class="txt" maxlength="80" placeholder="Par exemple : Le meilleur café, c’est ensemble !">
+   <span class="lbl-full" id="mpClubEmoLbl">Emblème du club</span>
+   <div class="mp-emojis" role="group" aria-labelledby="mpClubEmoLbl">${MP_EMOJIS.map(e=>`<button type="button" data-mp="emoji" data-v="${e}" aria-pressed="${MP.clubEmoji===e}" aria-label="Emblème ${e}">${e}</button>`).join('')}</div>
+   <p class="muted small" id="mpClubOut" aria-live="polite" style="margin:0"></p>
+   <div class="btns"><button class="btn btn-primary btn-sm" type="submit">👥 Fonder le club</button></div>
+  </form></details>`;
+}
+function mpClubHtml(){
+  if(!MP.me.club_id){
+    let h='<p class="muted small" style="margin:0">👥 Un club réunit jusqu’à 20 cafés. Chaque semaine, servez ensemble assez de clients pour décrocher une récompense commune, et discutez dans le salon privé du club.</p>';
+    h+=`<form id="mpClubSearchForm" class="mp-send" role="search" autocomplete="off"><input id="mpClubSearch" class="txt" maxlength="30" placeholder="Chercher un club" value="${esc(MP.clubSearch)}" aria-label="Chercher un club"><button class="btn btn-sm" type="submit">🔍 Chercher</button></form>`;
+    if(!MP.clubs)h+='<p class="hint">Chargement des clubs…</p>';
+    else if(!MP.clubs.length)h+='<p class="hint">Aucun club trouvé. Fonde le tien !</p>';
+    else h+=`<ol class="mp-list">${MP.clubs.map(mpClubRowHtml).join('')}</ol>`;
+    return h+mpClubFormHtml();
+  }
+  const c=MP.club;
+  if(!c)return '<p class="hint">Chargement de ton club…</p>';
+  const goal=+c.goal,served=+c.served,reached=served>=goal,owner=c.owner===MP.me.id;
+  let h=`<div class="mp-me"><span class="mp-av" aria-hidden="true">${esc(c.emoji)}</span><div class="grow"><b>${esc(c.name)}</b><span class="muted small">${c.motto?esc(c.motto)+' · ':''}n° ${c.rank} des clubs · ${c.members} / 20 membres · ${money(+c.value)}</span></div></div>`;
+  h+=`<div class="quest${reached?' ready':''}"><div class="grow"><b>🎯 Objectif de la semaine : servir ${fmtK(goal)} clients ensemble</b><div class="bar"><i style="width:${clamp(served/goal*100,0,100)}%"></i></div><span class="muted small">${fmtK(served)} / ${fmtK(goal)} clients · ${money(+c.sales)} de ventes · remise à zéro chaque lundi</span></div>${reached?(c.claimed?'<span class="tag ok">Récompense récupérée ✓</span>':`<button type="button" class="btn btn-gold btn-sm" data-mp="cclaim">Récupérer ${money(mpClubPrize())}</button>`):''}</div>`;
+  h+=`<h4>👥 Les membres</h4><ol class="mp-list">${(c.list||[]).map(m=>mpRowHtml(Object.assign({},m,{firm_name:(m.owner?'👑 ':'')+m.firm_name}),null,money(+m.firm_value))).join('')}</ol>`;
+  h+=`<h4>💬 Le salon du club</h4>`+mpChatHtml('club:'+c.id,'Ce salon n’est visible que par les membres du club. Les messages sont modérés comme sur la terrasse.');
+  h+=`<details class="mp-edit"><summary>⚙️ Gérer mon club</summary><div class="btns" style="margin-top:6px">`;
+  if(owner)(c.list||[]).filter(m=>m.id!==MP.me.id).forEach(m=>{h+=`<button type="button" class="btn btn-sm" data-mp="ckick" data-id="${esc(m.id)}">Retirer ${esc(m.pseudo)}</button>`;});
+  return h+`<button type="button" class="btn btn-sm" data-mp="cleave">Quitter le club</button></div></details>`;
 }
 function mpJoinHtml(){
   const firm=MP.firm!=null?MP.firm:(S.firm.created?S.firm.name:'Le Petit Comptoir');
@@ -2218,9 +2323,12 @@ function tabMonde(){
   let h=`<div class="sec-head"><div><h3>En ligne</h3><p class="muted small">Les cafés des autres joueurs de toute la France</p></div></div>`;
   if(!MP.ready)return h+'<p class="hint">Connexion au multijoueur…</p>';
   if(!MP.me)return h+mpJoinHtml()+'<h4>🏆 Le classement national</h4>'+mpBoardHtml(10);
+  MP.curRoom=null;
   h+=mpMeHtml();
-  h+=`<div class="seg" role="group" aria-label="Rubrique du multijoueur">${[['rank','🏆 Classement'],['cafes','☕ Cafés'],['chat','💬 Terrasse']].map(([k,l])=>`<button type="button" data-mp="view" data-v="${k}" aria-pressed="${MP.view===k}">${l}</button>`).join('')}</div>`;
-  h+=MP.view==='cafes'?mpDirHtml():MP.view==='chat'?mpChatHtml():mpBoardHtml();
+  const todo=MP.me.duels_todo||0;
+  h+=`<div class="seg mp-wrap" role="group" aria-label="Rubrique du multijoueur">${[['rank','🏆 Classement'],['cafes','☕ Cafés'],['duels','⚔️ Défis'+(todo?` (${todo})`:'')],['club','👥 Club'],['chat','💬 Terrasse']].map(([k,l])=>`<button type="button" data-mp="view" data-v="${k}" aria-pressed="${MP.view===k}">${l}</button>`).join('')}</div>`;
+  h+=MP.view==='cafes'?mpDirHtml():MP.view==='duels'?mpDuelsHtml():MP.view==='club'?mpClubHtml()
+    :MP.view==='chat'?mpChatHtml('terrasse','La terrasse, c’est le salon de tous les joueurs et joueuses. Reste sympa, et ne partage jamais d’informations personnelles : nom, adresse, téléphone, réseaux sociaux.'):mpBoardHtml();
   return h+mpEditHtml();
 }
 async function mpJoin(){
@@ -2230,8 +2338,13 @@ async function mpJoin(){
   if(ps.length<3){out.textContent='☝️ Choisis un pseudo d’au moins 3 caractères.';return;}
   btn.disabled=true;out.textContent='Connexion…';MP.joining=true;
   try{
-    if(!Cloud.user){const {data,error}=await Cloud.sb.auth.signInAnonymously();if(error)throw error;Cloud.user=data.user||(data.session&&data.session.user);}
-    const r=await mpRpc('mp_publish',mpPayload(ps,fn,MP.emoji));
+    const anon=async()=>{const {data,error}=await Cloud.sb.auth.signInAnonymously();if(error)throw error;Cloud.user=data.user||(data.session&&data.session.user);};
+    if(!Cloud.user)await anon();
+    let r;
+    try{r=await mpRpc('mp_publish',mpPayload(ps,fn,MP.emoji));}
+    catch(e){if(!(e&&e.code==='23503'))throw e;
+      // Le compte de cette session n'existe plus : on en recrée un
+      await Cloud.sb.auth.signOut();Cloud.user=null;await anon();r=await mpRpc('mp_publish',mpPayload(ps,fn,MP.emoji));}
     if(!r||!r.ok){out.textContent='❌ '+((r&&r.error)||'Impossible de rejoindre pour l’instant.');btn.disabled=false;MP.joining=false;return;}
     MP.me=r.me;MP.lastPub=Date.now();MP.board=null;MP.dir=null;MP.view='rank';MP.joining=false;
     Snd.coin();confettiBurst(70);toast(`🌍 Bienvenue en ligne, ${MP.me.pseudo} !`,'gold');renderPanel();
@@ -2246,11 +2359,11 @@ async function mpSaveProfile(){
 }
 async function mpSend(room,input){
   if(!input)return;const text=input.value.trim();if(!text)return;
-  const out=document.getElementById(room==='terrasse'?'mpChatOut':'mpBookOut');
+  const book=room.startsWith('cafe:'),out=document.getElementById(book?'mpBookOut':'mpChatOut');
   input.disabled=true;
   try{
     const r=await mpRpc('mp_post',{p_room:room,p_body:text});
-    if(r&&r.ok){input.value='';if(out)out.textContent='';if(room==='terrasse'){MP.draft='';await mpLoadChat();}else await mpLoadBook(room);}
+    if(r&&r.ok){input.value='';if(out)out.textContent='';if(!book){MP.draft='';await mpLoadChat(room);}else await mpLoadBook(room);}
     else if(out)out.textContent='❌ '+((r&&r.error)||'Message non envoyé.');
   }catch(e){if(out)out.textContent='❌ Message non envoyé. Réessaie dans un instant.';}
   input.disabled=false;try{input.focus();}catch(e){}
@@ -2292,7 +2405,7 @@ async function mpVisit(id){
   const room='cafe:'+p.id,tipTxt=p.tipped?'💝 Pourboire laissé aujourd’hui':'💝 Laisser un pourboire';
   card.innerHTML=`<div class="modal-head"><span class="modal-ic">${esc(p.emoji)}</span><div><p class="eyebrow">${p.mine?'Ta vitrine':'En visite chez '+esc(p.pseudo)}</p><h2>${esc(p.firm_name)}</h2></div></div>
   <canvas class="visit-cv" id="mpVisitCv" role="img" aria-label="La salle du café ${esc(p.firm_name)}"></canvas>
-  <div class="btns"><span class="tag">Niveau ${p.level} · ${esc(mpLevelName(p.level))}</span>${p.rank?`<span class="tag">🏆 n° ${p.rank} du classement</span>`:''}${p.cheater?'<span class="tag">🎭 Codes secrets · hors classement</span>':''}</div>
+  <div class="btns"><span class="tag">Niveau ${p.level} · ${esc(mpLevelName(p.level))}</span>${p.rank?`<span class="tag">🏆 n° ${p.rank} du classement</span>`:''}${p.cheater?'<span class="tag">🎭 Codes secrets · hors classement</span>':''}${p.club?`<button type="button" class="tag" data-mp="cvisit" data-id="${p.club.id}">${esc(p.club.emoji)} Club ${esc(p.club.name)}</button>`:''}${p.duels_won?`<span class="tag">⚔️ ${p.duels_won} duel${p.duels_won>1?'s':''} gagné${p.duels_won>1?'s':''}</span>`:''}</div>
   <div class="statgrid">
    <div><b>${money(+p.firm_value)}</b><span>valeur du groupe</span></div>
    <div><b>${p.cafes}${p.franchises?' + '+fmtK(p.franchises):''}</b><span>${p.cafes>1?'adresses':'adresse'}${p.franchises?' + franchisés':''}</span></div>
@@ -2301,7 +2414,7 @@ async function mpVisit(id){
    <div><b>${p.items}</b><span>produits à la carte</span></div>
    <div><b>${fmtK(+p.served)}</b><span>clients servis${p.days>0?` en ${p.days} jour${p.days>1?'s':''}`:''}</span></div>
   </div>
-  <div class="btns" style="align-items:center">${p.mine?'':`<button type="button" class="btn btn-gold" data-mp="tip" data-id="${esc(p.id)}" ${p.tipped||!MP.me?'disabled':''}>${tipTxt}</button>`}<span class="muted small">${p.tips_total} pourboire${p.tips_total>1?'s':''} reçu${p.tips_total>1?'s':''}</span></div>
+  <div class="btns" style="align-items:center">${p.mine?'':`<button type="button" class="btn btn-gold" data-mp="tip" data-id="${esc(p.id)}" ${p.tipped||!MP.me?'disabled':''}>${tipTxt}</button>`}${p.mine||!MP.me?'':`<button type="button" class="btn btn-sm" data-mp="duel" data-id="${esc(p.id)}" ${p.dueling?'disabled':''}>${p.dueling?'⚔️ Défi en cours':'⚔️ Défier'}</button>`}<span class="muted small">${p.tips_total} pourboire${p.tips_total>1?'s':''} reçu${p.tips_total>1?'s':''}</span></div>
   <h4 style="margin:4px 0 0">📖 Livre d’or</h4>
   <div class="mp-chat mp-book" id="mpBook"><p class="muted small">Chargement…</p></div>
   ${MP.me?`<form id="mpBookForm" class="mp-send" data-room="${room}" autocomplete="off"><input class="txt" maxlength="200" placeholder="${p.mine?'Un mot pour tes visiteurs…':'Un mot gentil pour '+esc(p.pseudo)+'…'}" aria-label="Message pour le livre d’or"><button class="btn btn-primary btn-sm" type="submit">Signer</button></form><p class="muted small" id="mpBookOut" aria-live="polite" style="margin:0"></p>`:'<p class="muted small">Rejoins le multijoueur dans l’onglet En ligne pour signer le livre d’or et laisser des pourboires.</p>'}
@@ -2311,6 +2424,32 @@ async function mpVisit(id){
   if(!mpPaintVisit(cvEl,p))cvEl.hidden=true;
   mpLoadBook(room);
 }
+async function mpClubVisit(id){
+  openModal(`<div class="modal-head"><span class="modal-ic">👥</span><div><p class="eyebrow">Club</p><h2>Chargement…</h2></div></div><div class="btns"><button class="btn" type="button" data-modal-ok>Fermer</button></div>`);
+  const tok=R.modalTok;let c=null;
+  try{c=await mpRpc('mp_club',{p_id:+id});}catch(e){}
+  if(R.modalTok!==tok||$('#modal').hidden)return;
+  const card=$('#modalCard');
+  if(!c){card.innerHTML=`<div class="modal-head"><span class="modal-ic">👥</span><div><p class="eyebrow">Club</p><h2>Club introuvable</h2></div></div><p class="ev-text">Ce club n’existe plus ou n’est plus visible.</p><div class="btns"><button class="btn" type="button" data-modal-ok>Fermer</button></div>`;return;}
+  const canJoin=MP.me&&!MP.me.club_id&&c.members<20;
+  card.innerHTML=`<div class="modal-head"><span class="modal-ic">${esc(c.emoji)}</span><div><p class="eyebrow">Club · n° ${c.rank}</p><h2>${esc(c.name)}</h2></div></div>
+  ${c.motto?`<p class="ev-text">« ${esc(c.motto)} »</p>`:''}
+  <div class="statgrid"><div><b>${c.members} / 20</b><span>membres</span></div><div><b>${money(+c.value)}</b><span>valeur cumulée</span></div></div>
+  <h4 style="margin:4px 0 0">👥 Les membres</h4><ol class="mp-list">${(c.list||[]).map(m=>mpRowHtml(Object.assign({},m,{firm_name:(m.owner?'👑 ':'')+m.firm_name}),null,money(+m.firm_value))).join('')}</ol>
+  <div class="btns">${c.mine?'<span class="tag ok">C’est ton club ✓</span>':canJoin?`<button type="button" class="btn btn-primary" data-mp="cjoin" data-id="${c.id}">👥 Rejoindre ce club</button>`:MP.me&&MP.me.club_id?'<span class="muted small">Quitte ton club actuel pour rejoindre celui-ci.</span>':c.members>=20?'<span class="muted small">Ce club est complet.</span>':''}
+  <button class="btn" type="button" data-modal-ok>Fermer</button>${MP.me&&!c.mine?`<button class="btn btn-sm" type="button" data-mp="creport" data-id="${c.id}">⚑ Signaler ce club</button>`:''}</div>`;
+}
+async function mpClubCreate(){
+  const out=$('#mpClubOut');const nm=($('#mpClubName').value||'').trim(),mo=($('#mpClubMotto').value||'').trim();
+  if(S.level<3){out.textContent='☝️ Il faut atteindre le niveau 3 pour fonder un club.';return;}
+  if(S.money<MP_CLUB_COST){out.textContent=`☝️ Il te faut ${money(MP_CLUB_COST)} en caisse pour fonder un club.`;return;}
+  if(nm.length<3){out.textContent='☝️ Choisis un nom d’au moins 3 caractères.';return;}
+  out.textContent='Création du club…';
+  let r=null;try{r=await mpRpc('mp_club_create',{p_name:nm,p_emoji:MP.clubEmoji,p_motto:mo||null});}catch(e){}
+  if(!r||!r.ok){out.textContent='❌ '+((r&&r.error)||'Création impossible pour l’instant.');return;}
+  S.money-=MP_CLUB_COST;book('invest',-MP_CLUB_COST);saveSoon();updateHud();
+  MP.me.club_id=r.id;MP.club=null;MP.clubs=null;Snd.level();confettiBurst(120);toast(`👥 Le club ${nm} est fondé ! Invite d’autres cafés à le rejoindre.`,'gold');renderPanel();
+}
 function mpArm(el,label){if(el.dataset.armed)return true;el.dataset.armed='1';const old=el.textContent;el.textContent=label;setTimeout(()=>{if(el.isConnected&&el.dataset.armed){delete el.dataset.armed;el.textContent=old;}},3500);return false;}
 async function mpAction(a,el){
   const id=el.dataset.id,v=el.dataset.v;
@@ -2318,8 +2457,50 @@ async function mpAction(a,el){
     case 'view':MP.view=v;MP.focusChat=false;renderPanel();break;
     case 'kind':if(MP.kind!==v){MP.kind=v;MP.board=null;renderPanel();}break;
     case 'dir':MP.dirMode=v;MP.dir=null;renderPanel();break;
-    case 'emoji':{const box=el.parentElement;box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));if(box.closest('#mpEditForm'))MP.editEmoji=v;else MP.emoji=v;break;}
+    case 'emoji':{const box=el.parentElement;box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));if(box.closest('#mpEditForm'))MP.editEmoji=v;else if(box.closest('#mpClubForm'))MP.clubEmoji=v;else MP.emoji=v;break;}
     case 'visit':mpVisit(id);break;
+    case 'cvisit':mpClubVisit(id);break;
+    case 'near':mpLoadNear();break;
+    case 'duel':{
+      el.disabled=true;let r=null;try{r=await mpRpc('mp_duel_create',{p_opponent:id});}catch(e){}
+      if(r&&r.ok){el.textContent='⚔️ Défi envoyé';MP.duels=null;toast('⚔️ Défi envoyé ! La réponse est attendue sous 48 h. Suis-le dans la rubrique Défis.','gold');if(tab==='monde'&&$('#modal').hidden)renderPanel();}
+      else{toast('⚔️ '+((r&&r.error)||'Défi impossible pour l’instant.'),'bad');el.disabled=false;}
+      break;}
+    case 'daccept':case 'drefuse':{
+      el.disabled=true;let r=null;try{r=await mpRpc('mp_duel_answer',{p_id:+id,p_accept:a==='daccept'});}catch(e){}
+      if(r&&r.ok)toast(a==='daccept'?'⚔️ Défi accepté ! Joue tes 3 prochaines journées pour gagner.':'Défi refusé.',a==='daccept'?'gold':'');
+      else toast('⚔️ '+((r&&r.error)||'Action impossible pour l’instant.'),'bad');
+      MP.duels=null;await mpRefreshMe(false);renderPanel();break;}
+    case 'dcancel':{el.disabled=true;try{await mpRpc('mp_duel_cancel',{p_id:+id});}catch(e){}MP.duels=null;renderPanel();break;}
+    case 'dclaim':{
+      el.disabled=true;let r=null;try{r=await mpRpc('mp_duel_claim',{p_id:+id});}catch(e){}
+      if(r&&r.ok){
+        if(r.won)mpReward(mpDuelPrize(),60,100,`🏆 Victoire en duel : +${money(mpDuelPrize())}, +100 abonnés et +60 XP !`);
+        else if(r.draw)mpReward(Math.round(mpDuelPrize()*.4),30,40,`🤝 Égalité : +${money(Math.round(mpDuelPrize()*.4))} et +30 XP.`);
+        else mpReward(0,15,0,'😅 Défaite, mais tu as appris des choses : +15 XP. Prends ta revanche !');
+      }else toast('⚔️ '+((r&&r.error)||'Récupération impossible pour l’instant.'),'bad');
+      MP.duels=null;await mpRefreshMe(false);renderPanel();break;}
+    case 'cjoin':{
+      el.disabled=true;let r=null;try{r=await mpRpc('mp_club_join',{p_id:+id});}catch(e){}
+      if(r&&r.ok){MP.me.club_id=+id;MP.club=null;MP.clubs=null;MP.view='club';closeModal();toast('👥 Bienvenue dans le club !','gold');Snd.coin();tab='monde';renderPanel();}
+      else{toast('👥 '+((r&&r.error)||'Impossible de rejoindre ce club pour l’instant.'),'bad');el.disabled=false;}
+      break;}
+    case 'cleave':{
+      if(!mpArm(el,'Confirmer : quitter le club ?'))return;el.disabled=true;
+      try{await mpRpc('mp_club_leave');}catch(e){}
+      MP.me.club_id=null;MP.club=null;MP.clubs=null;toast('👥 Tu as quitté le club.');renderPanel();break;}
+    case 'ckick':{
+      if(!mpArm(el,'Confirmer le retrait ?'))return;el.disabled=true;
+      try{await mpRpc('mp_club_kick',{p_member:id});}catch(e){}
+      MP.club=null;renderPanel();break;}
+    case 'cclaim':{
+      el.disabled=true;let r=null;try{r=await mpRpc('mp_club_claim');}catch(e){}
+      if(r&&r.ok)mpReward(mpClubPrize(),40,60,`🎯 Objectif du club atteint : +${money(mpClubPrize())}, +60 abonnés et +40 XP !`);
+      else toast('👥 '+((r&&r.error)||'Récupération impossible pour l’instant.'),'bad');
+      MP.club=null;renderPanel();break;}
+    case 'creport':{
+      if(!mpArm(el,'⚑ Confirmer le signalement ?'))return;el.disabled=true;let r=null;try{r=await mpRpc('mp_report_club',{p_id:+id});}catch(e){}
+      toast(r&&r.ok?'⚑ Merci, ce club a été signalé à la modération.':'⚑ '+((r&&r.error)||'Signalement impossible pour l’instant.'),r&&r.ok?'':'bad');break;}
     case 'claim':{
       el.disabled=true;let n=0;try{n=await mpRpc('mp_claim_tips');}catch(e){el.disabled=false;toast('💝 Récupération impossible pour l’instant.','bad');return;}
       if(n>0){const gain=mpTipValue()*n,fans=3*n;S.money+=gain;book('pourboires',gain);S.social.followers+=fans;Snd.coin();confettiBurst(40);
@@ -2338,7 +2519,7 @@ async function mpAction(a,el){
       toast(r&&r.ok?'⚑ Merci, ce café a été signalé à la modération.':'⚑ '+((r&&r.error)||'Signalement impossible pour l’instant.'),r&&r.ok?'':'bad');break;}
     case 'leave':{
       if(!mpArm(el,'Confirmer : supprimer ma vitrine ?'))return;el.disabled=true;
-      try{await mpRpc('mp_leave');MP.me=null;MP.board=null;MP.dir=null;MP.chat=[];MP.chatLast=0;mpBadge();toast('🌍 Tu as quitté le multijoueur. Ta vitrine et tes messages sont supprimés.');renderPanel();}
+      try{await mpRpc('mp_leave');MP.me=null;MP.board=null;MP.dir=null;MP.rooms={};MP.duels=null;MP.club=null;MP.clubs=null;mpBadge();toast('🌍 Tu as quitté le multijoueur. Ta vitrine et tes messages sont supprimés.');renderPanel();}
       catch(e){el.disabled=false;toast('🌍 Impossible de quitter pour l’instant. Réessaie dans un instant.','bad');}
       break;}
   }
@@ -2394,7 +2575,7 @@ function endDay(){
   sm.record=record;
   save();renderPanel();updateHud();statsPing('day');
   if(Cloud.linked())Cloud.push(true).catch(()=>{});
-  mpAfterDay();
+  mpAfterDay(sm);
   showSummary(sm,()=>maybeEvent(()=>{renderPanel();updateHud();save();if(autoOn())setTimeout(()=>{if(R.phase==='closed'&&$('#modal').hidden&&autoOn())openDay();},2500);}));
 }
 function addCampaign(c){const ex=S.campaigns.find(x=>x.id===c.id);if(ex)ex.days=Math.max(ex.days,c.days);else S.campaigns.push(Object.assign({},c));}

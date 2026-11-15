@@ -12,7 +12,7 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `serve.js` | Petit serveur pour tester le site sur ton ordinateur. |
 | `src/stats.html` | La page privée des statistiques. |
 | `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
-| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
+| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
 | `docs/` | Le site prêt à héberger. Il est regénéré à chaque `node build.js`, ne le modifie pas à la main. |
 
 ## Mettre à jour le site
@@ -91,21 +91,23 @@ Les joueurs rejoignent le multijoueur avec un simple pseudo : un compte anonyme 
 - **un annuaire des cafés**, avec une recherche ;
 - **la visite des cafés** des autres, avec leur salle redessinée (déco, équipe, enseigne), leurs chiffres et un livre d'or ;
 - **les pourboires** : un par café et par jour. Le café qui les reçoit gagne de l'argent et des abonnés, et la personne qui les laisse gagne de l'XP ;
-- **la terrasse**, un salon de discussion commun.
+- **la terrasse**, un salon de discussion commun ;
+- **les défis** : un duel de ventes sur 3 journées de jeu entre deux cafés, qui compte les ventes au comptoir du café d'origine, sans les succursales ni la franchise. Le gagnant reçoit de l'argent, des abonnés et de l'XP, et un classement « Duels » existe. Chaque joueur a au plus 3 défis en cours, et un défi non accepté expire au bout de 48 h ;
+- **les clubs** : jusqu'à 20 cafés par club, fondé pour 5 000 € dès le niveau 3, avec un salon privé et un classement des clubs. L'objectif de la semaine est de servir 1 000 clients par membre, avec un minimum de 2 000. Il se remet à zéro chaque lundi, et chaque membre récupère alors une récompense.
 
 La vitrine de chaque joueur se met à jour chaque soir de jeu. Les parties qui ont utilisé un code secret restent visibles, mais hors classement. Une nouvelle partie les remet dans la course.
 
 Installation, à faire une seule fois :
 
 1. Dans **Authentication → Sign In / Providers**, active **Allow anonymous sign-ins**, puis enregistre.
-2. Dans **SQL Editor**, exécute `supabase-multi.sql` après `supabase-stats.sql`.
+2. Dans **SQL Editor**, exécute `supabase-multi.sql` après `supabase-stats.sql`, puis `supabase-multi2.sql` (défis et clubs).
 
 Modération :
 
 - Les pseudos, enseignes et messages passent par un filtre : mots interdits (table `banned_words`, que tu peux compléter dans Table Editor), liens, e-mails, pseudos de réseaux sociaux et numéros de téléphone.
 - Les messages sont limités à 200 caractères, avec 4 secondes entre deux messages et 15 messages par tranche de 10 minutes.
 - Un message signalé 3 fois est masqué automatiquement. Une vitrine signalée 5 fois l'est aussi.
-- Sur `stats.html`, la carte **Modération du multijoueur** liste les messages signalés, les joueurs à surveiller et les derniers messages. Tu peux y masquer ou réafficher un message ou une vitrine, et bloquer un joueur 7 jours.
+- Sur `stats.html`, la carte **Modération du multijoueur** liste les messages signalés, les joueurs à surveiller, les clubs et les derniers messages. Tu peux y masquer ou réafficher un message, une vitrine ou un club, et bloquer un joueur 7 jours. Un club signalé 5 fois est masqué automatiquement.
 - Les messages de plus de 60 jours sont effacés automatiquement.
 
 Supabase recommande d'activer un captcha pour les comptes anonymes quand le jeu devient populaire (**Authentication → Attack Protection**).

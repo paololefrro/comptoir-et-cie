@@ -179,6 +179,8 @@ a{color:var(--accent);font-weight:800}
       <div id="modReported"></div>
       <h3 class="mod-h">Joueurs signalés, masqués ou bloqués</h3>
       <div id="modProfiles"></div>
+      <h3 class="mod-h">Clubs</h3>
+      <div id="modClubs"></div>
       <details><summary>Voir les 40 derniers messages</summary><div id="modRecent"></div></details>
     </section>
     <p class="foot" id="foot"></p>
@@ -371,7 +373,7 @@ a{color:var(--accent);font-weight:800}
   }
   function modMsgRow(m) {
     return '<div class="mod-row' + (m.hidden ? ' off' : '') + '"><span class="who">' + esc(m.pseudo) + '</span>' +
-      '<span class="meta">' + (m.room === 'terrasse' ? 'Terrasse' : 'Livre d’or') + ' · ' + when(m.at) + '</span>' +
+      '<span class="meta">' + (m.room === 'terrasse' ? 'Terrasse' : /^club:/.test(m.room) ? 'Salon de club' : 'Livre d’or') + ' · ' + when(m.at) + '</span>' +
       (m.reports ? '<span class="chip warn">⚑ ' + m.reports + '</span>' : '') + (m.hidden ? '<span class="chip">masqué</span>' : '') +
       '<span class="body">' + esc(m.body) + '</span>' +
       '<button type="button" class="btn sm" data-mod="' + (m.hidden ? 'show' : 'hide') + '" data-id="' + m.id + '">' + (m.hidden ? 'Réafficher' : 'Masquer') + '</button>' +
@@ -388,7 +390,15 @@ a{color:var(--accent);font-weight:800}
   function renderMod(o) {
     $('mod').hidden = false;
     $('modSum').textContent = plural(o.players, 'joueur inscrit', 'joueurs inscrits') + ' au multijoueur · ' +
-      plural(o.active_week, 'actif', 'actifs') + ' cette semaine · ' + plural(o.messages_day, 'message', 'messages') + ' ces dernières 24 h.';
+      plural(o.active_week, 'actif', 'actifs') + ' cette semaine · ' + plural(o.messages_day, 'message', 'messages') + ' ces dernières 24 h · ' +
+      plural(o.clubs_count, 'club', 'clubs') + ' · ' + plural(o.duels_week, 'défi lancé', 'défis lancés') + ' cette semaine.';
+    var clubs = o.clubs || [];
+    $('modClubs').innerHTML = clubs.length ? clubs.map(function (c) {
+      return '<div class="mod-row' + (c.hidden ? ' off' : '') + '"><span class="who">' + esc(c.name) + '</span><span class="meta">' + plural(c.members, 'membre', 'membres') + '</span>' +
+        (c.reports ? '<span class="chip warn">⚑ ' + c.reports + '</span>' : '') + (c.hidden ? '<span class="chip">masqué</span>' : '') +
+        '<span class="body">' + (c.motto ? '« ' + esc(c.motto) + ' »' : '') + '</span>' +
+        '<button type="button" class="btn sm" data-mod="' + (c.hidden ? 'cshow' : 'chide') + '" data-id="' + c.id + '">' + (c.hidden ? 'Réafficher le club' : 'Masquer le club') + '</button></div>';
+    }).join('') : '<p class="empty">Aucun club pour l’instant.</p>';
     var rep = o.reported || [], pro = o.profiles || [], rec = o.recent || [];
     $('modReported').innerHTML = rep.length ? rep.map(modMsgRow).join('') : '<p class="empty">Aucun message signalé. ✅</p>';
     $('modProfiles').innerHTML = pro.length ? pro.map(modProfileRow).join('') : '<p class="empty">Personne à surveiller. ✅</p>';
@@ -475,6 +485,7 @@ a{color:var(--accent);font-weight:800}
     if (a === 'hide' || a === 'show') r = await sb.rpc('admin_mod_message', { p_id: +id, p_hidden: a === 'hide' });
     else if (a === 'ban' || a === 'unban') r = await sb.rpc('admin_mod_ban', { p_user: id, p_days: a === 'ban' ? 7 : 0 });
     else if (a === 'phide' || a === 'pshow') r = await sb.rpc('admin_mod_profile', { p_user: id, p_hidden: a === 'phide' });
+    else if (a === 'chide' || a === 'cshow') r = await sb.rpc('admin_mod_club', { p_id: +id, p_hidden: a === 'chide' });
     $('modMsg').textContent = r && r.error ? 'Action impossible : ' + r.error.message : '';
     loadMod();
   });
