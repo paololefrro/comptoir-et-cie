@@ -23,6 +23,11 @@ node build.js
 
 Pour le tester sur ton ordinateur, lance `node serve.js`, puis ouvre http://localhost:3090. Pour voir où se placeront les publicités, lance `node build.js --preview`.
 
+## Tutoriel et personnalisation
+
+- **Tutoriel** : à la première visite, l'accueil propose un tour guidé en 11 étapes. Chaque zone de l'écran est mise en lumière avec une bulle d'explication, et on navigue avec les flèches du clavier ou Échap. Le bouton **🧭 Tuto**, en bas du panneau de gestion, permet de le revoir.
+- **Ma boutique** : en haut de l'onglet Travaux, le bouton **Personnaliser** permet de choisir le nom sur l'enseigne et les teintes des murs, du lambris et de la porte, du sol, du comptoir et de l'enseigne, ainsi que la couleur de la maison (liseré du comptoir et tenue). C'est gratuit, avec un aperçu en direct. Certaines teintes se débloquent avec le niveau. Les autres joueurs voient ces couleurs quand ils visitent le café dans le multijoueur, mais l'enseigne y affiche le nom choisi pour le multijoueur, qui est modéré.
+
 ## Codes secrets
 
 Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à côté du nom du café. Les majuscules, les accents et les espaces ne comptent pas.

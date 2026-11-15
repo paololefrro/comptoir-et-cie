@@ -368,6 +368,25 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .mp-msg time{font-size:.72rem;color:var(--ink-2);white-space:nowrap}
 .mp-msg .rep{border:0;background:none;color:var(--ink-2);cursor:pointer;font:inherit;font-size:.78rem;padding:0 2px}
 .mp-send{display:flex;gap:6px}
+.cu-card{background:var(--gold-soft)}
+.cu-group{display:flex;flex-direction:column;gap:6px}
+.cu-group>b{font-size:.92rem}
+.cu-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.cu-sw{display:flex;align-items:center;gap:7px;font:inherit;font-size:.76rem;font-weight:800;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:5px 8px;cursor:pointer;text-align:left;line-height:1.15;min-width:0}
+.cu-sw i{width:24px;height:24px;flex:none;border-radius:7px;border:1.5px solid rgba(0,0,0,.2)}
+.cu-sw span{min-width:0}
+.cu-sw small{display:block;font-weight:700;color:var(--ink-2)}
+.cu-sw[aria-pressed="true"]{border-color:var(--accent);background:var(--gold-soft);box-shadow:0 0 0 2px var(--accent) inset}
+.cu-sw:disabled{opacity:.55;cursor:not-allowed}
+.cu-sw:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+#tuto{position:fixed;inset:0;z-index:80}
+.tuto-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 9999px rgba(20,14,10,.62);outline:3px solid var(--gold);pointer-events:none}
+.tuto-tip{position:fixed;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:18px;padding:14px 16px;box-shadow:0 14px 34px rgba(0,0,0,.32);display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 24px);overflow:auto}
+.tuto-tip h3{margin:0;font-family:var(--font-display);font-weight:400;font-size:1.3rem;line-height:1.15}
+.tuto-tip p{margin:0;font-size:.92rem;line-height:1.45}
+.tuto-tip .eyebrow{margin:0}
+.tuto-skip{align-self:flex-start;background:none;border:0;padding:0;font:inherit;font-size:.8rem;font-weight:800;color:var(--ink-2);text-decoration:underline;cursor:pointer}
+
 .mp-wrap{flex-wrap:wrap}
 .mp-wrap button{flex:1 1 auto}
 .mp-pair{display:flex;gap:6px;align-items:center}
@@ -839,6 +858,39 @@ function randomLook(type){
 function staffLook(){return {skin:pick(SKINS),hairC:pick(HAIRC),hair:pick(HAIRS),shirt:pick(STAFF_SHIRTS),pants:'#2b2b2b',acc:Math.random()<.25?'glasses':null,accC:'#2b1d16',seed:Math.random()*10};}
 const ME_LOOK={skin:'#f3c9a6',hairC:'#4a2c1d',hair:'bob',shirt:'#e2456b',pants:'#2f3b52',acc:'beret',accC:'#2b1d16',seed:1.7};
 
+/* Personnalisation de la boutique : teintes classiques, certaines débloquées avec le niveau */
+const CUSTOM={
+ wall:{label:'Murs',icon:'🖌️',opts:[
+  {id:'sauge',name:'Vert sauge',c:['#cfe3c6','#c3dab9']},{id:'creme',name:'Crème',c:['#f1e6cf','#e8dabd']},
+  {id:'bleu',name:'Bleu pâle',c:['#d3e2ee','#c4d6e6']},{id:'rose',name:'Rose poudré',c:['#f2d9d6','#ead0cc']},
+  {id:'terracotta',name:'Terracotta',c:['#e8c2a8','#deb498'],req:2},{id:'moutarde',name:'Jaune moutarde',c:['#ecd9a0','#e3cd8c'],req:3},
+  {id:'canard',name:'Bleu canard',c:['#a9cbc7','#9bbfbb'],req:4},{id:'anthracite',name:'Gris anthracite',c:['#55595f','#4c5056'],req:5}]},
+ wains:{label:'Lambris et porte',icon:'🚪',opts:[
+  {id:'vert',name:'Vert bouteille',c:['#3f7a5a','#2f5e45','#4f8e6b','#1f4232']},{id:'bois',name:'Bois naturel',c:['#9b6a45','#7a4f32','#b3825a','#5a3824']},
+  {id:'nuit',name:'Bleu nuit',c:['#33496b','#263755','#46608a','#1b2840']},{id:'bordeaux',name:'Bordeaux',c:['#7a2f3d','#5e2230','#934252','#431520'],req:2},
+  {id:'blanc',name:'Blanc cassé',c:['#e4ddcf','#cfc5b3','#f2ece0','#b8ad99'],req:3},{id:'noir',name:'Noir mat',c:['#2b2b2e','#1d1d20','#3d3d42','#121214'],req:4}]},
+ floor:{label:'Sol',icon:'🧱',opts:[
+  {id:'damier',name:'Damier noir et blanc',kind:'check',c:['#2e2925','#f1e7d6']},{id:'parquet',name:'Parquet chêne',kind:'planks',c:['#b98a5a','#a97a4c','#c99a68']},
+  {id:'tomettes',name:'Tomettes',kind:'check',c:['#b5603f','#c87250'],req:2},{id:'ciment',name:'Carreaux de ciment',kind:'cement',c:['#ece5d6','#3d6f78'],req:3},
+  {id:'damierbleu',name:'Damier bleu',kind:'check',c:['#2e4a6b','#eef1f4'],req:3},{id:'marbre',name:'Marbre gris',kind:'marble',c:['#e2e2e0','#d4d4d2','#b4b4b2'],req:5}]},
+ counter:{label:'Comptoir',icon:'🪵',opts:[
+  {id:'noyer',name:'Noyer',c:['#6b3f2a','#87513a','#4a2a1b','#efe9df']},{id:'chene',name:'Chêne clair',c:['#b0814f','#c69766','#7d5530','#f3ede2']},
+  {id:'noir',name:'Noir mat',c:['#2c2c30','#45454b','#151518','#e8e4dc'],req:2},{id:'marbre',name:'Marbre blanc',c:['#e3ded4','#c9c1b3','#a39a8a','#ffffff'],req:3},
+  {id:'zinc',name:'Zinc',c:['#8e979e','#a9b1b7','#5f676d','#dfe3e6'],req:4},{id:'vert',name:'Vert anglais',c:['#2f5e45','#3f7a5a','#1f4232','#efe9df'],req:4}]},
+ enseigne:{label:'Enseigne',icon:'🪧',opts:[
+  {id:'bois',name:'Bois et crème',c:['#8a5a3c','#6b3f2a','#f6ead2']},{id:'vert',name:'Vert et crème',c:['#2f5e45','#24493a','#f6ead2']},
+  {id:'noir',name:'Noir et or',c:['#1f1d22','#3a3346','#e9c46a'],req:2},{id:'blanc',name:'Blanc et noir',c:['#f4efe6','#cfc6b6','#2b1d16'],req:2},
+  {id:'bordeaux',name:'Bordeaux et or',c:['#6e2433','#4e1824','#e9c46a'],req:3}]},
+ accent:{label:'Couleur de la maison',icon:'🎨',hint:'Le liseré du comptoir et ta tenue.',opts:[
+  {id:'framboise',name:'Framboise',c:'#e2456b'},{id:'or',name:'Or',c:'#d6a447'},{id:'menthe',name:'Menthe',c:'#3fae7a'},
+  {id:'bleu',name:'Bleu roi',c:'#3b6fd6'},{id:'corail',name:'Corail',c:'#f07a54',req:2},{id:'violet',name:'Violet',c:'#8b5cc7',req:3}]},
+};
+const CUSTOM_KEYS=['wall','wains','floor','counter','enseigne','accent'];
+function custOpt(k){const g=CUSTOM[k],id=S&&S.custom&&S.custom[k];return g.opts.find(o=>o.id===id)||g.opts[0];}
+const custKey=()=>CUSTOM_KEYS.map(k=>custOpt(k).id).join('.');
+const meLook=()=>{const a=custOpt('accent').c;return a===ME_LOOK.shirt?ME_LOOK:Object.assign({},ME_LOOK,{shirt:a});};
+const signName=()=>((S.custom&&S.custom.sign)||'').trim()||'Le Petit Comptoir';
+
 /* ================= État ================= */
 let S,R;
 const SAVE_KEY='comptoir-cie-v1';
@@ -852,7 +904,7 @@ function defaultState(){
     fr:{launched:false,rate:6,charte:'standard',list:[],cands:[],natCampaign:0,centrale:false,academie:false,lastRoy:0,prospect:{},seq:0},
     legacy:{points:0,spent:0,perks:{},ipos:0,best:0},trophies:{},login:{last:'',streak:0,total:0},missions:{day:0,list:[],bonus:false},
     lab:{pending:null,tried:{}},sig:[],passiveDaily:0,lastSeen:0,auto:false,tierIdx:0,life:{served:0,revenue:0,missions:0},
-    book:{},bookSales:{},bookHist:[],chef:{hired:false,since:0,tasks:{carte:true,recettes:true,labo:true},reserve:2500,log:[]}};
+    book:{},bookSales:{},bookHist:[],chef:{hired:false,since:0,tasks:{carte:true,recettes:true,labo:true},reserve:2500,log:[]},custom:{}};
 }
 function mergeState(d){
   const b=defaultState();const out=Object.assign(b,d);
@@ -880,6 +932,7 @@ function mergeState(d){
   out.trophies=Object.assign({},d.trophies||{});
   out.login=Object.assign(ds.login,d.login||{});
   out.missions=Object.assign(ds.missions,d.missions||{});if(!Array.isArray(out.missions.list))out.missions.list=[];
+  out.custom=Object.assign({},d.custom||{});
   out.lab=Object.assign(ds.lab,d.lab||{});if(!out.lab.tried)out.lab.tried={};
   out.sig=Array.isArray(d.sig)?d.sig:[];
   out.life=Object.assign(ds.life,d.life||{});out.life.served=Math.max(out.life.served||0,out.stats.served||0);
@@ -1954,6 +2007,91 @@ function updateMorale(news){
   syncStations();
 }
 function givePrime(name){const m=S.staff.find(x=>x.name===name);if(!m||m.primeDay===S.day)return;if(!spend(m.salary,'invest'))return;m.morale=clamp((m.morale??80)+30,0,100);m.primeDay=S.day;toast(`🎉 Prime versée : ${m.name} a le sourire !`);renderPanel();}
+/* ---------- Personnalisation de la boutique ---------- */
+const CU_SWATCH={wall:[0,1],wains:[0,2],floor:[0,1],counter:[0,3],enseigne:[0,2]};
+function cuSwatch(k,o){
+  const cur=custOpt(k).id===o.id,lock=o.req&&S.level<o.req;
+  const c=Array.isArray(o.c)?CU_SWATCH[k].map(i=>o.c[i]):[o.c,o.c];
+  return `<button type="button" class="cu-sw" data-cu="${k}" data-v="${o.id}" aria-pressed="${cur}" ${lock?'disabled':''} title="${esc(o.name)}${lock?' · débloqué au niveau '+o.req:''}"><i style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></i><span>${esc(o.name)}${lock?`<small>🔒 niveau ${o.req}</small>`:''}</span></button>`;
+}
+function cuPreview(){const cv2=$('#cuCv');if(!cv2)return;const w=cv2.clientWidth||480,dpr=Math.min(window.devicePixelRatio||1,2);cv2.width=Math.round(w*dpr);cv2.height=Math.round(w*H/W*dpr);mpPaintVisit(cv2,{firm_name:signName(),snapshot:mySnapshot()});}
+let cuBound=false;
+function openCustom(){
+  if(!S.custom)S.custom={};
+  openModal(`<div class="modal-head"><span class="modal-ic">🎨</span><div><p class="eyebrow">Ma boutique</p><h2>Personnalise ton café</h2></div></div>
+  <canvas class="visit-cv" id="cuCv" role="img" aria-label="Aperçu de ta boutique"></canvas>
+  <div class="cu-group"><label class="lbl-full" for="cuSign">Nom sur l’enseigne</label><input id="cuSign" class="txt" maxlength="26" value="${esc(S.custom.sign||'')}" placeholder="Le Petit Comptoir" autocomplete="off"></div>
+  ${CUSTOM_KEYS.map(k=>{const g=CUSTOM[k];return `<div class="cu-group"><b>${g.icon} ${g.label}</b>${g.hint?`<span class="muted small">${g.hint}</span>`:''}<div class="cu-row" role="group" aria-label="${esc(g.label)}">${g.opts.map(o=>cuSwatch(k,o)).join('')}</div></div>`;}).join('')}
+  ${S.upg.enseigne?'<p class="muted small" style="margin:0">💡 Ton enseigne néon garde ses couleurs lumineuses : la teinte choisie s’applique sans le néon.</p>':''}
+  <div class="btns"><button class="btn btn-primary" type="button" data-modal-ok>✓ Terminé</button><button class="btn btn-sm" type="button" data-cu-reset>Revenir au style d’origine</button></div>`,
+  ()=>{saveSoon();updateHud();if(MP.me){MP.lastPub=0;mpPublish(true);}});
+  if(!cuBound){cuBound=true;
+    $('#modal').addEventListener('click',e=>{
+      const b=e.target.closest('[data-cu]');
+      if(b&&!b.disabled){S.custom[b.dataset.cu]=b.dataset.v;b.parentElement.querySelectorAll('.cu-sw').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));Snd.init();cuPreview();saveSoon();return;}
+      if(e.target.closest('[data-cu-reset]')){const sg=S.custom.sign;S.custom={};if(sg)S.custom.sign=sg;$('#modalCard').querySelectorAll('.cu-sw').forEach(x=>{const k=x.dataset.cu;x.setAttribute('aria-pressed',String(CUSTOM[k].opts[0].id===x.dataset.v));});cuPreview();saveSoon();}
+    });
+    $('#modal').addEventListener('input',e=>{if(e.target.id!=='cuSign')return;S.custom.sign=e.target.value.replace(/[<>{}]/g,'').slice(0,26);cuPreview();updateHud();saveSoon();});
+  }
+  requestAnimationFrame(cuPreview);
+}
+
+/* ---------- Tutoriel guidé pour les nouveaux joueurs ---------- */
+const TUTO=[
+ {sel:'#stage',t:'☕ Voici ton café',d:'Les clients entrent par la porte, font la queue au comptoir et commandent. Toi et ton équipe préparez les commandes derrière le comptoir.'},
+ {sel:'#stage',t:'👆 Pendant le service',d:'Clique sur une commande au comptoir pour la préparer plus vite, et sur un client qui s’impatiente pour le faire patienter. Pense à ramasser les pièces laissées sur les tables !'},
+ {sel:'.hud .stats',t:'💰 Tes chiffres',d:'Ta trésorerie (clique dessus pour voir le bilan détaillé), ta réputation, tes abonnés et ton expérience. Chaque client servi rapporte de l’XP pour monter de niveau.'},
+ {sel:'.speed',t:'⏩ La vitesse',d:'Accélère la journée avec ×2, ×3 ou ×5, ou mets le jeu en pause quand tu veux.'},
+ {sel:'#missions',t:'🎯 Les missions du jour',d:'Trois petits défis chaque jour, avec une récompense à la clé. Réussis-les tous pour ouvrir le coffre bonus.'},
+ {sel:'.tab[data-tab="carte"]',tab:'carte',t:'🍽️ La carte',d:'Règle tes prix et commande ton stock : il est livré à l’ouverture. L’indicateur te dit si ton prix est juste. Sans stock, plus de ventes !'},
+ {sel:'.tab[data-tab="equipe"]',tab:'equipe',t:'👥 Ton équipe',d:'Quand la file d’attente s’allonge, recrute : chaque personne au comptoir sert en même temps que toi.'},
+ {sel:'.tab[data-tab="amelio"]',tab:'amelio',t:'🛠️ Travaux et déco',d:'Tables, machine espresso, terrasse… Chaque amélioration se voit dans la salle et attire plus de monde. En haut, « Personnaliser » te laisse choisir les couleurs et le nom de ta boutique.'},
+ {sel:'.tab[data-tab="obj"]',tab:'obj',t:'🏆 Objectifs et trophées',d:'De grands objectifs à atteindre, avec de belles récompenses, et des trophées à collectionner.'},
+ {sel:'.tab[data-tab="monde"]',tab:'monde',t:'🌍 En ligne',d:'Compare ton café à ceux des autres joueurs, visite leurs boutiques, lance des défis et rejoins un club.'},
+ {sel:'#openBtn',t:'☀️ C’est parti !',d:'Tout est prêt : clique ici pour ouvrir ta journée. Bon service !',open:true},
+];
+let tutoI=-1,TS=[];
+function startTuto(){
+  closeModal();updateHud();
+  TS=TUTO.filter(st=>{const el=document.querySelector(st.sel);return el&&!el.hidden&&el.getClientRects().length>0;});
+  if(!TS.length)return;
+  let o=$('#tuto');
+  if(!o){
+    o=document.createElement('div');o.id='tuto';
+    o.innerHTML='<div class="tuto-hole"></div><div class="tuto-tip" role="dialog" aria-modal="true" aria-labelledby="tutoT" aria-describedby="tutoD"><p class="eyebrow" id="tutoN"></p><h3 id="tutoT"></h3><p id="tutoD"></p><div class="btns"><button type="button" class="btn btn-sm" data-tuto="prev">← Précédent</button><button type="button" class="btn btn-primary btn-sm" data-tuto="next">Suivant →</button></div><button type="button" class="tuto-skip" data-tuto="skip">Passer le tuto</button></div>';
+    document.body.appendChild(o);
+    o.addEventListener('click',e=>{const b=e.target.closest('[data-tuto]');if(!b||b.disabled)return;const a=b.dataset.tuto;if(a==='next')tutoGo(1);else if(a==='prev')tutoGo(-1);else endTuto(false);});
+    window.addEventListener('resize',placeTuto);window.addEventListener('scroll',placeTuto,{passive:true});
+    document.addEventListener('keydown',e=>{if(tutoI<0)return;if(e.key==='Escape')endTuto(false);else if(e.key==='ArrowRight')tutoGo(1);else if(e.key==='ArrowLeft')tutoGo(-1);});
+  }
+  o.hidden=false;const wasOff=tutoI<0;tutoI=0;showTuto();
+  // Le cadre suit sa cible à chaque image (défilement, changement d'onglet, redimensionnement)
+  if(wasOff){const loop=()=>{if(tutoI<0)return;placeTuto();requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+}
+function showTuto(){
+  const st=TS[tutoI];if(!st)return;
+  if(st.tab&&tab!==st.tab){tab=st.tab;renderPanel();}
+  const el=document.querySelector(st.sel);if(el)el.scrollIntoView({block:'center',behavior:reduceMotion?'auto':'smooth'});
+  $('#tutoN').textContent=`Étape ${tutoI+1} sur ${TS.length}`;$('#tutoT').textContent=st.t;$('#tutoD').textContent=st.d;
+  const last=tutoI===TS.length-1,prev=$('#tuto [data-tuto="prev"]'),next=$('#tuto [data-tuto="next"]');
+  prev.disabled=tutoI===0;next.textContent=last?(st.open?'☀️ Ouvrir mon café':'✓ Terminer'):'Suivant →';
+  placeTuto();setTimeout(placeTuto,420);setTimeout(()=>next.focus({preventScroll:true}),60);
+}
+function tutoGo(d){const n=tutoI+d;if(n<0)return;if(n>=TS.length)return endTuto(true);tutoI=n;showTuto();}
+function placeTuto(){
+  if(tutoI<0)return;const st=TS[tutoI],el=st&&document.querySelector(st.sel),o=$('#tuto');if(!el||!o)return;
+  const r=el.getBoundingClientRect(),pad=6,hole=o.querySelector('.tuto-hole'),tip=o.querySelector('.tuto-tip');
+  Object.assign(hole.style,{left:(r.left-pad)+'px',top:(r.top-pad)+'px',width:(r.width+pad*2)+'px',height:(r.height+pad*2)+'px'});
+  const vw=innerWidth,vh=innerHeight,tw=Math.min(340,vw-32);tip.style.width=tw+'px';const th=tip.offsetHeight;
+  let top=r.bottom+14;if(top+th>vh-12)top=r.top-th-14;if(top<12)top=Math.max(12,vh-th-16);
+  tip.style.top=top+'px';tip.style.left=Math.max(16,Math.min(vw-tw-16,r.left+r.width/2-tw/2))+'px';
+}
+function endTuto(open){
+  tutoI=-1;const o=$('#tuto');if(o)o.hidden=true;
+  S.flags.tuto=true;tab='carte';renderPanel();save();
+  if(open&&TS.length&&TS[TS.length-1].open&&R.phase==='closed')openDay();
+}
+
 /* ---------- En ligne : vitrines, classement, visites, pourboires et terrasse (site uniquement, via Supabase) ---------- */
 const MP_EMOJIS=['☕','🥐','🍰','🧁','🍩','🍪','🧋','🍵','🫖','🥤','🍫','🌿','🌸','⭐','👑','🐱','🦊','🐻','🚀','🎵'];
 const MP={me:null,ready:false,view:'rank',kind:'value',board:null,boardT:0,dir:null,dirMode:'recent',search:'',rooms:{},curRoom:null,draft:'',emoji:'☕',pseudo:'',firm:null,lastPub:0,joining:false,loading:{},
@@ -1974,8 +2112,9 @@ function mpPayload(pseudo,firm,emoji){
     p_cafes:1+S.firm.locations.length,p_franchises:S.fr.list.length,p_rep:Math.round(S.rep*100)/100,
     p_followers:Math.round(S.social.followers),p_days:S.stats.days,p_served:Math.round(S.stats.served),
     p_best_day:Math.round(S.stats.bestDay),p_items:mpUnlocked().length,p_cheats:S.flags.cheats||0,
-    p_snapshot:{upg:Object.assign({},S.upg),items:mpUnlocked().map(it=>it.id).slice(0,80),staff:S.staff.slice(0,4).map(m=>m.look),art:!!S.flags.art}};
+    p_snapshot:mySnapshot()};
 }
+function mySnapshot(){return {upg:Object.assign({},S.upg),items:mpUnlocked().map(it=>it.id).slice(0,80),staff:S.staff.slice(0,4).map(m=>m.look),art:!!S.flags.art,custom:CUSTOM_KEYS.reduce((o,k)=>(o[k]=custOpt(k).id,o),{})};}
 function mpBadge(){const b=$('#mBadge');if(!b)return;const n=MP.me?(MP.me.tips_pending||0)+(MP.me.duels_todo||0):0;b.hidden=!n;b.textContent=n;}
 async function mpRefreshMe(publish){
   try{MP.me=Cloud.user?await mpRpc('mp_me'):null;}catch(e){MP.me=null;}
@@ -2260,12 +2399,12 @@ function mpPaintVisit(el,p){
   try{
     const items={};(snap.items||[]).forEach(id=>{if(ITEM[id])items[id]={unlocked:true};});
     S=mergeState({upg:snap.upg||{},items,staff:(Array.isArray(snap.staff)?snap.staff:[]).slice(0,4).map(look=>({look,name:'',trait:'calme',salary:0,days:0,morale:80})),
-      flags:{art:!!snap.art},weather:'soleil',firm:{created:true,name:p.firm_name,locations:[],createdDay:1}});
+      flags:{art:!!snap.art},custom:Object.assign({},snap.custom||{}),weather:'soleil',firm:{created:true,name:p.firm_name,locations:[],createdDay:1}});
     R={phase:'open',time:DAY_LEN*.42,speed:1,customers:[],queue:[],stations:[],seats:[],coins:[],floaters:[],sparks:[],passers:[],doorOpen:0,t:keepR.t,truck:null,lateDelivery:null,warned:{},modalTok:keepR.modalTok,signText:p.firm_name};
     syncStations();syncSeats();
     const c=el.getContext('2d'),sc=el.width/W;c.setTransform(sc,0,0,sc,0,0);
     paintStatic(c);drawWindow(c);drawSign(c);drawDoor(c);drawWallDecor(c);drawBoard(c);drawShelves(c);drawTurntable(c);drawBackBar(c);
-    R.stations.forEach((st,i)=>{const m=staffAt(i);drawPerson(c,STATION_X[i],STAFF_Y,m&&m.look?m.look:ME_LOOK,{apron:true,working:false,mood:'happy',noShadow:true});});
+    R.stations.forEach((st,i)=>{const m=staffAt(i);drawPerson(c,STATION_X[i],STAFF_Y,m&&m.look?m.look:meLook(),{apron:true,working:false,mood:'happy',noShadow:true});});
     drawCounter(c);
     const ents=[];R.seats.forEach(s=>{if(!s.terrace)ents.push({y:s.y-.5,f:()=>drawChair(c,s)});});
     for(let i=0;i<Math.min(S.upg.tables,TABLES.length);i++){const t=TABLES[i];ents.push({y:t.y,f:()=>drawTable(c,t,i)});}
@@ -2477,21 +2616,43 @@ function emo(c,e,x,y,size){c.font=`${size}px ${EMOJI}`;c.textAlign='center';c.te
 function mix(h1,h2,k){const p=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));const A=p(h1),B=p(h2);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')';}
 
 function paintStatic(c){
-  c.fillStyle='#cfe3c6';c.fillRect(0,0,W,FLOOR_Y);
-  c.fillStyle='#c3dab9';for(let x=0;x<W;x+=30)c.fillRect(x,0,15,198);
+  const Wl=custOpt('wall').c,Wn=custOpt('wains').c;
+  c.fillStyle=Wl[0];c.fillRect(0,0,W,FLOOR_Y);
+  c.fillStyle=Wl[1];for(let x=0;x<W;x+=30)c.fillRect(x,0,15,198);
   c.fillStyle='rgba(255,255,255,.4)';for(let x=7;x<W;x+=30)for(let y=22;y<190;y+=32){circ(c,x+((y-22)/32%2?15:0),y,1.6);c.fill();}
   c.fillStyle='#f3eee2';c.fillRect(0,0,W,9);c.fillStyle='#ddd3bf';c.fillRect(0,9,W,3);
-  c.fillStyle='#3f7a5a';c.fillRect(0,198,W,102);
-  c.fillStyle='#2f5e45';c.fillRect(0,195,W,8);
-  c.strokeStyle='#4f8e6b';c.lineWidth=2;for(let x=12;x<W;x+=72){rr(c,x,214,56,70,4);c.stroke();}
-  c.fillStyle='#1f4232';c.fillRect(0,291,W,9);
-  const tw=40,th=22;
-  for(let r=0;FLOOR_Y+r*th<H;r++)for(let k=0;k*tw<W;k++){c.fillStyle=(r+k)%2?'#2e2925':'#f1e7d6';c.fillRect(k*tw,FLOOR_Y+r*th,tw,th);}
+  c.fillStyle=Wn[0];c.fillRect(0,198,W,102);
+  c.fillStyle=Wn[1];c.fillRect(0,195,W,8);
+  c.strokeStyle=Wn[2];c.lineWidth=2;for(let x=12;x<W;x+=72){rr(c,x,214,56,70,4);c.stroke();}
+  c.fillStyle=Wn[3];c.fillRect(0,291,W,9);
+  paintFloor(c,custOpt('floor'));
   const g=c.createLinearGradient(0,FLOOR_Y,0,H);g.addColorStop(0,'rgba(40,25,15,.28)');g.addColorStop(.25,'rgba(40,25,15,.06)');g.addColorStop(1,'rgba(40,25,15,.16)');
   c.fillStyle=g;c.fillRect(0,FLOOR_Y,W,H-FLOOR_Y);
 }
+function paintFloor(c,f){
+  const y0=FLOOR_Y,th=22,col=f.c;
+  if(f.kind==='planks'){
+    for(let r=0;y0+r*th<H;r++){const off=(r%3)*40;
+      for(let x=-off,i=0;x<W;x+=120,i++){c.fillStyle=col[(r*7+i*3)%3];c.fillRect(x,y0+r*th,120,th);c.fillStyle='rgba(60,35,15,.3)';c.fillRect(x,y0+r*th,1.5,th);}
+      c.fillStyle='rgba(60,35,15,.32)';c.fillRect(0,y0+r*th+th-1.5,W,1.5);}
+    return;
+  }
+  if(f.kind==='cement'){const s=44,t=th*2;
+    for(let r=0;y0+r*t<H;r++)for(let k=0;k*s<W;k++){const x=k*s,y=y0+r*t;
+      c.fillStyle=col[0];c.fillRect(x,y,s,t);c.fillStyle=col[1];c.beginPath();c.moveTo(x+s/2,y+4);c.lineTo(x+s-4,y+t/2);c.lineTo(x+s/2,y+t-4);c.lineTo(x+4,y+t/2);c.closePath();c.fill();
+      c.fillStyle=col[0];circ(c,x+s/2,y+t/2,5);c.fill();c.strokeStyle='rgba(0,0,0,.14)';c.lineWidth=1;c.strokeRect(x+.5,y+.5,s-1,t-1);}
+    return;
+  }
+  if(f.kind==='marble'){const s=80,t=th*2;
+    for(let r=0;y0+r*t<H;r++)for(let k=0;k*s<W;k++){const x=k*s,y=y0+r*t,v=(r*13+k*7)%10;
+      c.fillStyle=(r+k)%2?col[0]:col[1];c.fillRect(x,y,s,t);c.strokeStyle=col[2];c.lineWidth=1;c.beginPath();c.moveTo(x+v*6,y);c.quadraticCurveTo(x+s/2,y+t/2+v,x+s-v*3,y+t);c.stroke();
+      c.strokeStyle='rgba(0,0,0,.1)';c.strokeRect(x+.5,y+.5,s-1,t-1);}
+    return;
+  }
+  const tw=40;for(let r=0;y0+r*th<H;r++)for(let k=0;k*tw<W;k++){c.fillStyle=(r+k)%2?col[0]:col[1];c.fillRect(k*tw,y0+r*th,tw,th);}
+}
 function ensureBg(){
-  const key=cv.width+'x'+cv.height;if(key===bgKey)return;bgKey=key;
+  const key=cv.width+'x'+cv.height+':'+custKey();if(key===bgKey)return;bgKey=key;
   bg.width=cv.width;bg.height=cv.height;bgc.setTransform(scale,0,0,scale,0,0);paintStatic(bgc);
 }
 function skyColors(){
@@ -2551,24 +2712,24 @@ function drawWindow(c){
     for(let i=0;i<14;i++){const t=(i+.5)/14,px=x+w*t,py=y+6+(1-(2*t-1)**2)*8;c.fillStyle=cols[i%5];c.beginPath();c.moveTo(px-7,py);c.lineTo(px+7,py);c.lineTo(px,py+12);c.closePath();c.fill();}}
 }
 function drawSign(c){
-  const x=62,y=14,w=276,h=36;const neon=S.upg.enseigne;
-  c.fillStyle=neon?'#1d1a24':'#8a5a3c';rr(c,x,y,w,h,8);c.fill();
-  c.strokeStyle=neon?'#3a3346':'#6b3f2a';c.lineWidth=3;rr(c,x,y,w,h,8);c.stroke();
-  const label=R.signText||'Le Petit Comptoir';let fs=21;
+  const x=62,y=14,w=276,h=36;const neon=S.upg.enseigne,SG=custOpt('enseigne').c;
+  c.fillStyle=neon?'#1d1a24':SG[0];rr(c,x,y,w,h,8);c.fill();
+  c.strokeStyle=neon?'#3a3346':SG[1];c.lineWidth=3;rr(c,x,y,w,h,8);c.stroke();
+  const label=R.signText||signName();let fs=21;
   c.font=`${fs}px Pacifico, "Brush Script MT", cursive`;while(fs>10&&c.measureText(label).width>w-22){fs--;c.font=`${fs}px Pacifico, "Brush Script MT", cursive`;}
   c.textAlign='center';c.textBaseline='middle';
   if(neon){const fl=(Math.sin(R.t*23)>.97)?.55:1;c.save();c.shadowColor='#ff4d86';c.shadowBlur=14*fl;c.fillStyle=`rgba(255,120,165,${fl})`;c.fillText(label,x+w/2,y+h/2+1);c.restore();c.fillStyle=`rgba(255,235,242,${.9*fl})`;c.fillText(label,x+w/2,y+h/2+1);}
-  else{c.fillStyle='#f6ead2';c.fillText(label,x+w/2,y+h/2+1);}
+  else{c.fillStyle=SG[2];c.fillText(label,x+w/2,y+h/2+1);}
 }
 function drawDoor(c){
-  const x=380,y=118,w=80,h=182;const [top,bot]=skyColors();
-  c.fillStyle='#24493a';rr(c,x-7,y-7,w+14,h+7,6);c.fill();
-  if(R.doorOpen>0){const g=c.createLinearGradient(0,y,0,y+h);g.addColorStop(0,top);g.addColorStop(1,bot);c.fillStyle=g;c.fillRect(x,y,w,h);c.fillStyle=isNight()?'#3b3d48':'#bdb7aa';c.fillRect(x,y+h-26,w,26);c.fillStyle='#2f5e45';c.fillRect(x,y,13,h);c.fillStyle='rgba(255,255,255,.18)';c.fillRect(x+13,y,4,h);}
+  const x=380,y=118,w=80,h=182,Wn=custOpt('wains').c;const [top,bot]=skyColors();
+  c.fillStyle=Wn[3];rr(c,x-7,y-7,w+14,h+7,6);c.fill();
+  if(R.doorOpen>0){const g=c.createLinearGradient(0,y,0,y+h);g.addColorStop(0,top);g.addColorStop(1,bot);c.fillStyle=g;c.fillRect(x,y,w,h);c.fillStyle=isNight()?'#3b3d48':'#bdb7aa';c.fillRect(x,y+h-26,w,26);c.fillStyle=Wn[1];c.fillRect(x,y,13,h);c.fillStyle='rgba(255,255,255,.18)';c.fillRect(x+13,y,4,h);}
   else{
-    c.fillStyle='#2f5e45';c.fillRect(x,y,w,h);
+    c.fillStyle=Wn[1];c.fillRect(x,y,w,h);
     c.save();c.globalAlpha=.85;const g=c.createLinearGradient(0,y,0,y+90);g.addColorStop(0,top);g.addColorStop(1,bot);c.fillStyle=g;rr(c,x+10,y+12,w-20,92,4);c.fill();c.restore();
     c.fillStyle='rgba(255,255,255,.14)';c.beginPath();c.moveTo(x+18,y+104);c.lineTo(x+40,y+12);c.lineTo(x+50,y+12);c.lineTo(x+28,y+104);c.closePath();c.fill();
-    c.strokeStyle='#4f8e6b';c.lineWidth=2;rr(c,x+12,y+116,w-24,56,3);c.stroke();
+    c.strokeStyle=Wn[2];c.lineWidth=2;rr(c,x+12,y+116,w-24,56,3);c.stroke();
     c.fillStyle='#d6a447';circ(c,x+w-13,y+110,4);c.fill();
     const closed=R.phase==='closed';c.strokeStyle='#d6a447';c.lineWidth=1;c.beginPath();c.moveTo(x+w/2-12,y+14);c.lineTo(x+w/2,y+6);c.lineTo(x+w/2+12,y+14);c.stroke();
     c.fillStyle=closed?'#e2456b':'#3f8f63';rr(c,x+w/2-26,y+14,52,17,4);c.fill();
@@ -2663,13 +2824,13 @@ function drawMachine(c){
   if(busy&&R.phase!=='closed'){c.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<4;i++){const k=(R.t*.8+i/4)%1;c.globalAlpha=(1-k)*.7;circ(c,x+40+Math.sin(k*7+i)*5,y-60-k*40,4+k*7);c.fill();}c.globalAlpha=1;}
 }
 function drawCounter(c){
-  const x1=520,x2=998,top=COUNTER_TOP;
-  c.fillStyle='#6b3f2a';c.fillRect(x1+3,top+10,x2-x1-3,H-top>60?56:56);
-  c.strokeStyle='#87513a';c.lineWidth=2;STATION_X.forEach(sx=>{rr(c,sx-34,top+18,68,34,4);c.stroke();});
-  c.fillStyle='#e2456b';c.fillRect(x1+3,top+10,x2-x1-3,4);
+  const x1=520,x2=998,top=COUNTER_TOP,K=custOpt('counter').c;
+  c.fillStyle=K[0];c.fillRect(x1+3,top+10,x2-x1-3,H-top>60?56:56);
+  c.strokeStyle=K[1];c.lineWidth=2;STATION_X.forEach(sx=>{rr(c,sx-34,top+18,68,34,4);c.stroke();});
+  c.fillStyle=custOpt('accent').c;c.fillRect(x1+3,top+10,x2-x1-3,4);
   c.fillStyle='#d6a447';c.fillRect(x1+3,top+56,x2-x1-3,4);
-  c.fillStyle='#4a2a1b';c.fillRect(x1+3,top+60,x2-x1-3,4);
-  c.fillStyle='#efe9df';rr(c,x1,top,x2-x1+2,11,3);c.fill();c.fillStyle='#d6cdbd';c.fillRect(x1,top+9,x2-x1+2,2);
+  c.fillStyle=K[2];c.fillRect(x1+3,top+60,x2-x1-3,4);
+  c.fillStyle=K[3];rr(c,x1,top,x2-x1+2,11,3);c.fill();c.fillStyle='#d6cdbd';c.fillRect(x1,top+9,x2-x1+2,2);
   c.strokeStyle='rgba(170,160,150,.5)';c.lineWidth=1;c.beginPath();for(let k=0;k<6;k++){const vx=x1+30+k*80;c.moveTo(vx,top+2);c.quadraticCurveTo(vx+20,top+8,vx+44,top+3);}c.stroke();
   for(let i=0;i<5;i++){const sx=STATION_X[i];if(i>=maxStations())drawVitrine(c,sx,i);else if(i>=R.stations.length)drawRecruit(c,sx);}
   c.fillStyle='#d6a447';rr(c,524,top-22,30,22,4);c.fill();c.fillStyle='#2b1d16';rr(c,528,top-19,22,7,2);c.fill();c.fillStyle='#7fe0a8';c.font='900 6px Nunito, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('€',539,top-15.5);
@@ -2817,7 +2978,7 @@ function draw(){
   const c=ctx;c.setTransform(1,0,0,1,0,0);c.drawImage(bg,0,0);
   c.setTransform(scale,0,0,scale,0,0);
   drawWindow(c);drawSign(c);drawDoor(c);drawWallDecor(c);drawBoard(c);drawShelves(c);drawTurntable(c);drawBackBar(c);
-  R.stations.forEach((st,i)=>{const m=staffAt(i);const working=!!(st.customer&&st.customer.state==='waiting');drawPerson(c,STATION_X[i],STAFF_Y,m?m.look:ME_LOOK,{apron:true,working,mood:'happy',noShadow:true});});
+  R.stations.forEach((st,i)=>{const m=staffAt(i);const working=!!(st.customer&&st.customer.state==='waiting');drawPerson(c,STATION_X[i],STAFF_Y,m?m.look:meLook(),{apron:true,working,mood:'happy',noShadow:true});});
   drawCounter(c);
   const ents=[];
   R.seats.forEach(s=>{if(!s.terrace)ents.push({y:s.y-.5,f:()=>drawChair(c,s)});});
@@ -2882,7 +3043,7 @@ function showWelcome(){
     <li><span>🎯</span><div>Chaque jour : 3 <b>missions</b>, une récompense de connexion et des <b>trophées</b> qui boostent tes revenus pour toujours.</div></li>
     <li><span>🛠️</span><div>Investis dans l’équipe, les tables et la déco : <b>tout se voit dans la salle</b>.</div></li>
   </ul>
-  <button class="btn btn-primary btn-lg" data-modal-ok>☀️ Ouvrir mon café</button>`,()=>{S.flags.welcome=true;save();openDay();});
+  <div class="btns"><button class="btn btn-primary btn-lg" type="button" data-choice="0">🧭 Suivre le petit tuto (1 minute)</button><button class="btn" type="button" data-choice="1">Je connais : ouvrir mon café</button></div>`,null,ch=>{S.flags.welcome=true;save();closeModal();if(ch===0)startTuto();else openDay();});
 }
 function showSummary(sm,next){
   const good=sm.profit>=0;const Wt=WEATHERS[S.weather];
@@ -3013,6 +3174,7 @@ function tabEquipe(){
 }
 function tabAmelio(){
   let h=`<div class="sec-head"><div><h3>Améliorations</h3><p class="muted small">Chaque achat se voit dans la salle.</p></div></div>`;
+  h+=`<div class="upg cu-card"><div class="upg-ic" aria-hidden="true">🎨</div><div class="grow"><b>Ma boutique</b><p class="muted small">Couleurs des murs, du sol, du comptoir, de l’enseigne et nom du café : fais-en une boutique à ton goût. C’est gratuit et modifiable à tout moment.</p></div><button class="btn btn-gold btn-sm" data-act="custom">Personnaliser</button></div>`;
   UPGRADES.forEach(u=>{const lvl=S.upg[u.id],max=u.costs.length,done=lvl>=max;const cost=done?0:u.costs[lvl],req=done?0:u.req[lvl];const can=S.level>=req;
     const pips=max>1?`<span class="pips" aria-label="Niveau ${lvl} sur ${max}">${Array.from({length:max},(_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('')}</span>`:'';
     h+=`<div class="upg ${done?'done':''}"><div class="upg-ic" aria-hidden="true">${u.icon}</div><div class="grow"><div class="item-top"><b>${u.name}</b>${pips}</div><p class="muted small">${u.desc}</p></div>${done?'<span class="tag ok">✓ Max</span>':can?`<button class="btn btn-primary btn-sm" data-act="upg" data-id="${u.id}" data-cost="${cost}">${costTxt(cost)}</button>`:`<span class="tag lock">🔒 Niv. ${req}</span>`}</div>`;});
@@ -3144,7 +3306,7 @@ function tabObj(){
   return h;
 }
 function settingsHtml(){
-  return `<div class="settings"><span class="btns">${suggestOn()?'<button class="btn btn-sm btn-gold" type="button" data-suggest>💡 Proposer une idée</button>':''}<button class="btn btn-sm" data-act="savebox">💾 Sauvegarde</button><button class="btn btn-sm" data-act="sound">${S.sound?'🔊 Son activé':'🔈 Son coupé'}</button>${S.upg.brasdroit?`<button class="btn btn-sm ${S.auto?'btn-green':''}" data-act="auto">⏩ Mode continu : ${S.auto?'activé':'désactivé'}</button>`:''}</span>${R.confirmReset?`<span class="confirm">Effacer la partie ? <button class="btn btn-sm btn-primary" data-act="reset-yes">Oui, recommencer</button><button class="btn btn-sm" data-act="reset-no">Annuler</button></span>`:`<button class="btn btn-sm" data-act="reset">↺ Nouvelle partie</button>`}</div>`;
+  return `<div class="settings"><span class="btns">${suggestOn()?'<button class="btn btn-sm btn-gold" type="button" data-suggest>💡 Proposer une idée</button>':''}<button class="btn btn-sm" data-act="tuto">🧭 Tuto</button><button class="btn btn-sm" data-act="savebox">💾 Sauvegarde</button><button class="btn btn-sm" data-act="sound">${S.sound?'🔊 Son activé':'🔈 Son coupé'}</button>${S.upg.brasdroit?`<button class="btn btn-sm ${S.auto?'btn-green':''}" data-act="auto">⏩ Mode continu : ${S.auto?'activé':'désactivé'}</button>`:''}</span>${R.confirmReset?`<span class="confirm">Effacer la partie ? <button class="btn btn-sm btn-primary" data-act="reset-yes">Oui, recommencer</button><button class="btn btn-sm" data-act="reset-no">Annuler</button></span>`:`<button class="btn btn-sm" data-act="reset">↺ Nouvelle partie</button>`}</div>`;
 }
 function renderPanel(){
   const body=$('#tabBody');const st=body.scrollTop;
@@ -3205,6 +3367,8 @@ function act(a,el){
   R.cat=CAT_BY_ACT[a]||null;
   const id=el.dataset.id;const it=id?ITEM[id]:null;const cap=stockCap();
   switch(a){
+    case 'custom':openCustom();break;
+    case 'tuto':startTuto();break;
     case 'order10':orderStock(id,10);break;
     case 'orderfill':orderStock(id,cap);break;
     case 'orderall':if(!orderAll())toast('Rien à commander : la réserve est pleine ou déjà en route.');break;
@@ -3263,7 +3427,7 @@ let lastToastKey={};function toastOnce(k,m){const n=performance.now();if(lastToa
 /* HUD */
 const moneyEl=$('#money');
 function updateHud(){
-  const bn=S.firm.created?S.firm.name:'Le Petit Comptoir';const bEl=$('#brandName');if(bEl.textContent!==bn)bEl.textContent=bn;
+  const bn=S.firm.created?S.firm.name:signName();const bEl=$('#brandName');if(bEl.textContent!==bn)bEl.textContent=bn;
   const fo=fmtK(S.social.followers);const fEl=$('#fol');if(fEl.textContent!==fo)fEl.textContent=fo;
   updateBadge();renderMissions();
   const tc=$('#tierChip');const ti=tierIdx();tc.hidden=ti<1;if(ti>=1){const tx=TIERS[ti].icon+' '+TIERS[ti].name;if(tc.textContent!==tx)tc.textContent=tx;}
