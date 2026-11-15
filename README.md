@@ -12,7 +12,7 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `serve.js` | Petit serveur pour tester le site sur ton ordinateur. |
 | `src/stats.html` | La page privée des statistiques. |
 | `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
-| `supabase.sql`, `supabase-stats.sql` | Les tables et règles à créer dans Supabase. |
+| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
 | `docs/` | Le site prêt à héberger. Il est regénéré à chaque `node build.js`, ne le modifie pas à la main. |
 
 ## Mettre à jour le site
@@ -70,6 +70,33 @@ Le même projet Supabase sert aussi à la **boîte à idées**. Les joueurs cliq
 - Personne d'autre que toi ne peut les lire : le site a seulement le droit d'en ajouter.
 - Un même navigateur ne peut envoyer qu'une idée par minute, et chaque message fait au plus 600 caractères.
 - Tant que Supabase n'est pas configuré, le bouton n'apparaît pas.
+
+### Multijoueur (onglet « 🌍 En ligne »)
+
+Les joueurs rejoignent le multijoueur avec un simple pseudo : un compte anonyme est créé pour eux, sans e-mail. Ils ont alors accès à :
+
+- **un classement national** par valeur du groupe, abonnés ou pourboires ;
+- **un annuaire des cafés**, avec une recherche ;
+- **la visite des cafés** des autres, avec leur salle redessinée (déco, équipe, enseigne), leurs chiffres et un livre d'or ;
+- **les pourboires** : un par café et par jour. Le café qui les reçoit gagne de l'argent et des abonnés, et la personne qui les laisse gagne de l'XP ;
+- **la terrasse**, un salon de discussion commun.
+
+La vitrine de chaque joueur se met à jour chaque soir de jeu. Les parties qui ont utilisé un code secret restent visibles, mais hors classement. Une nouvelle partie les remet dans la course.
+
+Installation, à faire une seule fois :
+
+1. Dans **Authentication → Sign In / Providers**, active **Allow anonymous sign-ins**, puis enregistre.
+2. Dans **SQL Editor**, exécute `supabase-multi.sql` après `supabase-stats.sql`.
+
+Modération :
+
+- Les pseudos, enseignes et messages passent par un filtre : mots interdits (table `banned_words`, que tu peux compléter dans Table Editor), liens, e-mails, pseudos de réseaux sociaux et numéros de téléphone.
+- Les messages sont limités à 200 caractères, avec 4 secondes entre deux messages et 15 messages par tranche de 10 minutes.
+- Un message signalé 3 fois est masqué automatiquement. Une vitrine signalée 5 fois l'est aussi.
+- Sur `stats.html`, la carte **Modération du multijoueur** liste les messages signalés, les joueurs à surveiller et les derniers messages. Tu peux y masquer ou réafficher un message ou une vitrine, et bloquer un joueur 7 jours.
+- Les messages de plus de 60 jours sont effacés automatiquement.
+
+Supabase recommande d'activer un captcha pour les comptes anonymes quand le jeu devient populaire (**Authentication → Attack Protection**).
 
 ### Statistiques de fréquentation
 

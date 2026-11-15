@@ -79,6 +79,17 @@ th,td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);white
 th{font-weight:800;color:var(--ink-2)}
 th:first-child,td:first-child{text-align:left}
 .foot{color:var(--ink-2);font-size:.82rem;margin-top:14px}
+#mod{margin-top:12px}
+.mod-h{font:900 .9rem var(--font-body);margin:14px 0 4px}
+.mod-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.mod-row:last-child{border-bottom:0}
+.mod-row .who{font-weight:900}
+.mod-row .meta{color:var(--ink-2);font-size:.8rem}
+.mod-row .body{flex:1 1 100%;overflow-wrap:anywhere}
+.mod-row.off .body{text-decoration:line-through;color:var(--ink-2)}
+.chip{display:inline-block;font-weight:800;font-size:.75rem;border:1.5px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--ink-2)}
+.chip.warn{border-color:var(--accent);color:var(--accent)}
+.btn.sm{padding:4px 10px;font-size:.8rem}
 a{color:var(--accent);font-weight:800}
 </style>
 </head>
@@ -159,6 +170,17 @@ a{color:var(--accent);font-weight:800}
       <section class="card"><h2>💡 Boîte à idées</h2><div id="sugg"></div></section>
       <section class="card"><h2>☁️ Sauvegardes en ligne</h2><div id="acc"></div></section>
     </div>
+
+    <section class="card" id="mod" hidden>
+      <h2>🛡️ Modération du multijoueur</h2>
+      <p class="hint" id="modSum"></p>
+      <p class="msg" id="modMsg" role="alert"></p>
+      <h3 class="mod-h">Messages signalés</h3>
+      <div id="modReported"></div>
+      <h3 class="mod-h">Joueurs signalés, masqués ou bloqués</h3>
+      <div id="modProfiles"></div>
+      <details><summary>Voir les 40 derniers messages</summary><div id="modRecent"></div></details>
+    </section>
     <p class="foot" id="foot"></p>
   </main>
 </div>
@@ -342,6 +364,44 @@ a{color:var(--accent);font-weight:800}
     $('foot').textContent = 'Mis à jour à ' + pad(g.getHours()) + ':' + pad(g.getMinutes()) + ' · actualisation automatique chaque minute tant que la page est ouverte.';
   }
 
+  // ---------- Modération du multijoueur
+  function when(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function modMsgRow(m) {
+    return '<div class="mod-row' + (m.hidden ? ' off' : '') + '"><span class="who">' + esc(m.pseudo) + '</span>' +
+      '<span class="meta">' + (m.room === 'terrasse' ? 'Terrasse' : 'Livre d’or') + ' · ' + when(m.at) + '</span>' +
+      (m.reports ? '<span class="chip warn">⚑ ' + m.reports + '</span>' : '') + (m.hidden ? '<span class="chip">masqué</span>' : '') +
+      '<span class="body">' + esc(m.body) + '</span>' +
+      '<button type="button" class="btn sm" data-mod="' + (m.hidden ? 'show' : 'hide') + '" data-id="' + m.id + '">' + (m.hidden ? 'Réafficher' : 'Masquer') + '</button>' +
+      '<button type="button" class="btn sm" data-mod="ban" data-id="' + esc(m.author) + '">Bloquer 7 jours</button></div>';
+  }
+  function modProfileRow(p) {
+    var banned = p.banned_until && new Date(p.banned_until) > new Date();
+    return '<div class="mod-row' + (p.hidden ? ' off' : '') + '"><span class="who">' + esc(p.pseudo) + '</span><span class="meta">' + esc(p.firm_name) + '</span>' +
+      (p.reports ? '<span class="chip warn">⚑ ' + p.reports + '</span>' : '') + (p.hidden ? '<span class="chip">vitrine masquée</span>' : '') +
+      (banned ? '<span class="chip">bloqué jusqu’au ' + when(p.banned_until) + '</span>' : '') + '<span class="body"></span>' +
+      '<button type="button" class="btn sm" data-mod="' + (p.hidden ? 'pshow' : 'phide') + '" data-id="' + esc(p.id) + '">' + (p.hidden ? 'Réafficher la vitrine' : 'Masquer la vitrine') + '</button>' +
+      '<button type="button" class="btn sm" data-mod="' + (banned ? 'unban' : 'ban') + '" data-id="' + esc(p.id) + '">' + (banned ? 'Débloquer' : 'Bloquer 7 jours') + '</button></div>';
+  }
+  function renderMod(o) {
+    $('mod').hidden = false;
+    $('modSum').textContent = plural(o.players, 'joueur inscrit', 'joueurs inscrits') + ' au multijoueur · ' +
+      plural(o.active_week, 'actif', 'actifs') + ' cette semaine · ' + plural(o.messages_day, 'message', 'messages') + ' ces dernières 24 h.';
+    var rep = o.reported || [], pro = o.profiles || [], rec = o.recent || [];
+    $('modReported').innerHTML = rep.length ? rep.map(modMsgRow).join('') : '<p class="empty">Aucun message signalé. ✅</p>';
+    $('modProfiles').innerHTML = pro.length ? pro.map(modProfileRow).join('') : '<p class="empty">Personne à surveiller. ✅</p>';
+    $('modRecent').innerHTML = rec.length ? rec.map(modMsgRow).join('') : '<p class="empty">Aucun message pour l’instant.</p>';
+  }
+  async function loadMod() {
+    try {
+      var r = await sb.rpc('admin_mod_overview');
+      if (r.error) { $('mod').hidden = true; return; }
+      renderMod(r.data || {});
+    } catch (e) {}
+  }
+
   function ui(state) {
     $('login').hidden = state !== 'login';
     $('dash').hidden = state !== 'dash';
@@ -350,7 +410,7 @@ a{color:var(--accent);font-weight:800}
     $('logout').hidden = state === 'login';
     if (state !== 'denied' && state !== 'dash') $('msg').textContent = '';
   }
-  window.CCStats = { render: render, ui: ui };
+  window.CCStats = { render: render, ui: ui, renderMod: renderMod };
 
   var sb = null;
   try {
@@ -387,6 +447,7 @@ a{color:var(--accent);font-weight:800}
       $('msg').textContent = '';
       ui('dash');
       render(r.data || {});
+      loadMod();
     } catch (e) {
       $('msg').textContent = 'Connexion à Supabase impossible. Vérifie ta connexion Internet.';
     } finally { loading = false; }
@@ -406,6 +467,17 @@ a{color:var(--accent);font-weight:800}
     load();
   });
   $('logout').addEventListener('click', async function () { await sb.auth.signOut(); ui('login'); });
+  $('mod').addEventListener('click', async function (e) {
+    var b = e.target.closest('[data-mod]');
+    if (!b) return;
+    var a = b.getAttribute('data-mod'), id = b.getAttribute('data-id'), r;
+    b.disabled = true;
+    if (a === 'hide' || a === 'show') r = await sb.rpc('admin_mod_message', { p_id: +id, p_hidden: a === 'hide' });
+    else if (a === 'ban' || a === 'unban') r = await sb.rpc('admin_mod_ban', { p_user: id, p_days: a === 'ban' ? 7 : 0 });
+    else if (a === 'phide' || a === 'pshow') r = await sb.rpc('admin_mod_profile', { p_user: id, p_hidden: a === 'phide' });
+    $('modMsg').textContent = r && r.error ? 'Action impossible : ' + r.error.message : '';
+    loadMod();
+  });
   $('period').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b) return;
