@@ -10,6 +10,9 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `config.json` | Les réglages du site : adresse, identifiants AdSense, informations légales. |
 | `build.js` | Fabrique le site final dans `docs/`. |
 | `serve.js` | Petit serveur pour tester le site sur ton ordinateur. |
+| `src/stats.html` | La page privée des statistiques. |
+| `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
+| `supabase.sql`, `supabase-stats.sql` | Les tables et règles à créer dans Supabase. |
 | `docs/` | Le site prêt à héberger. Il est regénéré à chaque `node build.js`, ne le modifie pas à la main. |
 
 ## Mettre à jour le site
@@ -67,6 +70,25 @@ Le même projet Supabase sert aussi à la **boîte à idées**. Les joueurs cliq
 - Personne d'autre que toi ne peut les lire : le site a seulement le droit d'en ajouter.
 - Un même navigateur ne peut envoyer qu'une idée par minute, et chaque message fait au plus 600 caractères.
 - Tant que Supabase n'est pas configuré, le bouton n'apparaît pas.
+
+### Statistiques de fréquentation
+
+Le site compte les visites de façon anonyme, sans cookie, et les enregistre dans le même projet Supabase. Pour chaque visite, il garde un identifiant tiré au hasard, la durée, le type d'appareil, la provenance, ainsi que le jour et le niveau de la partie. Les chiffres se consultent sur une page privée : **https://www.comptoir-et-cie.fr/stats.html**.
+
+Installation, à faire une seule fois :
+
+1. Dans **SQL Editor → New query**, colle le contenu de `supabase-stats.sql`, puis clique sur **Run**.
+2. Dans **Authentication → Users → Add user → Create new user**, crée ton compte avec l'adresse inscrite dans le fichier (`paul_guinot@orange.fr`) et un mot de passe. Coche **Auto Confirm User**.
+3. Ouvre `stats.html` et connecte-toi avec cette adresse et ce mot de passe.
+
+Pour donner l'accès à quelqu'un d'autre, ajoute son adresse dans la table `admins` (Table Editor), puis crée-lui un compte de la même façon.
+
+Bon à savoir :
+
+- Pour savoir d'où viennent les joueurs, ajoute `?ref=nom` à tes liens, par exemple `https://www.comptoir-et-cie.fr/?ref=tiktok`.
+- Les visites faites depuis ton ordinateur en local (`node serve.js`) ne sont pas comptées. Ajoute `?track=1` à l'adresse pour tester.
+- Les joueurs peuvent refuser le comptage sur la page Confidentialité.
+- Les visites de plus de 25 mois sont effacées automatiquement, comme le recommande la CNIL.
 
 ## Mise en ligne avec GitHub Pages (gratuit)
 

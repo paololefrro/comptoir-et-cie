@@ -1859,6 +1859,8 @@ function updateMorale(news){
   syncStations();
 }
 function givePrime(name){const m=S.staff.find(x=>x.name===name);if(!m||m.primeDay===S.day)return;if(!spend(m.salary,'invest'))return;m.morale=clamp((m.morale??80)+30,0,100);m.primeDay=S.day;toast(`🎉 Prime versée : ${m.name} a le sourire !`);renderPanel();}
+// Signal pour la mesure d'audience du site (rien n'est envoyé par le jeu lui-même)
+function statsPing(kind){try{window.dispatchEvent(new CustomEvent('cc-stats',{detail:{kind,day:S.day,level:S.level}}));}catch(e){}}
 function endDay(){
   R.phase='closed';R.cat=null;
   R.coins.forEach(k=>collectCoin(k,false));R.coins=[];
@@ -1905,7 +1907,7 @@ function endDay(){
   sm.autoOrder=0;if(S.upg.fournisseur){const b=S.money;orderAll(true);sm.autoOrder=b-S.money;}
   news.forEach(t=>pushNews(t,sm.day));sm.news=news;
   sm.record=record;
-  save();renderPanel();updateHud();
+  save();renderPanel();updateHud();statsPing('day');
   if(Cloud.user)Cloud.push(true).catch(()=>{});
   showSummary(sm,()=>maybeEvent(()=>{renderPanel();updateHud();save();if(autoOn())setTimeout(()=>{if(R.phase==='closed'&&$('#modal').hidden&&autoOn())openDay();},2500);}));
 }
@@ -2785,7 +2787,7 @@ function start(data){
   if(!S.social.feed.length)seedFeed();
   Cloud.init();
   try{document.fonts&&document.fonts.load('20px Pacifico');document.fonts&&document.fonts.load('900 12px Nunito');document.fonts&&document.fonts.load('40px "Lilita One"');}catch(e){}
-  renderPanel();updateHud();setSpeedUI();
+  renderPanel();updateHud();setSpeedUI();statsPing('start');
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
   startupModals();
 }

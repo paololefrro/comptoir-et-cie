@@ -7,6 +7,8 @@ const path = require('path');
 const root = __dirname;
 const cfg = JSON.parse(fs.readFileSync(path.join(root, 'config.json'), 'utf8'));
 const src = fs.readFileSync(path.join(root, 'src', 'jeu.html'), 'utf8');
+const AUDIENCE_JS = fs.readFileSync(path.join(root, 'src', 'audience.js'), 'utf8');
+const STATS_SRC = fs.readFileSync(path.join(root, 'src', 'stats.html'), 'utf8');
 const out = path.join(root, 'docs');
 fs.mkdirSync(out, { recursive: true });
 
@@ -90,6 +92,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font-body);line-hei
 .back{display:inline-block;font-weight:800;text-decoration:none}
 .card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:4px 20px 16px}
 mark{background:#ffe08a;color:#2b1d16;padding:0 4px;border-radius:4px}
+.btn{font:800 .9rem var(--font-body);color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 </style>`;
 
 const FOOTER = `<footer class="site-footer">
@@ -163,6 +167,7 @@ const index = `<!doctype html>
 <head>
 ${head(cfg.title || cfg.siteName, cfg.description, '/')}
 <script>window.SITE_CONFIG=${JSON.stringify(SITE_CONFIG)};</script>
+${cloud ? `<script>\n${AUDIENCE_JS.trim()}\n</script>` : ''}
 ${CLOUD_HEAD}
 ${gameStyle}
 ${SITE_CSS}
@@ -203,7 +208,7 @@ ${inner}
 
 const privacy = page('Politique de confidentialité', 'Comment ' + cfg.siteName + ' traite tes données.', 'confidentialite.html', `
 <h2>En bref</h2>
-<p>Le jeu ne te demande aucune information personnelle et n’a pas de compte utilisateur. Ta partie est enregistrée uniquement dans ton navigateur.</p>
+${cloud ? `<p>Le jeu se joue sans compte : ta partie est enregistrée dans ton navigateur. La sauvegarde en ligne avec ton e-mail est facultative. Le site compte les visites de façon anonyme, sans cookie, et tu peux refuser ce comptage plus bas.</p>` : `<p>Le jeu ne te demande aucune information personnelle et n’a pas de compte utilisateur. Ta partie est enregistrée uniquement dans ton navigateur.</p>`}
 <h2>Responsable du traitement</h2>
 <p>${editor}. Contact : ${contact}.</p>
 <h2>Sauvegarde de ta partie</h2>
@@ -212,6 +217,19 @@ ${cloud ? `<h2>Sauvegarde en ligne (facultative)</h2>
 <p>Si tu choisis de te connecter pour sauvegarder ta partie en ligne, nous conservons ton adresse e-mail (pour t’envoyer le lien de connexion) et les données de ta partie. Elles sont hébergées par Supabase et ne servent qu’à te permettre de retrouver ta partie. Tu peux supprimer ta sauvegarde en ligne à tout moment depuis la fenêtre « 💾 Sauvegarde ». Pour supprimer aussi ton compte, écris-nous à l’adresse ci-dessus.</p>
 <h2>Boîte à idées</h2>
 <p>Quand tu proposes une idée, nous enregistrons ton message, son type, le pseudo facultatif que tu choisis, ainsi que le jour et le niveau de ta partie. Ces suggestions, hébergées par Supabase, servent uniquement à améliorer le jeu et ne sont jamais affichées publiquement. N’y écris pas d’informations personnelles.</p>` : ''}
+${cloud ? `<h2>Mesure d’audience</h2>
+<p>Pour savoir combien de personnes jouent et améliorer le jeu, le site compte les visites de façon anonyme, sans cookie. Ton navigateur reçoit un identifiant tiré au hasard, gardé dans son stockage local pendant 13 mois au plus. À chaque visite, nous enregistrons cet identifiant, la durée de la visite, le type d’appareil (téléphone, tablette ou ordinateur), le site d’où tu arrives, ainsi que le jour et le niveau de ta partie. Nous n’enregistrons ni ton adresse IP ni ton nom.</p>
+<p>Ces données ne servent qu’à produire des statistiques sur la fréquentation du jeu. Elles ne sont pas croisées avec d’autres données ni transmises à des tiers. Elles sont hébergées par Supabase et effacées au bout de 25 mois.</p>
+<p><button type="button" class="btn" id="auditToggle" hidden></button> <span id="auditState" role="status"></span></p>
+<script>
+(function(){
+  var b=document.getElementById('auditToggle'),st=document.getElementById('auditState'),ls;
+  try{ls=window.localStorage;ls.getItem('x');}catch(e){st.textContent='Ton navigateur bloque le stockage local : tes visites ne sont pas comptées.';return;}
+  function show(){var off=ls.getItem('cc-noaudit')==='1';b.textContent=off?'Accepter à nouveau le comptage':'Ne plus compter mes visites';st.textContent=off?'Tes visites ne sont plus comptées sur ce navigateur.':'Tes visites sont comptées de façon anonyme.';b.hidden=false;}
+  b.addEventListener('click',function(){if(ls.getItem('cc-noaudit')==='1')ls.removeItem('cc-noaudit');else{ls.setItem('cc-noaudit','1');ls.removeItem('cc-vid');}show();});
+  show();
+})();
+</script>` : ''}
 <h2>Publicité</h2>
 <p>Le site affiche des annonces fournies par Google AdSense. Google et ses partenaires peuvent utiliser des cookies pour afficher des annonces, éventuellement personnalisées en fonction de tes visites sur ce site et sur d’autres sites. Lors de ta première visite, un message te permet d’accepter ou de refuser ces cookies. Tu peux changer d’avis à tout moment avec le lien « Gérer mes cookies » en bas de la page du jeu.</p>
 <p>Pour en savoir plus sur l’utilisation des données par Google : <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">policies.google.com/technologies/partner-sites</a>. Tu peux aussi gérer la personnalisation des annonces sur <a href="https://adssettings.google.com" rel="noopener" target="_blank">adssettings.google.com</a>.</p>
@@ -250,6 +268,9 @@ write('index.html', index);
 write('confidentialite.html', privacy);
 write('mentions-legales.html', legal);
 write('404.html', notFound);
+const LEVEL_NAMES = [...((src.match(/const LEVELS=\[([\s\S]*?)\];/) || [])[1] || '').matchAll(/name:'([^']+)'/g)].map(m => m[1]);
+if (cloud) write('stats.html', STATS_SRC.replace('__CLOUD__', JSON.stringify({ url: cloudUrl, key: cloudKey })).replace('__LEVELS__', JSON.stringify(LEVEL_NAMES)));
+else if (fs.existsSync(path.join(out, 'stats.html'))) fs.unlinkSync(path.join(out, 'stats.html'));
 write('favicon.svg', FAVICON);
 write('.nojekyll', '');
 write('robots.txt', `User-agent: *\nAllow: /\n${url ? `Sitemap: ${url}/sitemap.xml\n` : ''}`);
