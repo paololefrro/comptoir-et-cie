@@ -78,7 +78,7 @@ Le site compte les visites de façon anonyme, sans cookie, et les enregistre dan
 Installation, à faire une seule fois :
 
 1. Dans **SQL Editor → New query**, colle le contenu de `supabase-stats.sql`, puis clique sur **Run**.
-2. Dans **Authentication → Users → Add user → Create new user**, crée ton compte avec l'adresse inscrite dans le fichier (`paul_guinot@orange.fr`) et un mot de passe. Coche **Auto Confirm User**.
+2. Dans **Authentication → Users → Add user → Create new user**, crée ton compte avec ton adresse e-mail et un mot de passe. Coche **Auto Confirm User**. Ajoute ensuite cette adresse dans la table `admins` (Table Editor → admins → Insert row).
 3. Ouvre `stats.html` et connecte-toi avec cette adresse et ce mot de passe.
 
 Pour donner l'accès à quelqu'un d'autre, ajoute son adresse dans la table `admins` (Table Editor), puis crée-lui un compte de la même façon.

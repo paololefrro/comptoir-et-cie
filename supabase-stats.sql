@@ -60,7 +60,8 @@ grant execute on function public.track_visit(uuid, uuid, int, text, text, int, i
 create table if not exists public.admins (email text primary key);
 alter table public.admins enable row level security;
 revoke all on public.admins from anon, authenticated;
-insert into public.admins (email) values ('paul_guinot@orange.fr') on conflict do nothing;
+-- Remplace l'adresse ci-dessous par celle de ton compte, puis retire les deux tirets en début de ligne :
+-- insert into public.admins (email) values ('ton-adresse@exemple.fr') on conflict do nothing;
 
 create or replace function public.is_admin()
 returns boolean
