@@ -49,3 +49,10 @@ drop policy if exists "Envoyer une suggestion" on public.suggestions;
 
 create policy "Envoyer une suggestion" on public.suggestions
   for insert to anon, authenticated with check (status = 'nouvelle');
+
+-- Autorisations de l'API. Le projet n'expose pas les nouvelles tables automatiquement :
+-- chaque rôle reçoit seulement ce dont il a besoin, et les règles ci-dessus filtrent les lignes.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.saves to authenticated;
+grant insert on public.suggestions to anon, authenticated;
+grant usage on sequence public.suggestions_id_seq to anon, authenticated;

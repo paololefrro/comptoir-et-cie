@@ -10,8 +10,8 @@
     "content": ""
   },
   "adPreview": false,
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
+  "supabaseUrl": "https://wxxptrzjrxoahwxkbbob.supabase.co",
+  "supabaseAnonKey": "sb_publishable_cG6wRwRXPZuO3_I6CVdIAg_hD8hqcOY",
   "editorName": "Paul Guinot",
   "contactEmail": "paul_guinot@orange.fr",
   "hostName": "GitHub, Inc. (service GitHub Pages)",
