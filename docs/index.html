@@ -355,6 +355,10 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .chk{display:flex;gap:8px;align-items:center;font-weight:700;font-size:.86rem;cursor:pointer}
 .chk input{accent-color:var(--accent);width:18px;height:18px;flex:none}
 @media (max-width:560px){.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sugg-ta{width:100%;flex:none;resize:vertical;min-height:96px;font-weight:600}
+.sugg-form{display:flex;flex-direction:column;gap:8px}
+.sugg-form .txt{flex:none;width:100%}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .save-ta{width:100%;flex:none;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;font-weight:500;resize:vertical;word-break:break-all;min-height:62px}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 @media (prefers-reduced-motion:reduce){
@@ -808,6 +812,7 @@ const TROPHIES=[
  {id:'mis50',icon:'🎯',name:'Tireur d’élite',desc:'Réussir 50 missions du jour.',ok:()=>(S.life.missions||0)>=50},
  {id:'streak7',icon:'📅',name:'Fidèle au poste',desc:'Revenir jouer 7 jours d’affilée.',ok:()=>S.login.streak>=7},
  {id:'year',icon:'🍂',name:'Quatre saisons',desc:'Tenir une année complète (56 jours).',ok:()=>S.day>56},
+ {id:'idee',icon:'💡',name:'Bonne idée',desc:'Proposer une idée pour le jeu dans la boîte à idées.',ok:()=>!!S.flags.suggested},
  {id:'ipo',icon:'🔔',name:'Coté en Bourse',desc:'Faire entrer ton groupe en Bourse.',ok:()=>(S.legacy.ipos||0)>=1},
 ];
 
@@ -1845,6 +1850,46 @@ function bindCloudBox(msg){
     try{await Cloud.remove();closeModal();toast('Sauvegarde en ligne supprimée.');}catch(e){msg.textContent='❌ La suppression a échoué.';armDel=false;}});
 }
 
+/* ---------- Boîte à idées des joueurs (site uniquement, via Supabase) ---------- */
+const SUGG_CATS=[['produit','🍰 Nouveau produit'],['amelioration','🛠️ Amélioration ou nouvelle fonction'],['bug','🐞 Bug à corriger'],['autre','💬 Autre chose']];
+const suggestOn=()=>Cloud.on();
+function openSuggest(){
+  if(!suggestOn())return;
+  openModal(`<div class="modal-head"><span class="modal-ic">💡</span><div><p class="eyebrow">Boîte à idées</p><h2>Une idée pour le jeu ?</h2></div></div>
+  <p class="small" style="margin:0">Propose un nouveau produit, une amélioration, ou signale un bug. Toutes les suggestions sont lues, et les meilleures arrivent dans le jeu !</p>
+  <form id="suggForm" class="sugg-form" autocomplete="off" novalidate>
+   <label class="lbl-full" for="suggCat">Type de suggestion</label>
+   <select id="suggCat" class="txt">${SUGG_CATS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+   <label class="lbl-full" for="suggMsg">Ton idée</label>
+   <textarea id="suggMsg" class="txt sugg-ta" maxlength="600" rows="4" placeholder="Par exemple : un salon de thé japonais, un mode nuit, de nouvelles musiques…"></textarea>
+   <p class="bk-sub" id="suggCount">0 / 600</p>
+   <label class="lbl-full" for="suggName">Ton pseudo (facultatif)</label>
+   <input id="suggName" class="txt" maxlength="30" placeholder="Pour qu’on puisse te remercier">
+   <input type="text" id="suggWeb" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+   <p class="muted small" id="suggOut" aria-live="polite" style="margin:0">N’écris pas d’informations personnelles (adresse, téléphone…).</p>
+   <div class="btns"><button class="btn btn-primary" type="submit" id="suggSend">Envoyer mon idée</button><button class="btn" type="button" data-modal-ok>Fermer</button></div>
+  </form>`);
+  setTimeout(()=>{const t=document.getElementById('suggMsg');if(t)t.focus();},90);
+  const ta=document.getElementById('suggMsg'),cnt=document.getElementById('suggCount'),out=document.getElementById('suggOut'),btn=document.getElementById('suggSend');
+  ta.addEventListener('input',()=>{cnt.textContent=`${ta.value.length} / 600`;});
+  document.getElementById('suggForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(document.getElementById('suggWeb').value){out.textContent='✅ Merci !';return;}
+    const text=ta.value.trim();if(text.length<5){out.textContent='❌ Écris au moins quelques mots.';return;}
+    let last=0;try{last=+localStorage.getItem('cc-sugg-last')||0;}catch(err){last=0;}
+    if(Date.now()-last<60000){out.textContent='⏳ Merci ! Attends une minute avant d’envoyer une autre idée.';return;}
+    btn.disabled=true;out.textContent='Envoi en cours…';
+    try{
+      const {error}=await Cloud.sb.from('suggestions').insert({category:document.getElementById('suggCat').value,message:text,pseudo:(document.getElementById('suggName').value||'').trim()||null,game_day:S.day,game_level:S.level});
+      if(error)throw error;
+      try{localStorage.setItem('cc-sugg-last',String(Date.now()));}catch(err){}
+      S.flags.suggested=(S.flags.suggested||0)+1;saveSoon();
+      ta.value='';cnt.textContent='0 / 600';out.textContent='✅ Merci ! Ton idée est bien arrivée.';Snd.init();Snd.level();confettiBurst(60);
+    }catch(err){out.textContent='❌ L’envoi a échoué. Vérifie ta connexion, puis réessaie dans un instant.';}
+    btn.disabled=false;
+  });
+}
+
 /* ---------- Moral de l'équipe ---------- */
 function updateMorale(news){
   const rush=R.day.peakQueue>=6;
@@ -2587,7 +2632,7 @@ function tabObj(){
   return h;
 }
 function settingsHtml(){
-  return `<div class="settings"><span class="btns"><button class="btn btn-sm" data-act="savebox">💾 Sauvegarde</button><button class="btn btn-sm" data-act="sound">${S.sound?'🔊 Son activé':'🔈 Son coupé'}</button>${S.upg.brasdroit?`<button class="btn btn-sm ${S.auto?'btn-green':''}" data-act="auto">⏩ Mode continu : ${S.auto?'activé':'désactivé'}</button>`:''}</span>${R.confirmReset?`<span class="confirm">Effacer la partie ? <button class="btn btn-sm btn-primary" data-act="reset-yes">Oui, recommencer</button><button class="btn btn-sm" data-act="reset-no">Annuler</button></span>`:`<button class="btn btn-sm" data-act="reset">↺ Nouvelle partie</button>`}</div>`;
+  return `<div class="settings"><span class="btns">${suggestOn()?'<button class="btn btn-sm btn-gold" type="button" data-suggest>💡 Proposer une idée</button>':''}<button class="btn btn-sm" data-act="savebox">💾 Sauvegarde</button><button class="btn btn-sm" data-act="sound">${S.sound?'🔊 Son activé':'🔈 Son coupé'}</button>${S.upg.brasdroit?`<button class="btn btn-sm ${S.auto?'btn-green':''}" data-act="auto">⏩ Mode continu : ${S.auto?'activé':'désactivé'}</button>`:''}</span>${R.confirmReset?`<span class="confirm">Effacer la partie ? <button class="btn btn-sm btn-primary" data-act="reset-yes">Oui, recommencer</button><button class="btn btn-sm" data-act="reset-no">Annuler</button></span>`:`<button class="btn btn-sm" data-act="reset">↺ Nouvelle partie</button>`}</div>`;
 }
 function renderPanel(){
   const body=$('#tabBody');const st=body.scrollTop;
@@ -2738,6 +2783,7 @@ function bindUI(){
   $('#tabBody').addEventListener('input',e=>{if(e.target.id==='firmName'){R.firmName=e.target.value;return;}if(e.target.id==='frRate'){S.fr.rate=+e.target.value;const v=$('#frRateV');if(v)v.textContent=S.fr.rate+' %';const hh=$('#frRateHint');if(hh)hh.textContent=rateHint();saveSoon();return;}const id=e.target.dataset&&e.target.dataset.price;if(!id)return;S.items[id].price=Math.round(+e.target.value*10)/10;updatePriceUI(id);saveSoon();});
   document.querySelectorAll('.speed button').forEach(b=>b.addEventListener('click',()=>{R.speed=+b.dataset.speed;if(R.speed>0)S.speed=R.speed;setSpeedUI();saveSoon();}));
   $('#openBtn').addEventListener('click',()=>openDay());
+  document.addEventListener('click',e=>{const s=e.target.closest&&e.target.closest('[data-suggest]');if(s&&$('#modal').hidden){e.preventDefault();openSuggest();}});
   const goBilan=()=>{tab='bilan';R.bilanP='today';renderPanel();const p=document.querySelector('.panel');if(p&&p.scrollIntoView)p.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
   $('#moneyStat').addEventListener('click',goBilan);
   $('#moneyStat').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goBilan();}});
@@ -2828,6 +2874,7 @@ if(hot&&hot.ready)hot.ready(start);else start((hot&&hot.data)||{});
   <span>© 2026 Comptoir &amp; Cie</span>
   <a href="confidentialite.html">Confidentialité</a>
   <a href="mentions-legales.html">Mentions légales</a>
+  
   
 </footer>
 <script>

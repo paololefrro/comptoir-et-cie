@@ -59,6 +59,15 @@ La clé « anon » est faite pour être publique. Ce sont les règles du fichier
 
 Tant que ces deux champs sont vides, la sauvegarde en ligne n'apparaît pas : seuls le code et le fichier de sauvegarde sont proposés.
 
+### Boîte à idées
+
+Le même projet Supabase sert aussi à la **boîte à idées**. Les joueurs cliquent sur **💡 Proposer une idée** (en bas du panneau de gestion ou en bas de la page), choisissent un type (nouveau produit, amélioration, bug, autre) et écrivent leur idée.
+
+- Les suggestions arrivent dans **Supabase → Table Editor → suggestions**. Tu peux changer la colonne `status` (par exemple en `lue` ou `ajoutée`) pour t'y retrouver.
+- Personne d'autre que toi ne peut les lire : le site a seulement le droit d'en ajouter.
+- Un même navigateur ne peut envoyer qu'une idée par minute, et chaque message fait au plus 600 caractères.
+- Tant que Supabase n'est pas configuré, le bouton n'apparaît pas.
+
 ## Mise en ligne avec GitHub Pages (gratuit)
 
 1. Crée un compte sur https://github.com, puis un dépôt **public** nommé `comptoir-et-cie`.

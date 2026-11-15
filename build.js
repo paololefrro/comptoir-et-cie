@@ -96,6 +96,7 @@ const FOOTER = `<footer class="site-footer">
   <span>© ${year} ${esc(cfg.siteName)}</span>
   <a href="confidentialite.html">Confidentialité</a>
   <a href="mentions-legales.html">Mentions légales</a>
+  ${cloud ? '<button type="button" data-suggest>💡 Proposer une idée</button>' : ''}
   ${client ? '<button type="button" id="cookiePrefs">Gérer mes cookies</button>' : ''}
 </footer>`;
 
@@ -208,7 +209,9 @@ const privacy = page('Politique de confidentialité', 'Comment ' + cfg.siteName 
 <h2>Sauvegarde de ta partie</h2>
 <p>Ta progression est enregistrée dans le stockage local de ton navigateur (« localStorage »). Ces données restent sur ton appareil et servent uniquement à faire fonctionner le jeu. Tu peux les effacer avec le bouton « Nouvelle partie » ou en vidant les données du site dans ton navigateur.</p>
 ${cloud ? `<h2>Sauvegarde en ligne (facultative)</h2>
-<p>Si tu choisis de te connecter pour sauvegarder ta partie en ligne, nous conservons ton adresse e-mail (pour t’envoyer le lien de connexion) et les données de ta partie. Elles sont hébergées par Supabase et ne servent qu’à te permettre de retrouver ta partie. Tu peux supprimer ta sauvegarde en ligne à tout moment depuis la fenêtre « 💾 Sauvegarde ». Pour supprimer aussi ton compte, écris-nous à l’adresse ci-dessus.</p>` : ''}
+<p>Si tu choisis de te connecter pour sauvegarder ta partie en ligne, nous conservons ton adresse e-mail (pour t’envoyer le lien de connexion) et les données de ta partie. Elles sont hébergées par Supabase et ne servent qu’à te permettre de retrouver ta partie. Tu peux supprimer ta sauvegarde en ligne à tout moment depuis la fenêtre « 💾 Sauvegarde ». Pour supprimer aussi ton compte, écris-nous à l’adresse ci-dessus.</p>
+<h2>Boîte à idées</h2>
+<p>Quand tu proposes une idée, nous enregistrons ton message, son type, le pseudo facultatif que tu choisis, ainsi que le jour et le niveau de ta partie. Ces suggestions, hébergées par Supabase, servent uniquement à améliorer le jeu et ne sont jamais affichées publiquement. N’y écris pas d’informations personnelles.</p>` : ''}
 <h2>Publicité</h2>
 <p>Le site affiche des annonces fournies par Google AdSense. Google et ses partenaires peuvent utiliser des cookies pour afficher des annonces, éventuellement personnalisées en fonction de tes visites sur ce site et sur d’autres sites. Lors de ta première visite, un message te permet d’accepter ou de refuser ces cookies. Tu peux changer d’avis à tout moment avec le lien « Gérer mes cookies » en bas de la page du jeu.</p>
 <p>Pour en savoir plus sur l’utilisation des données par Google : <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">policies.google.com/technologies/partner-sites</a>. Tu peux aussi gérer la personnalisation des annonces sur <a href="https://adssettings.google.com" rel="noopener" target="_blank">adssettings.google.com</a>.</p>

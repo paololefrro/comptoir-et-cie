@@ -28,3 +28,24 @@ create policy "Modifier sa sauvegarde" on public.saves
 
 create policy "Supprimer sa sauvegarde" on public.saves
   for delete using (auth.uid() = user_id);
+
+-- Boîte à idées : les joueurs peuvent envoyer une suggestion, mais personne ne peut les lire
+-- depuis le site. Toi, tu les lis dans Supabase : Table Editor → suggestions.
+
+create table if not exists public.suggestions (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  category text not null check (category in ('produit', 'amelioration', 'bug', 'autre')),
+  message text not null check (char_length(message) between 5 and 600),
+  pseudo text check (pseudo is null or char_length(pseudo) <= 30),
+  game_day integer,
+  game_level integer,
+  status text not null default 'nouvelle'
+);
+
+alter table public.suggestions enable row level security;
+
+drop policy if exists "Envoyer une suggestion" on public.suggestions;
+
+create policy "Envoyer une suggestion" on public.suggestions
+  for insert to anon, authenticated with check (status = 'nouvelle');
