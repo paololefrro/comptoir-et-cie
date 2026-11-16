@@ -264,7 +264,18 @@ module.exports = [
     <tr><td>👑 Empire mondial</td><td>90</td></tr>
   </tbody>
 </table>
-<p>Chaque palier rend ta marque plus attirante. Et pour les plus ambitieux, l’entrée en Bourse permet de repartir de zéro avec des parts de fondateur, qui donnent des bonus permanents à chaque nouvelle aventure.</p>
+<p>Chaque palier rend ta marque plus attirante.</p>
+
+<h2>Entrer en Bourse</h2>
+<p>Quand ta société vaut au moins 100 000 €, l’onglet « 📈 Bourse » te permet de faire coter ton groupe. Tu vends une partie du capital, de 10 à 49 %, à des investisseurs et tu récupères aussitôt de l’argent frais. Rien n’est remis à zéro : ton café, ta caisse, tes adresses et ta progression restent intacts, et tu gardes toujours la majorité.</p>
+<p>Le cours de ton action suit la valeur de ton groupe et tes bénéfices des sept derniers jours. Il bouge chaque soir avec l’humeur du marché et quelques événements : euphorie, coup de froid, article élogieux… Tu peux ensuite :</p>
+<ul>
+  <li><b>lever plus d’argent</b> en émettant de nouvelles actions, tant que tu gardes 51 % du capital ;</li>
+  <li><b>racheter tes actions</b> pour reprendre une plus grosse part ;</li>
+  <li><b>verser des dividendes</b>, de 10 à 50 % du bénéfice du jour : ils rassurent les investisseurs et font monter ton cours ;</li>
+  <li><b>investir dans les groupes rivaux</b> de la ville, qui versent eux aussi un petit dividende chaque soir.</li>
+</ul>
+<p>Astuce : une action se vend mieux quand le cours est haut. Soigne tes bénéfices et ta réputation avant de lever de l’argent.</p>
 `},
 {
   slug: 'guide-multijoueur',
@@ -291,6 +302,10 @@ module.exports = [
 
 <h2>Les clubs</h2>
 <p>Un club réunit jusqu’à vingt cafés. On peut en fonder un dès le niveau 3, pour 5 000 €. Chaque semaine, les membres doivent servir ensemble un nombre de clients fixé selon la taille du club. Quand l’objectif est atteint, chaque membre récupère une récompense. Le club a aussi son <b>salon privé</b> pour discuter entre membres.</p>
+
+<h2>La Bourse entre joueurs</h2>
+<p>Si ton groupe est coté en Bourse, tu peux proposer une partie de tes actions aux autres joueurs, depuis l’onglet « 📈 Bourse ». Ils les achètent au cours de ta dernière clôture, et l’argent arrive dans ta caisse à ta prochaine connexion ou à la fin de ta journée.</p>
+<p>À l’inverse, tu peux acheter des actions des cafés des autres joueurs. Chaque soir où ce café fait un bénéfice et verse un dividende, tu touches ta part. Tu peux revendre tes actions à tout moment au cours du jour, moins 2 % de frais. Si un café quitte le multijoueur, ses actionnaires sont remboursés au dernier cours. Les parties qui ont utilisé un code secret ne peuvent pas échanger d’actions avec les joueurs.</p>
 
 <h2>La terrasse et les règles</h2>
 <p>La terrasse est le salon de discussion commun de tous les joueurs. Pour que tout le monde s’y sente bien :</p>

@@ -13,7 +13,7 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `src/guides.js` | Les guides du jeu publiés sur le site (une page par guide, plus la page `guides.html`). |
 | `src/stats.html` | La page privée des statistiques. |
 | `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
-| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql`, `supabase-cadeaux.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
+| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql`, `supabase-cadeaux.sql`, `supabase-bourse.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
 | `docs/` | Le site prêt à héberger. Il est regénéré à chaque `node build.js`, ne le modifie pas à la main. |
 
 ## Mettre à jour le site
@@ -46,7 +46,6 @@ Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à c
 | `TOUTDEBLOQUER` | Débloque toute la carte |
 | `EQUIPEDREVE` | Comptoir agrandi au maximum, équipe au moral maximal |
 | `FRANCHISEXPRESS` | Crée la société, lance la franchise et fait venir 5 candidats |
-| `FONDATEUR` | +5 parts de fondateur |
 
 ### Cadeaux aux joueurs
 
@@ -56,7 +55,6 @@ Sur `stats.html`, la carte **🎁 Offrir un cadeau à un joueur** permet de choi
 - 📱 des abonnés, au plus 10 millions ;
 - ⭐ de l’XP, au plus 1 million ;
 - 🆙 des niveaux en plus, jusqu’au niveau maximum ;
-- 🏅 des parts de fondateur, au plus 100 ;
 - 🌟 une réputation à 5 ★ ;
 - 📦 une réserve pleine ;
 - 🍽️ toute la carte débloquée ;
@@ -117,7 +115,7 @@ La vitrine de chaque joueur se met à jour chaque soir de jeu. Les parties qui o
 Installation, à faire une seule fois :
 
 1. Dans **Authentication → Sign In / Providers**, active **Allow anonymous sign-ins**, puis enregistre.
-2. Dans **SQL Editor**, exécute `supabase-multi.sql` après `supabase-stats.sql`, puis `supabase-multi2.sql` (défis et clubs).
+2. Dans **SQL Editor**, exécute `supabase-multi.sql` après `supabase-stats.sql`, puis `supabase-multi2.sql` (défis et clubs), `supabase-cadeaux.sql` et `supabase-bourse.sql` (Bourse entre joueurs).
 
 Modération :
 
@@ -126,6 +124,17 @@ Modération :
 - Un message signalé 3 fois est masqué automatiquement. Une vitrine signalée 5 fois l'est aussi.
 - Sur `stats.html`, la carte **Modération du multijoueur** liste les messages signalés, les joueurs à surveiller, les clubs et les derniers messages. Tu peux y masquer ou réafficher un message, une vitrine ou un club, et bloquer un joueur 7 jours. Un club signalé 5 fois est masqué automatiquement.
 - Les messages de plus de 60 jours sont effacés automatiquement.
+
+### Bourse (onglet « 📈 Bourse »)
+
+L’onglet s’ouvre dès que le joueur a créé sa société. L’ancien système d’héritage (entrée en Bourse qui remettait la partie à zéro, parts de fondateur et bonus permanents) a disparu : les parts de fondateur des anciennes sauvegardes sont converties une fois en argent, 10 000 € par part.
+
+- **Introduction en Bourse** : dès 100 000 € de valeur, le joueur vend 10 à 49 % du capital (frais de 5 %). Le fondateur garde toujours ses 100 000 actions : de nouvelles actions sont créées pour les investisseurs. Rien n’est remis à zéro.
+- **Cours** : valeur du groupe (trésorerie et placements compris) plus 15 fois le bénéfice moyen des 7 derniers jours, divisée par le nombre d’actions, avec un bonus de confiance (dividende, réputation), l’humeur du marché et des événements le soir.
+- **Émettre ou racheter** des actions (frais de 3 % ou prime de 2 %). Le joueur garde au moins 51 % du capital.
+- **Dividendes** : 0, 10, 25 ou 50 % du bénéfice du jour, versés seulement aux autres actionnaires et seulement les jours bénéficiaires.
+- **Groupes rivaux** : achat et vente d’actions des trois groupes de la ville (frais de 1 %), avec un petit dividende chaque soir.
+- **Entre joueurs** (multijoueur) : un joueur coté propose des actions ; les autres les achètent au cours de sa dernière clôture. L’argent et les dividendes arrivent à la connexion suivante ou en fin de journée (fonction `mp_stock_claim`). Revente au marché au cours du jour moins 2 %. Si un café quitte le multijoueur, ses actionnaires sont remboursés au dernier cours. Les parties avec un code secret (hors vitrines exemptées) ne peuvent ni acheter ni proposer d’actions. Garde-fous côté serveur : cours limité à 5 fois la valeur de la vitrine, variation au plus ×2 d’une publication à l’autre, dividende au plus 5 % du cours et une fois toutes les 30 secondes.
 
 Supabase recommande d'activer un captcha pour les comptes anonymes quand le jeu devient populaire (**Authentication → Attack Protection**).
 

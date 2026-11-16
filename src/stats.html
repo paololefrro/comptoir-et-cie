@@ -468,7 +468,6 @@ a{color:var(--accent);font-weight:800}
     { k: 'followers', icon: '📱', name: 'Abonnés', def: 5000, max: 10000000 },
     { k: 'xp', icon: '⭐', name: 'Expérience (XP)', def: 1000, max: 1000000 },
     { k: 'levels', icon: '🆙', name: 'Niveaux en plus', def: 1, max: 11 },
-    { k: 'shares', icon: '🏅', name: 'Parts de fondateur', def: 5, max: 100 },
     { k: 'rep', icon: '🌟', name: 'Réputation à 5 ★' },
     { k: 'stock', icon: '📦', name: 'Réserve pleine', hint: 'Tous ses produits au maximum de stock' },
     { k: 'menu', icon: '🍽️', name: 'Toute la carte débloquée' },
@@ -481,7 +480,7 @@ a{color:var(--accent);font-weight:800}
       case 'followers': return fmt(a) + ' abonnés';
       case 'xp': return fmt(a) + ' XP';
       case 'levels': return a + (a > 1 ? ' niveaux' : ' niveau');
-      case 'shares': return a + (a > 1 ? ' parts' : ' part') + ' de fondateur';
+      case 'shares': return a + (a > 1 ? ' parts' : ' part') + ' de fondateur (ancien cadeau)';
       case 'rep': return 'réputation à 5 ★';
       case 'stock': return 'réserve pleine';
       case 'menu': return 'toute la carte débloquée';
