@@ -79,7 +79,19 @@ th,td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);white
 th{font-weight:800;color:var(--ink-2)}
 th:first-child,td:first-child{text-align:left}
 .foot{color:var(--ink-2);font-size:.82rem;margin-top:14px}
-#mod{margin-top:12px}
+#mod,#gift{margin-top:12px}
+.field{font:600 .95rem var(--font-body);color:var(--ink);background:var(--card-2);border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.field:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.gift-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.gift-row .field{flex:1 1 220px}
+.gift-presets{display:flex;gap:6px;flex-wrap:wrap}
+.gift-kinds{display:flex;flex-wrap:wrap;margin:6px 0}
+.gift-lbl{display:block;font-weight:800;font-size:.85rem;margin-top:6px}
+.gift-player{display:flex;gap:12px;align-items:center;background:var(--card-2);border-radius:14px;padding:10px 12px;margin:8px 0}
+.gift-player .av{font-size:1.6rem}
+.gift-player b{display:block}
+.gift-player span{display:block;font-size:.84rem;color:var(--ink-2)}
+.btn.go{background:var(--accent);border-color:var(--accent);color:var(--on-accent);margin-top:6px}
 .mod-h{font:900 .9rem var(--font-body);margin:14px 0 4px}
 .mod-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem}
 .mod-row:last-child{border-bottom:0}
@@ -170,6 +182,35 @@ a{color:var(--accent);font-weight:800}
       <section class="card"><h2>💡 Boîte à idées</h2><div id="sugg"></div></section>
       <section class="card"><h2>☁️ Sauvegardes en ligne</h2><div id="acc"></div></section>
     </div>
+
+    <section class="card" id="gift" hidden>
+      <h2>🎁 Offrir un cadeau à un joueur</h2>
+      <p class="hint">Tape l’e-mail d’un compte ou le pseudo d’un joueur du multijoueur. Le cadeau lui est remis à sa prochaine ouverture du jeu, ou à la fin de sa prochaine journée.</p>
+      <form id="giftFind" class="gift-row" autocomplete="off">
+        <input id="giftTarget" class="field" placeholder="E-mail ou pseudo en ligne" aria-label="E-mail ou pseudo du joueur" maxlength="120">
+        <button class="btn" type="submit">🔍 Chercher</button>
+      </form>
+      <p class="msg" id="giftMsg" role="status"></p>
+      <div id="giftPlayer"></div>
+      <form id="giftForm" hidden autocomplete="off">
+        <div class="seg gift-kinds" role="group" aria-label="Type de cadeau">
+          <button type="button" data-gk="money" aria-pressed="true">💰 Argent</button>
+          <button type="button" data-gk="followers" aria-pressed="false">📱 Abonnés</button>
+          <button type="button" data-gk="xp" aria-pressed="false">⭐ XP</button>
+          <button type="button" data-gk="max" aria-pressed="false">👑 Tout au max</button>
+        </div>
+        <div class="gift-row" id="giftAmountRow">
+          <input id="giftAmount" class="field" type="number" min="1" step="1" value="10000" aria-label="Quantité offerte">
+          <span class="gift-presets" id="giftPresets"></span>
+        </div>
+        <p class="hint" id="giftKindHint"></p>
+        <label class="gift-lbl" for="giftNote">Petit message pour le joueur (facultatif)</label>
+        <div class="gift-row"><input id="giftNote" class="field" maxlength="120" placeholder="Par exemple : bravo pour ta victoire au concours !"></div>
+        <button class="btn go" type="submit" id="giftSend">🎁 Envoyer le cadeau</button>
+      </form>
+      <h3 class="mod-h">Derniers cadeaux envoyés</h3>
+      <div id="giftRecent"></div>
+    </section>
 
     <section class="card" id="mod" hidden>
       <h2>🛡️ Modération du multijoueur</h2>
@@ -420,6 +461,52 @@ a{color:var(--accent);font-weight:800}
     $('logout').hidden = state === 'login';
     if (state !== 'denied' && state !== 'dash') $('msg').textContent = '';
   }
+  // ---------- Cadeaux aux joueurs
+  var giftUser = null, giftKind = 'money';
+  var GIFT_PRESETS = { money: [1000, 10000, 100000, 1000000], followers: [1000, 10000, 100000], xp: [500, 5000, 50000] };
+  var GIFT_HINT = {
+    money: 'Ajouté à sa trésorerie. Au plus 100 000 000 € par cadeau.',
+    followers: 'Ajoutés à ses abonnés sur les réseaux. Au plus 10 millions par cadeau.',
+    xp: 'Peut lui faire passer un ou plusieurs niveaux. Au plus 1 million d’XP par cadeau.',
+    max: 'Met toute sa partie au maximum (niveau, carte, labo, équipe, adresses, franchise). Comme un code secret, cela place sa vitrine hors classement.'
+  };
+  var GIFT_UNIT = { money: ' €', followers: ' abonnés', xp: ' XP' };
+  function giftWho(u) { return u.pseudo || u.email || 'ce joueur'; }
+  function giftLabel() {
+    if (!giftUser) return '🎁 Envoyer le cadeau';
+    if (giftKind === 'max') return '👑 Offrir « tout au maximum » à ' + giftWho(giftUser);
+    return '🎁 Offrir ' + fmt(+$('giftAmount').value || 0) + GIFT_UNIT[giftKind] + ' à ' + giftWho(giftUser);
+  }
+  function giftKindUI() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gk]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-gk') === giftKind)); });
+    $('giftAmountRow').hidden = giftKind === 'max';
+    $('giftPresets').innerHTML = (GIFT_PRESETS[giftKind] || []).map(function (v) { return '<button type="button" class="btn sm" data-ga="' + v + '">' + fmt(v) + (GIFT_UNIT[giftKind] || '') + '</button>'; }).join('');
+    $('giftKindHint').textContent = GIFT_HINT[giftKind];
+    var b = $('giftSend'); delete b.dataset.armed; b.textContent = giftLabel();
+  }
+  function giftPlayerHtml(u) {
+    var seen = u.updated_at || u.last_sign_in_at;
+    return '<div class="gift-player"><span class="av" aria-hidden="true">' + esc(u.emoji || '☕') + '</span><div>' +
+      '<b>' + (u.pseudo ? esc(u.pseudo) + ' · ' + esc(u.firm_name || '') : 'Pas encore dans le multijoueur') + '</b>' +
+      '<span>' + (u.email ? esc(u.email) : 'Compte anonyme (sans e-mail)') + (u.level ? ' · niveau ' + u.level : '') + (u.firm_value ? ' · ' + fmt(u.firm_value) + ' €' : '') + (u.cheater ? ' · 🎭 hors classement' : '') + '</span>' +
+      '<span>' + (seen ? 'Dernière activité : ' + when(seen) : '') + (u.pending ? ' · 🎁 ' + plural(u.pending, 'cadeau en attente', 'cadeaux en attente') : '') + '</span>' +
+      '</div></div>';
+  }
+  async function loadGifts() {
+    try {
+      var r = await sb.rpc('admin_gifts_recent');
+      if (r.error) { $('gift').hidden = true; return; }
+      $('gift').hidden = false;
+      var L = r.data || [];
+      $('giftRecent').innerHTML = L.length ? L.map(function (g) {
+        var what = g.kind === 'max' ? '👑 Tout au maximum' : (g.kind === 'money' ? '💰 ' : g.kind === 'xp' ? '⭐ ' : '📱 ') + fmt(g.amount) + GIFT_UNIT[g.kind];
+        return '<div class="mod-row"><span class="who">' + esc(g.pseudo || g.email || 'Joueur supprimé') + '</span><span class="meta">' + when(g.created_at) + '</span>' +
+          '<span class="chip' + (g.claimed_at ? '' : ' warn') + '">' + (g.claimed_at ? 'Reçu le ' + when(g.claimed_at) : 'En attente') + '</span>' +
+          '<span class="body">' + what + (g.note ? ' · « ' + esc(g.note) + ' »' : '') + '</span></div>';
+      }).join('') : '<p class="empty">Aucun cadeau envoyé pour l’instant.</p>';
+    } catch (e) {}
+  }
+
   window.CCStats = { render: render, ui: ui, renderMod: renderMod };
 
   var sb = null;
@@ -458,6 +545,7 @@ a{color:var(--accent);font-weight:800}
       ui('dash');
       render(r.data || {});
       loadMod();
+      loadGifts();
     } catch (e) {
       $('msg').textContent = 'Connexion à Supabase impossible. Vérifie ta connexion Internet.';
     } finally { loading = false; }
@@ -477,6 +565,54 @@ a{color:var(--accent);font-weight:800}
     load();
   });
   $('logout').addEventListener('click', async function () { await sb.auth.signOut(); ui('login'); });
+  $('giftFind').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var t = $('giftTarget').value.trim();
+    if (!t) return;
+    $('giftMsg').textContent = 'Recherche…';
+    var r = await sb.rpc('admin_find_player', { p_target: t });
+    if (r.error) { $('giftMsg').textContent = 'Recherche impossible : ' + r.error.message; return; }
+    if (!r.data) {
+      giftUser = null; $('giftPlayer').innerHTML = ''; $('giftForm').hidden = true;
+      $('giftMsg').textContent = 'Aucun joueur trouvé avec cet e-mail ou ce pseudo. Seuls les joueurs qui ont créé un compte (e-mail ou multijoueur) peuvent recevoir un cadeau.';
+      return;
+    }
+    giftUser = r.data; $('giftMsg').textContent = '';
+    $('giftPlayer').innerHTML = giftPlayerHtml(giftUser);
+    $('giftForm').hidden = false; giftKindUI();
+  });
+  $('giftForm').addEventListener('click', function (e) {
+    var k = e.target.closest('[data-gk]');
+    if (k) { giftKind = k.getAttribute('data-gk'); var p = GIFT_PRESETS[giftKind]; if (p) $('giftAmount').value = p[1] || p[0]; giftKindUI(); return; }
+    var a = e.target.closest('[data-ga]');
+    if (a) { $('giftAmount').value = a.getAttribute('data-ga'); giftKindUI(); }
+  });
+  $('giftAmount').addEventListener('input', function () { var b = $('giftSend'); delete b.dataset.armed; b.textContent = giftLabel(); });
+  $('giftForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!giftUser) return;
+    var b = $('giftSend');
+    var amount = Math.round(+$('giftAmount').value || 0);
+    if (giftKind !== 'max' && amount < 1) { $('giftMsg').textContent = 'Indique une quantité d’au moins 1.'; return; }
+    // Deux clics pour éviter les envois par erreur
+    if (!b.dataset.armed) {
+      b.dataset.armed = '1'; b.textContent = '✅ Confirmer : ' + giftLabel().replace(/^\S+\s/, '');
+      setTimeout(function () { if (b.dataset.armed) { delete b.dataset.armed; b.textContent = giftLabel(); } }, 5000);
+      return;
+    }
+    delete b.dataset.armed; b.disabled = true;
+    var r = await sb.rpc('admin_gift', { p_user: giftUser.id, p_kind: giftKind, p_amount: giftKind === 'max' ? null : amount, p_note: $('giftNote').value.trim() || null });
+    b.disabled = false;
+    if (r.error || !r.data || !r.data.ok) {
+      $('giftMsg').textContent = 'Envoi impossible : ' + ((r.data && r.data.error) || (r.error && r.error.message) || 'erreur inconnue') + '.';
+    } else {
+      $('giftMsg').textContent = '✅ Cadeau envoyé ! ' + giftWho(giftUser) + ' le recevra à sa prochaine ouverture du jeu, ou à la fin de sa journée.';
+      $('giftNote').value = ''; giftUser.pending = (giftUser.pending || 0) + 1;
+      $('giftPlayer').innerHTML = giftPlayerHtml(giftUser); loadGifts();
+    }
+    giftKindUI();
+  });
+
   $('mod').addEventListener('click', async function (e) {
     var b = e.target.closest('[data-mod]');
     if (!b) return;

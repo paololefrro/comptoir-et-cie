@@ -1841,16 +1841,30 @@ function maxOut(){
   syncStations();syncSeats();checkTier();checkTrophies();
 }
 // Cadeaux de compte offerts depuis Supabase (table gifts), appliqués à la connexion
+let giftBusy=false;
 async function claimGifts(){
-  if(!Cloud.linked())return;
-  let gifts=[];try{gifts=await mpRpc('claim_gifts')||[];}catch(e){return;}
+  if(!Cloud.user||giftBusy)return;giftBusy=true;
+  let gifts=[];try{gifts=await mpRpc('claim_gifts')||[];}catch(e){gifts=[];}
+  giftBusy=false;if(!gifts.length)return;
   gifts.forEach(g=>{
-    if(g.kind!=='max')return;
-    const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;
-    showBanner('👑 Compte boosté !','Tout est au maximum');confettiBurst(220);Snd.level();
-    toast('👑 '+(g.note||'Ton compte a été boosté au maximum !'),'gold');
+    const a=Math.max(0,+g.amount||0),note=g.note?` « ${g.note} »`:'';
+    if(g.kind==='max'){
+      const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;
+      showBanner('👑 Compte boosté !','Tout est au maximum');
+      toast('👑 '+(g.note||'Ton compte a été boosté au maximum !'),'gold');
+    }else if(g.kind==='money'&&a){
+      S.money+=a;book('recompenses',a);showBanner('🎁 Un cadeau pour toi !',`+${money(a)} en caisse`);
+      toast(`🎁 Cadeau de l’équipe : +${money(a)}${note}`,'gold');
+    }else if(g.kind==='followers'&&a){
+      S.social.followers+=a;showBanner('🎁 Un cadeau pour toi !',`+${fmtK(a)} abonnés`);
+      toast(`🎁 Cadeau de l’équipe : +${fmtK(a)} abonnés${note}`,'gold');
+    }else if(g.kind==='xp'&&a){
+      addXP(a);showBanner('🎁 Un cadeau pour toi !',`+${fmtK(a)} XP`);
+      toast(`🎁 Cadeau de l’équipe : +${fmtK(a)} XP${note}`,'gold');
+    }
   });
-  if(gifts.some(g=>g.kind==='max')){save();renderPanel();updateHud();Cloud.push(true).catch(()=>{});if(MP.me){MP.lastPub=0;mpPublish(true);}}
+  confettiBurst(200);Snd.level();save();renderPanel();updateHud();
+  if(Cloud.linked())Cloud.push(true).catch(()=>{});if(MP.me){MP.lastPub=0;mpPublish(true);}
 }
 const CHEATS={
  TOUTAUMAX:{d:'Tout au maximum : niveau, carte ★★★, labo, équipe, adresses et franchise mondiale',f(){maxOut();}},
@@ -2625,6 +2639,7 @@ function endDay(){
   save();renderPanel();updateHud();statsPing('day');
   if(Cloud.linked())Cloud.push(true).catch(()=>{});
   mpAfterDay(sm);
+  if(Cloud.user)setTimeout(claimGifts,4000);
   showSummary(sm,()=>maybeEvent(()=>{renderPanel();updateHud();save();if(autoOn())setTimeout(()=>{if(R.phase==='closed'&&$('#modal').hidden&&autoOn())openDay();},2500);}));
 }
 function addCampaign(c){const ex=S.campaigns.find(x=>x.id===c.id);if(ex)ex.days=Math.max(ex.days,c.days);else S.campaigns.push(Object.assign({},c));}

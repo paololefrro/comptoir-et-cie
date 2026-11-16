@@ -13,7 +13,7 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `src/guides.js` | Les guides du jeu publiés sur le site (une page par guide, plus la page `guides.html`). |
 | `src/stats.html` | La page privée des statistiques. |
 | `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
-| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
+| `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql`, `supabase-cadeaux.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
 | `docs/` | Le site prêt à héberger. Il est regénéré à chaque `node build.js`, ne le modifie pas à la main. |
 
 ## Mettre à jour le site
@@ -48,16 +48,22 @@ Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à c
 | `FRANCHISEXPRESS` | Crée la société, lance la franchise et fait venir 5 candidats |
 | `FONDATEUR` | +5 parts de fondateur |
 
-### Cadeaux de compte
+### Cadeaux aux joueurs
 
-Pour offrir un boost au maximum à un joueur connecté avec son e-mail, exécute dans **SQL Editor** :
+Sur `stats.html`, la carte **🎁 Offrir un cadeau à un joueur** permet d’offrir à un joueur :
 
-```sql
-insert into public.gifts (user_id, kind, note)
-  select id, 'max', 'Cadeau de l’équipe' from auth.users where email = 'adresse@exemple.fr';
-```
+- de l’argent, au plus 100 000 000 € par cadeau ;
+- des abonnés, au plus 10 millions ;
+- de l’XP, au plus 1 million ;
+- le boost **tout au maximum**.
 
-Le boost s’applique tout seul la prochaine fois que la personne ouvre le jeu connectée à ce compte. Comme un code secret, il place la partie hors classement.
+Pour l’utiliser :
+
+1. Tape l’e-mail de son compte ou son pseudo du multijoueur, puis clique sur **Chercher** : sa fiche s’affiche (enseigne, niveau, dernière activité, cadeaux en attente).
+2. Choisis le cadeau et la quantité, ajoute si tu veux un petit message, puis clique deux fois sur le bouton d’envoi : le deuxième clic confirme.
+3. Le joueur reçoit le cadeau tout seul, avec une animation et ton message, à sa prochaine ouverture du jeu ou à la fin de sa prochaine journée. La liste « Derniers cadeaux envoyés » indique s’il l’a reçu.
+
+L’argent, les abonnés et l’XP ne changent rien au classement. Le boost tout au maximum, lui, place la partie hors classement, comme un code secret. Seuls les joueurs qui ont un compte (e-mail ou multijoueur) peuvent recevoir un cadeau. L’installation demande `supabase-cadeaux.sql`, à exécuter après les autres fichiers SQL.
 
 ## Sauvegarde des joueurs
 
