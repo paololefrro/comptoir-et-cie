@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Comptoir &amp; Cie</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Nunito:wght@600;800&amp;display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#e4eedd;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Un clic et ton café t’attend, sur n’importe quel appareil.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e4eedd;font-family:Nunito,'Segoe UI',Helvetica,Arial,sans-serif;color:#2b1d16;">
+<tr><td align="center" style="padding:28px 12px 32px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+    <tr><td align="center" style="padding:0 0 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" valign="middle" width="58" height="58" style="width:58px;height:58px;background:#e2456b;border-radius:18px;font-size:30px;line-height:58px;text-align:center;">☕</td>
+      </tr></table>
+      <div style="font-family:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:27px;line-height:1.2;color:#2f5e45;margin-top:8px;">Comptoir &amp; Cie</div>
+      <div style="font-size:13px;font-weight:800;color:#67584d;margin-top:2px;">Le jeu de gestion de café</div>
+    </td></tr>
+    <tr><td style="background:#fbfdf8;border:2px solid #d0dfc4;border-radius:22px;padding:28px 26px 26px;">
+      <div style="font-size:12.5px;font-weight:800;color:#e2456b;text-transform:uppercase;letter-spacing:1.2px;">Connexion</div>
+      <h1 style="margin:6px 0 12px;font-family:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:30px;font-weight:400;line-height:1.15;color:#2b1d16;">Ton café t’attend !</h1>
+      <p style="margin:0 0 22px;font-size:16px;line-height:1.55;font-weight:600;color:#4a3c32;">Clique sur le bouton pour te connecter et retrouver ta partie, ta vitrine et ta place au classement. Pas besoin de mot de passe.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 22px;"><tr>
+        <td align="center" style="background:#e2456b;border-radius:16px;border-bottom:4px solid #b82f51;">
+          <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 30px;font-family:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:20px;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:16px;">☕ Retrouver ma partie</a>
+        </td>
+      </tr></table>
+      <div style="background:#fbecce;border:2px dashed #f0ad3c;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;font-weight:800;color:#2b1d16;">⏱️ Ce lien ne sert qu’une fois et expire au bout d’une heure. Tu peux l’ouvrir sur n’importe quel appareil : ta partie en ligne t’y attend.</div>
+      <p style="margin:18px 0 0;font-size:12.5px;line-height:1.5;color:#67584d;">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><a href="{{ .ConfirmationURL }}" style="color:#2f5e45;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+    </td></tr>
+    <tr><td align="center" style="padding:16px 10px 0;font-size:12.5px;line-height:1.55;color:#67584d;">
+      Tu n’as rien demandé ? Ignore simplement cet e-mail : personne ne peut utiliser ton compte sans ce lien.<br>
+      ☕ <a href="https://www.comptoir-et-cie.fr" style="color:#2f5e45;font-weight:800;text-decoration:none;">www.comptoir-et-cie.fr</a>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>

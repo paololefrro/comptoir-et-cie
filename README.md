@@ -105,6 +105,18 @@ La clé « anon » est faite pour être publique. Ce sont les règles du fichier
 
 Tant que ces deux champs sont vides, la sauvegarde en ligne n'apparaît pas : seuls le code et le fichier de sauvegarde sont proposés.
 
+### E-mails de connexion aux couleurs du jeu
+
+Le dossier `emails/` contient les modèles d’e-mails de Supabase aux couleurs de Comptoir & Cie (généré par `node emails/generer.js`, aperçu dans `emails/apercu.html`).
+
+| Modèle Supabase | Fichier | Objet |
+| --- | --- | --- |
+| Magic link or OTP | `connexion.html` | ☕ Ton lien pour retrouver ta partie · Comptoir & Cie |
+| Change email address | `confirmation-adresse.html` | ✅ Confirme ton adresse pour garder ta partie · Comptoir & Cie |
+| Confirm sign up | `inscription.html` | ☕ Bienvenue au Comptoir ! Confirme ton adresse |
+
+Supabase ne permet de modifier les modèles qu’avec un **SMTP personnalisé** (Authentication → Emails → SMTP Settings). Une fois le SMTP branché : Authentication → Emails → Templates, choisir le modèle, coller l’objet et le contenu du fichier, puis enregistrer. Les variables `{{ .ConfirmationURL }}` et `{{ .NewEmail }}` sont remplies par Supabase.
+
 ### Boîte à idées
 
 Le même projet Supabase sert aussi à la **boîte à idées**. Les joueurs cliquent sur **💡 Proposer une idée** (en bas du panneau de gestion ou en bas de la page), choisissent un type (nouveau produit, amélioration, bug, autre) et écrivent leur idée.
