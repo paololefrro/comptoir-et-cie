@@ -1975,7 +1975,7 @@ async function claimGifts(){
   const got=[],notes=[];
   gifts.forEach(g=>{
     const a=Math.max(0,+g.amount||0);if(g.note)notes.push(g.note);
-    if(g.kind==='max'){const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;got.push('👑 tout au maximum');}
+    if(g.kind==='max'){const mb=S.money;maxOut();book('recompenses',S.money-mb);got.push('👑 tout au maximum');}
     else if(g.kind==='money'&&a){S.money+=a;book('recompenses',a);got.push(`+${money(a)}`);}
     else if(g.kind==='followers'&&a){S.social.followers+=a;got.push(`+${fmtK(a)} abonnés`);}
     else if(g.kind==='xp'&&a){addXP(a);got.push(`+${fmtK(a)} XP`);}

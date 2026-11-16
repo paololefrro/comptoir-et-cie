@@ -159,3 +159,75 @@ end $$;
 revoke all on function public.gift_amount(text, bigint) from public, anon, authenticated;
 revoke all on function public.admin_gift_many(uuid, jsonb, text) from public, anon;
 grant execute on function public.admin_gift_many(uuid, jsonb, text) to authenticated;
+
+-- 3. Comptes exemptés du « hors classement » ----------------------------------
+--    Une vitrine exemptée reste classée même si la partie a utilisé des codes secrets.
+--    Réservé au compte de l'équipe : update public.profiles set exempt = true where …
+alter table public.profiles add column if not exists exempt boolean not null default false;
+
+create or replace function public.mp_publish(
+  p_pseudo text, p_firm_name text, p_emoji text default '☕',
+  p_level int default 1, p_firm_value bigint default 0, p_cafes int default 1, p_franchises int default 0,
+  p_rep numeric default 3, p_followers int default 0, p_days int default 0, p_served bigint default 0,
+  p_best_day int default 0, p_items int default 0, p_snapshot jsonb default '{}'::jsonb, p_cheats int default 0)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid  uuid := auth.uid();
+  ps   text := regexp_replace(btrim(coalesce(p_pseudo, '')), '\s+', ' ', 'g');
+  fn   text := regexp_replace(btrim(coalesce(p_firm_name, '')), '\s+', ' ', 'g');
+  em   text := case when p_emoji = any (array['☕','🥐','🍰','🧁','🍩','🍪','🧋','🍵','🫖','🥤','🍫','🌿','🌸','⭐','👑','🐱','🦊','🐻','🚀','🎵'])
+                    then p_emoji else '☕' end;
+  snap jsonb := case when jsonb_typeof(p_snapshot) = 'object' and pg_column_size(p_snapshot) < 6000
+                     then p_snapshot else '{}'::jsonb end;
+begin
+  if uid is null then
+    return jsonb_build_object('ok', false, 'error', 'Connexion au multijoueur impossible. Recharge la page.');
+  end if;
+  if ps !~ '^[A-Za-zÀ-ÖØ-öø-ÿ0-9 _.-]{3,20}$' then
+    return jsonb_build_object('ok', false, 'error', 'Ton pseudo doit faire 3 à 20 caractères : lettres, chiffres, espace, point ou tiret.');
+  end if;
+  if char_length(fn) not between 2 and 40 or fn ~ '[<>{}]' then
+    return jsonb_build_object('ok', false, 'error', 'Le nom de ton enseigne doit faire 2 à 40 caractères.');
+  end if;
+  if not public.mp_is_clean(ps || ' ' || fn) then
+    return jsonb_build_object('ok', false, 'error', 'Ce nom contient un mot interdit. Choisis-en un autre.');
+  end if;
+  if public.mp_has_contact(ps || ' ' || fn) then
+    return jsonb_build_object('ok', false, 'error', 'Pas de lien, d’adresse e-mail ni de numéro dans les noms.');
+  end if;
+  if exists (select 1 from public.profiles where lower(pseudo) = lower(ps) and id <> uid) then
+    return jsonb_build_object('ok', false, 'error', 'Ce pseudo est déjà pris. Essaie une variante.');
+  end if;
+
+  insert into public.profiles as p (id, pseudo, firm_name, emoji, level, firm_value, cafes, franchises, rep,
+                                    followers, days, served, best_day, items, snapshot, cheats)
+  values (uid, ps, fn, em,
+          least(greatest(coalesce(p_level, 1), 1), 100),
+          least(greatest(coalesce(p_firm_value, 0), 0), 1000000000000000),
+          least(greatest(coalesce(p_cafes, 1), 1), 10000),
+          least(greatest(coalesce(p_franchises, 0), 0), 1000000),
+          least(greatest(coalesce(p_rep, 3), 0), 5),
+          least(greatest(coalesce(p_followers, 0), 0), 2000000000),
+          least(greatest(coalesce(p_days, 0), 0), 10000000),
+          least(greatest(coalesce(p_served, 0), 0), 1000000000000),
+          least(greatest(coalesce(p_best_day, 0), 0), 2000000000),
+          least(greatest(coalesce(p_items, 0), 0), 1000),
+          snap,
+          least(greatest(coalesce(p_cheats, 0), 0), 1000000))
+  on conflict (id) do update set
+    pseudo = excluded.pseudo, firm_name = excluded.firm_name, emoji = excluded.emoji,
+    level = excluded.level, firm_value = excluded.firm_value, cafes = excluded.cafes,
+    franchises = excluded.franchises, rep = excluded.rep, followers = excluded.followers,
+    days = excluded.days, served = excluded.served, best_day = excluded.best_day,
+    items = excluded.items, snapshot = excluded.snapshot,
+    -- Compte exempté : jamais hors classement ; nouvelle partie (moins de jours) : repart sans marque de triche
+    cheats = case when p.exempt then 0
+                  when excluded.days < p.days then excluded.cheats
+                  else greatest(p.cheats, excluded.cheats) end,
+    updated_at = now();
+  return jsonb_build_object('ok', true, 'me', public.mp_me());
+exception when unique_violation then
+  return jsonb_build_object('ok', false, 'error', 'Ce pseudo est déjà pris. Essaie une variante.');
+end $$;

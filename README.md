@@ -68,7 +68,7 @@ Pour l’utiliser :
 2. Coche les cadeaux et règle les quantités : un récapitulatif s’affiche sous la liste. Ajoute si tu veux un petit message, puis clique deux fois sur le bouton d’envoi : le deuxième clic confirme.
 3. Le joueur reçoit le cadeau tout seul, avec une animation et ton message, à sa prochaine ouverture du jeu ou à la fin de sa prochaine journée. La liste « Derniers cadeaux envoyés » indique s’il l’a reçu.
 
-Ces cadeaux ne changent rien au classement, sauf le boost tout au maximum. Celui-ci place la partie hors classement, comme un code secret. Seuls les joueurs qui ont un compte (e-mail ou multijoueur) peuvent recevoir un cadeau. L’installation demande `supabase-cadeaux.sql`, à exécuter après les autres fichiers SQL.
+Aucun cadeau ne change la place du joueur au classement, même le boost tout au maximum : seuls les codes secrets utilisés par le joueur lui-même mettent une partie hors classement. Seuls les joueurs qui ont un compte (e-mail ou multijoueur) peuvent recevoir un cadeau. L’installation demande `supabase-cadeaux.sql`, à exécuter après les autres fichiers SQL.
 
 ## Sauvegarde des joueurs
 
@@ -112,7 +112,7 @@ Les joueurs rejoignent le multijoueur avec un simple pseudo : un compte anonyme 
 - **les défis** : un duel de ventes sur 3 journées de jeu entre deux cafés, qui compte les ventes au comptoir du café d'origine, sans les succursales ni la franchise. Le gagnant reçoit de l'argent, des abonnés et de l'XP, et un classement « Duels » existe. Chaque joueur a au plus 3 défis en cours, et un défi non accepté expire au bout de 48 h ;
 - **les clubs** : jusqu'à 20 cafés par club, fondé pour 5 000 € dès le niveau 3, avec un salon privé et un classement des clubs. L'objectif de la semaine est de servir 1 000 clients par membre, avec un minimum de 2 000. Il se remet à zéro chaque lundi, et chaque membre récupère alors une récompense.
 
-La vitrine de chaque joueur se met à jour chaque soir de jeu. Les parties qui ont utilisé un code secret restent visibles, mais hors classement. Une nouvelle partie les remet dans la course.
+La vitrine de chaque joueur se met à jour chaque soir de jeu. Les parties qui ont utilisé un code secret restent visibles, mais hors classement. Exception : les vitrines marquées `exempt` dans la table `profiles`, comme le compte de l’équipe, restent toujours classées. Une nouvelle partie les remet dans la course.
 
 Installation, à faire une seule fois :
 

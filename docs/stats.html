@@ -472,7 +472,7 @@ a{color:var(--accent);font-weight:800}
     { k: 'rep', icon: '🌟', name: 'Réputation à 5 ★' },
     { k: 'stock', icon: '📦', name: 'Réserve pleine', hint: 'Tous ses produits au maximum de stock' },
     { k: 'menu', icon: '🍽️', name: 'Toute la carte débloquée' },
-    { k: 'max', icon: '👑', name: 'Tout au maximum', hint: 'Place sa partie hors classement' }
+    { k: 'max', icon: '👑', name: 'Tout au maximum', hint: 'Niveau, carte, labo, équipe, adresses et franchise' }
   ];
   function giftWho(u) { return u.pseudo || u.email || 'ce joueur'; }
   function giftText(kind, a) {
@@ -503,8 +503,7 @@ a{color:var(--accent);font-weight:800}
     b.textContent = giftUser && ch.length ? '🎁 Offrir à ' + giftWho(giftUser) : '🎁 Envoyer le cadeau';
     $('giftSummary').textContent = !giftUser ? 'Cherche d’abord un joueur ci-dessus, puis coche ce que tu veux lui offrir.'
       : !ch.length ? 'Coche au moins un cadeau.'
-      : 'À offrir à ' + giftWho(giftUser) + ' : ' + ch.map(function (c) { return giftText(c.kind, c.amount); }).join(', ') + '.' +
-        (ch.some(function (c) { return c.kind === 'max'; }) ? ' Le boost « tout au maximum » placera sa partie hors classement.' : '');
+      : 'À offrir à ' + giftWho(giftUser) + ' : ' + ch.map(function (c) { return giftText(c.kind, c.amount); }).join(', ') + '.';
   }
   $('giftItems').innerHTML = GIFT_ITEMS.map(function (it) {
     return '<label class="gift-item"><input type="checkbox" data-gi="' + it.k + '"><span class="gi-name">' + it.icon + ' ' + it.name + (it.hint ? '<small>' + it.hint + '</small>' : '') + '</span>' +
