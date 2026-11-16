@@ -369,15 +369,41 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .mp-row .nm b,.mp-row .nm small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mp-row .nm small{font-weight:700;opacity:.75}
 .mp-row .val{font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
-.mp-chat{display:flex;flex-direction:column;gap:6px;height:300px;overflow-y:auto;background:var(--card-2);border-radius:14px;padding:8px 10px;overscroll-behavior:contain}
-.mp-book{height:auto;max-height:180px;min-height:48px}
-.mp-msg{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline;font-size:.88rem;line-height:1.35}
-.mp-msg .who{font:inherit;font-weight:900;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
-.mp-msg.mine .who{color:var(--accent)}
-.mp-msg .body{flex:1 1 60%;min-width:0;overflow-wrap:anywhere}
-.mp-msg time{font-size:.72rem;color:var(--ink-2);white-space:nowrap}
-.mp-msg .rep{border:0;background:none;color:var(--ink-2);cursor:pointer;font:inherit;font-size:.78rem;padding:0 2px}
-.mp-send{display:flex;gap:6px}
+.mp-chatwrap{position:relative}
+.mp-chat{display:flex;flex-direction:column;height:min(62vh,520px);min-height:260px;overflow-y:auto;background:var(--card-2);border:2px solid var(--line);border-radius:18px;padding:10px 12px 14px;overscroll-behavior:contain}
+.mp-chat>:first-child{margin-top:auto}
+.mp-book{height:auto;max-height:280px;min-height:70px}
+.mp-day{align-self:center;font-size:.7rem;font-weight:900;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:2px 10px;margin:10px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+.mp-msg{display:flex;gap:8px;align-items:flex-end;max-width:86%;margin-top:10px}
+.mp-msg.cont{margin-top:3px}
+.mp-msg.mine{align-self:flex-end;flex-direction:row-reverse}
+.mp-av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;background:var(--card);border:2px solid var(--line)}
+.mp-msg.cont .mp-av{visibility:hidden;height:0;border:0;overflow:hidden}
+.mp-bub{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mp-meta{display:flex;align-items:baseline;gap:6px;font-size:.78rem;padding:0 6px}
+.mp-msg.mine .mp-meta{justify-content:flex-end}
+.mp-meta .who{font:inherit;font-weight:900;color:var(--ink);background:none;border:0;padding:0;cursor:pointer}
+.mp-meta .who:hover{text-decoration:underline}
+.mp-meta b{font-weight:900}
+.mp-meta time{color:var(--ink-2);font-weight:700;font-size:.72rem}
+.mp-text{background:var(--card);border:2px solid var(--line);border-radius:18px 18px 18px 5px;padding:8px 13px;font-size:.98rem;font-weight:600;line-height:1.4;color:var(--ink);overflow-wrap:anywhere;white-space:pre-wrap}
+.mp-msg.cont .mp-text{border-radius:18px 18px 18px 5px}
+.mp-msg.mine .mp-text{background:var(--accent);border-color:var(--accent);color:var(--on-accent);border-radius:18px 18px 5px 18px}
+.mp-msg .rep{flex:none;align-self:center;border:0;background:none;color:var(--ink-2);cursor:pointer;font:inherit;font-size:.8rem;padding:4px;opacity:.45}
+.mp-msg .rep:hover,.mp-msg .rep:focus-visible{opacity:1}
+.mp-empty{margin:auto;text-align:center;color:var(--ink-2);font-weight:800;font-size:.92rem;padding:20px}
+.mp-empty span{display:block;font-size:2.4rem;margin-bottom:6px}
+.mp-newbtn{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);border:0;border-radius:99px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:900;font-size:.82rem;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
+.mp-send{display:flex;gap:6px;align-items:center}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mp-send .txt{font-size:1rem;padding:11px 16px;border-radius:99px}
+.mp-send .btn{border-radius:99px;padding:10px 18px;flex:none}
+.mp-tools{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.mp-quick{display:flex;gap:3px;flex-wrap:wrap}
+.mp-quick button{border:0;background:var(--card-2);border-radius:99px;font-size:1.05rem;line-height:1;padding:6px 7px;cursor:pointer}
+.mp-quick button:hover{background:var(--card)}
+.mp-count{font-size:.72rem;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.mp-count.warn{color:var(--bad)}
 .cu-card{background:var(--gold-soft)}
 .cu-group{display:flex;flex-direction:column;gap:6px}
 .cu-group>b{font-size:.92rem}
@@ -2397,7 +2423,7 @@ async function mpInit(){
   if(!mpOn())return;
   const onClick=e=>{const b=e.target.closest('[data-mp]');if(!b||b.disabled)return;e.preventDefault();Snd.init();mpAction(b.dataset.mp,b);};
   $('#tabBody').addEventListener('click',onClick);$('#modal').addEventListener('click',onClick);
-  $('#tabBody').addEventListener('input',e=>{const t=e.target;if(t.id==='mpChatIn')MP.draft=t.value;else if(t.id==='mpSearch')MP.search=t.value;else if(t.id==='mpPseudo')MP.pseudo=t.value;else if(t.id==='mpFirm')MP.firm=t.value;else if(t.id==='mpClubSearch')MP.clubSearch=t.value;});
+  $('#tabBody').addEventListener('input',e=>{const t=e.target;if(t.id==='mpChatIn'){MP.draft=t.value;mpCount();}else if(t.id==='mpSearch')MP.search=t.value;else if(t.id==='mpPseudo')MP.pseudo=t.value;else if(t.id==='mpFirm')MP.firm=t.value;else if(t.id==='mpClubSearch')MP.clubSearch=t.value;});
   const onSubmit=e=>{const f=e.target;if(!f.id||!f.id.startsWith('mp'))return;e.preventDefault();
     if(f.id==='mpJoinForm')mpJoin();else if(f.id==='mpChatForm')mpSend(f.dataset.room,f.querySelector('input'));
     else if(f.id==='mpSearchForm'){MP.dir=null;renderPanel();}else if(f.id==='mpBookForm')mpSend(f.dataset.room,f.querySelector('input'));
@@ -2405,13 +2431,14 @@ async function mpInit(){
     else if(f.id==='mpClubSearchForm'){MP.clubs=null;renderPanel();}};
   $('#tabBody').addEventListener('submit',onSubmit);$('#modal').addEventListener('submit',onSubmit);
   $('#tabBody').addEventListener('focusin',e=>{if(e.target.id==='mpChatIn')MP.focusChat=true;});
+  $('#tabBody').addEventListener('scroll',e=>{const b=e.target;if(b.id!=='mpChat')return;const nb=document.getElementById('mpNew');if(nb&&!nb.hidden&&b.scrollHeight-b.scrollTop-b.clientHeight<80)nb.hidden=true;},true);
   $('#tabBody').addEventListener('focusout',e=>{if(e.target.id==='mpChatIn'&&e.relatedTarget)MP.focusChat=false;});
   try{const {data}=await Cloud.sb.auth.getSession();Cloud.user=data&&data.session?data.session.user:null;}catch(e){}
   await claimGifts();
   await mpRefreshMe(true);
   bkClaim();
   MP.ready=true;if(tab==='monde')renderPanel();
-  setInterval(()=>{if(MP.me&&tab==='monde'&&MP.curRoom&&!document.hidden)mpLoadChat();},8000);
+  setInterval(()=>{if(MP.me&&tab==='monde'&&MP.curRoom&&!document.hidden)mpLoadChat();},4000);
 }
 async function mpLoad(key,fn){
   if(MP.loading[key])return;MP.loading[key]=true;
@@ -2438,9 +2465,12 @@ function mpPaintChat(changed){
   const box=document.getElementById('mpChat');if(!box||!MP.curRoom)return;const L=mpRoom(MP.curRoom).list;
   if(!changed&&box.dataset.n===String(L.length))return;
   const near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
-  box.innerHTML=L.length?L.map(mpMsgHtml).join(''):'<p class="muted small">Personne n’a encore parlé. Lance la conversation !</p>';
+  const grew=box.dataset.scrolled&&+box.dataset.n<L.length;
+  box.innerHTML=mpMsgsHtml(L,'Personne n’a encore parlé.<br>Lance la conversation !');
   box.dataset.n=L.length;
-  if(near||!box.dataset.scrolled){box.scrollTop=box.scrollHeight;box.dataset.scrolled='1';}
+  const nb=document.getElementById('mpNew');
+  if(near||!box.dataset.scrolled){box.scrollTop=box.scrollHeight;box.dataset.scrolled='1';if(nb)nb.hidden=true;}
+  else if(grew&&nb)nb.hidden=false;
 }
 function mpAfterRender(){
   if(!MP.ready||!mpOn())return;
@@ -2488,15 +2518,25 @@ function mpDirHtml(){
   if(!MP.dir.length)return h+'<p class="hint">Aucun café trouvé.</p>';
   return h+`<ol class="mp-list">${MP.dir.map(r=>mpRowHtml(r,null,money(r.firm_value))).join('')}</ol>`;
 }
-function mpMsgHtml(m){
-  return `<div class="mp-msg${m.mine?' mine':''}"><span aria-hidden="true">${esc(m.emoji||'☕')}</span><button type="button" class="who" data-mp="visit" data-id="${esc(m.author)}">${esc(m.pseudo)}</button><span class="body">${esc(m.body)}</span><time datetime="${esc(m.at)}">${mpHm(m.at)}</time>${m.mine?'':`<button type="button" class="rep" data-mp="report" data-id="${m.id}" title="Signaler ce message" aria-label="Signaler le message de ${esc(m.pseudo)}">⚑</button>`}</div>`;
+function mpMsgHtml(m,cont){
+  const who=m.mine?'<b>Toi</b>':`<button type="button" class="who" data-mp="visit" data-id="${esc(m.author)}" title="Visiter son café">${esc(m.pseudo)}</button>`;
+  return `<div class="mp-msg${m.mine?' mine':''}${cont?' cont':''}"><span class="mp-av" aria-hidden="true">${esc(m.emoji||'☕')}</span><div class="mp-bub">${cont?'':`<div class="mp-meta">${who}<time datetime="${esc(m.at)}">${mpHm(m.at)}</time></div>`}<div class="mp-text" title="${mpHm(m.at)}">${cont?`<span class="vh">${esc(m.mine?'Toi':m.pseudo)} : </span>`:''}${esc(m.body)}</div></div>${m.mine?'':`<button type="button" class="rep" data-mp="report" data-id="${m.id}" title="Signaler ce message" aria-label="Signaler le message de ${esc(m.pseudo)}">⚑</button>`}</div>`;
 }
+function mpDayLabel(iso){const d=new Date(iso),t=new Date(),k=x=>x.toDateString();if(k(d)===k(t))return 'Aujourd’hui';if(k(d)===k(new Date(t-864e5)))return 'Hier';return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+function mpMsgsHtml(L,empty){
+  if(!L.length)return `<div class="mp-empty"><span aria-hidden="true">💬</span>${empty}</div>`;
+  let h='',day='',prev=null;
+  L.forEach(m=>{const dk=new Date(m.at).toDateString();if(dk!==day){day=dk;prev=null;h+=`<div class="mp-day">${mpDayLabel(m.at)}</div>`;}
+    h+=mpMsgHtml(m,!!(prev&&prev.author===m.author&&new Date(m.at)-new Date(prev.at)<5*60e3));prev=m;});
+  return h;
+}
+function mpCount(){const c=document.getElementById('mpCount');if(!c)return;const n=(MP.draft||'').length;c.textContent=n+' / 200';c.classList.toggle('warn',n>=180);}
 function mpChatHtml(room,intro){
   MP.curRoom=room;
   const ban=MP.me.banned_until&&new Date(MP.me.banned_until)>new Date();
   return `<p class="muted small" style="margin:0">${intro}</p>
-  <div class="mp-chat" id="mpChat" aria-live="polite" aria-label="Messages"></div>
-  ${ban?`<p class="hint">🚫 Tu ne peux plus écrire jusqu’au ${new Date(MP.me.banned_until).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</p>`:`<form id="mpChatForm" class="mp-send" data-room="${esc(room)}" autocomplete="off"><input id="mpChatIn" class="txt" maxlength="200" placeholder="Écris un message…" value="${esc(MP.draft)}" aria-label="Ton message"><button class="btn btn-primary btn-sm" type="submit">Envoyer</button></form><p class="muted small" id="mpChatOut" aria-live="polite" style="margin:0"></p>`}`;
+  <div class="mp-chatwrap"><div class="mp-chat" id="mpChat" aria-live="polite" aria-label="Messages"></div><button type="button" class="mp-newbtn" id="mpNew" data-mp="chatbottom" hidden>⬇ Nouveaux messages</button></div>
+  ${ban?`<p class="hint">🚫 Tu ne peux plus écrire jusqu’au ${new Date(MP.me.banned_until).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</p>`:`<form id="mpChatForm" class="mp-send" data-room="${esc(room)}" autocomplete="off"><input id="mpChatIn" class="txt" maxlength="200" placeholder="Écris un message…" value="${esc(MP.draft)}" aria-label="Ton message"><button class="btn btn-primary" type="submit">Envoyer ➤</button></form><div class="mp-tools"><div class="mp-quick" role="group" aria-label="Ajouter un émoji">${['👋','☕','😂','👍','❤️','🔥','🎉','😮','🙏'].map(e=>`<button type="button" data-mp="emo" data-v="${e}" aria-label="Ajouter ${e}">${e}</button>`).join('')}</div><span class="mp-count" id="mpCount">${(MP.draft||'').length} / 200</span></div><p class="muted small" id="mpChatOut" aria-live="polite" style="margin:0"></p>`}`;
 }
 const mpWhen=iso=>new Date(iso).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 function mpDuelHtml(d){
@@ -2646,7 +2686,7 @@ async function mpLoadBook(room){
   const box=document.getElementById('mpBook');if(!box)return;
   let rows=[];try{rows=await mpRpc('mp_messages',{p_room:room,p_after:0})||[];}catch(e){box.innerHTML='<p class="muted small">Le livre d’or est indisponible pour l’instant.</p>';return;}
   if(!document.getElementById('mpBook'))return;
-  box.innerHTML=rows.length?rows.map(mpMsgHtml).join(''):'<p class="muted small">Personne n’a encore signé le livre d’or.</p>';box.scrollTop=box.scrollHeight;
+  box.innerHTML=mpMsgsHtml(rows,'Personne n’a encore signé le livre d’or.');box.scrollTop=box.scrollHeight;
 }
 // Dessine la salle d'un autre café avec le moteur du jeu, en remplaçant l'état le temps d'une image
 function mpPaintVisit(el,p){
@@ -2729,7 +2769,9 @@ async function mpAction(a,el){
   if(a.startsWith('bk'))return bkMpAction(a,el);
   const id=el.dataset.id,v=el.dataset.v;
   switch(a){
-    case 'view':MP.view=v;MP.focusChat=false;renderPanel();break;
+    case 'view':MP.view=v;MP.focusChat=false;renderPanel();if(v==='chat')setTimeout(()=>{const f=document.getElementById('mpChatForm')||document.getElementById('mpChat');if(f)f.scrollIntoView({block:'end',behavior:'smooth'});},60);break;
+    case 'emo':{const i=document.getElementById('mpChatIn');if(!i)break;const a0=i.selectionStart??i.value.length,a1=i.selectionEnd??i.value.length;const nv=(i.value.slice(0,a0)+v+i.value.slice(a1)).slice(0,200);i.value=nv;MP.draft=nv;MP.focusChat=true;const p=Math.min(nv.length,a0+v.length);i.focus();i.setSelectionRange(p,p);mpCount();break;}
+    case 'chatbottom':{const b=document.getElementById('mpChat');if(b)b.scrollTop=b.scrollHeight;el.hidden=true;break;}
     case 'kind':if(MP.kind!==v){MP.kind=v;MP.board=null;renderPanel();}break;
     case 'dir':MP.dirMode=v;MP.dir=null;renderPanel();break;
     case 'emoji':{const box=el.parentElement;box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));if(box.closest('#mpEditForm'))MP.editEmoji=v;else if(box.closest('#mpClubForm'))MP.clubEmoji=v;else MP.emoji=v;break;}
