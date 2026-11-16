@@ -94,7 +94,7 @@ Comment ça se passe :
 - **Après la connexion** : s’il n’y a rien en ligne, la partie de l’appareil est envoyée ; si l’appareil a une partie toute neuve, la partie en ligne est reprise automatiquement ; si les deux parties diffèrent, le jeu demande laquelle garder.
 - **Chaque soir**, la partie est envoyée en ligne, sauf si la partie en ligne est plus avancée de plus d’un jour : elle n’est jamais écrasée sans demander.
 - Si l’adresse a déjà un compte, le joueur reçoit un lien de connexion à ce compte et retrouve la partie qui y est enregistrée.
-- Tant que le SMTP personnalisé n’est pas branché, les e-mails sont ceux de Supabase par défaut, en anglais, et leur nombre par heure est limité.
+- Les e-mails partent de `Comptoir & Cie <noreply@comptoir-et-cie.fr>` par le SMTP de Resend (voir plus bas), avec les modèles du dossier `emails/`.
 
 1. Crée un compte sur https://supabase.com, puis un projet. Choisis une région en Europe (par exemple Paris ou Francfort).
 2. Ouvre **SQL Editor → New query**, colle le contenu de `supabase.sql`, puis clique sur **Run**.
@@ -115,7 +115,11 @@ Le dossier `emails/` contient les modèles d’e-mails de Supabase aux couleurs 
 | Change email address | `confirmation-adresse.html` | ✅ Confirme ton adresse pour garder ta partie · Comptoir & Cie |
 | Confirm sign up | `inscription.html` | ☕ Bienvenue au Comptoir ! Confirme ton adresse |
 
-Supabase ne permet de modifier les modèles qu’avec un **SMTP personnalisé** (Authentication → Emails → SMTP Settings). Une fois le SMTP branché : Authentication → Emails → Templates, choisir le modèle, coller l’objet et le contenu du fichier, puis enregistrer. Les variables `{{ .ConfirmationURL }}` et `{{ .NewEmail }}` sont remplies par Supabase.
+Supabase ne permet de modifier les modèles qu’avec un **SMTP personnalisé**. Celui du jeu passe par **Resend** (domaine comptoir-et-cie.fr vérifié, région Irlande) :
+
+- **Authentication → Emails → SMTP Settings** : expéditeur `noreply@comptoir-et-cie.fr`, nom « Comptoir & Cie », hôte `smtp.resend.com`, port 465, identifiant `resend`, mot de passe = une clé API Resend (à coller soi-même, elle ne s’affiche plus ensuite).
+- **DNS chez OVH** : TXT `resend._domainkey` (DKIM) et les deux CNAME `send` et `rsend` donnés par Resend. Pas de MX Resend : la réception reste chez OVH.
+- **Modèles** : Authentication → Emails → Templates, choisir le modèle, coller l’objet et le contenu du fichier, puis enregistrer (les trois sont en place depuis le 17 novembre 2026). Les variables `{{ .ConfirmationURL }}` et `{{ .NewEmail }}` sont remplies par Supabase. Après une modification de `generer.js`, recoller les fichiers.
 
 ### Boîte à idées
 
