@@ -125,6 +125,21 @@ Modération :
 - Sur `stats.html`, la carte **Modération du multijoueur** liste les messages signalés, les joueurs à surveiller, les clubs et les derniers messages. Tu peux y masquer ou réafficher un message, une vitrine ou un club, et bloquer un joueur 7 jours. Un club signalé 5 fois est masqué automatiquement.
 - Les messages de plus de 60 jours sont effacés automatiquement.
 
+### Niveaux et améliorations
+
+- **50 niveaux**, du Kiosque au Panthéon du café. Les 12 premiers n’ont pas changé. Du niveau 13 au 50, chaque palier demande environ 4,5 % d’XP de plus que le précédent (21 000 XP pour le niveau 13, près de 500 000 XP pour le 50). Au-delà du niveau 12, chaque client servi rapporte 2 à 6 XP.
+- Au-delà du niveau 12, les effets liés au niveau (passage, loyer, récompenses, prix) progressent 4 fois moins vite (fonction `lvE`). La pénalité de réputation quand des clients repartent diminue au fil de la journée, pour qu’un café bondé ne s’effondre pas.
+- **Nouveaux paliers jusqu’au niveau 50** : tables (6 tables), salle voisine (+6 places par niveau, jusqu’à 36), comptoir (7 postes, et une file d’attente qui s’allonge), commis en cuisine (5 niveaux, +10 % de vitesse chacun et préparation des livraisons, salaire chaque soir), machine espresso, four, déco, réserve (jusqu’à 2 000 portions), enseigne et terrasse chauffée.
+- Les nouveaux grands objectifs, missions et trophées sont ajoutés à la fin des listes pour ne pas décaler les sauvegardes.
+
+### Livraison (onglet « 🛵 Livraison »)
+
+Plateforme fictive **Livr’Éclair**, dès le niveau 4 (inscription 500 €). Les commandes arrivent pendant la journée, avec des pics le midi et le soir, et sont plus nombreuses quand il pleut ou fait froid. Elles sont préparées par les commis en cuisine ou à un poste libre du comptoir (ticket vert), puis un livreur vient les chercher au comptoir de retrait près de la porte.
+
+- Une commande non lancée à temps est annulée : son stock revient en réserve et la note baisse.
+- Recette = prix de la carte moins la commission (30 % au départ). Note sur 5 selon la rapidité, le prix et l’emballage.
+- Améliorations : zone de livraison (6 zones, jusqu’au niveau 50), contrat (commission de 30 % à 10 %), emballages et 4 livreurs maison sans commission (salaire chaque soir). Bouton de mise en avant pour une journée (+60 % de commandes) et mise en pause des commandes.
+
 ### Bourse (onglet « 📈 Bourse »)
 
 L’onglet s’ouvre dès que le joueur a créé sa société. L’ancien système d’héritage (entrée en Bourse qui remettait la partie à zéro, parts de fondateur et bonus permanents) a disparu : les parts de fondateur des anciennes sauvegardes sont converties une fois en argent, 10 000 € par part.

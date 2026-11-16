@@ -231,3 +231,16 @@ begin
 exception when unique_violation then
   return jsonb_build_object('ok', false, 'error', 'Ce pseudo est déjà pris. Essaie une variante.');
 end $$;
+
+-- 4. Niveaux jusqu'au 50 : jusqu'à 49 niveaux offerts d'un coup -------------------------
+create or replace function public.gift_amount(p_kind text, p_amount bigint)
+returns bigint language sql immutable
+as $$
+  select case p_kind
+    when 'money'     then least(greatest(coalesce(p_amount, 0), 1), 100000000)
+    when 'followers' then least(greatest(coalesce(p_amount, 0), 1), 10000000)
+    when 'xp'        then least(greatest(coalesce(p_amount, 0), 1), 1000000)
+    when 'levels'    then least(greatest(coalesce(p_amount, 0), 1), 49)
+  end;
+$$;
+revoke all on function public.gift_amount(text, bigint) from public, anon, authenticated;

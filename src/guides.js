@@ -32,7 +32,11 @@ module.exports = [
 </ol>
 
 <h2>Monter de niveau</h2>
-<p>Chaque client servi te rapporte 1 point d’expérience. Ton café passe ainsi de <b>Kiosque</b> à <b>Petit café</b> (40 XP), puis <b>Café de quartier</b> (150 XP), <b>Adresse prisée</b> (380 XP) et bien plus loin. Chaque niveau débloque de nouveaux produits, de nouvelles améliorations et, à partir du niveau 3, la création de ta propre société.</p>
+<p>Chaque client servi te rapporte 1 point d’expérience. Ton café passe ainsi de <b>Kiosque</b> à <b>Petit café</b> (40 XP), puis <b>Café de quartier</b> (150 XP), <b>Adresse prisée</b> (380 XP) et bien plus loin : il y a <b>50 niveaux</b>, jusqu’au <b>Panthéon du café</b>. Chaque niveau débloque de nouveaux produits, de nouvelles améliorations et, à partir du niveau 3, la création de ta propre société. Après le niveau 12, chaque client rapporte de 2 à 6 points d’expérience.</p>
+
+<h2>La livraison à domicile</h2>
+<p>Dès le niveau 4, l’onglet <b>Livraison</b> te permet d’inscrire ton café sur <b>Livr’Éclair</b>, l’appli de livraison de la ville (500 €). Des commandes arrivent alors pendant la journée, surtout le midi, le soir et quand il pleut. Ton équipe les prépare au comptoir, ou tes commis en cuisine, puis un livreur passe les chercher près de la porte. Tu touches le prix de ta carte moins une commission de 30 % au départ.</p>
+<p>Une commande qui attend trop est annulée et fait baisser ta note sur l’appli. Plus ta note est haute, plus tu reçois de commandes. Avec le temps, tu peux agrandir ta zone de livraison, négocier une commission plus basse, soigner tes emballages et embaucher tes propres livreurs, qui ne paient pas de commission.</p>
 
 <h2>Les erreurs à éviter</h2>
 <ul>
@@ -141,7 +145,9 @@ module.exports = [
   html: `
 <h2>Quand recruter ?</h2>
 <p>Le signal est simple : si la file d’attente dépasse régulièrement quatre clients et que des clients repartent à cause de l’attente, il est temps d’embaucher. Chaque personne recrutée occupe un poste au comptoir et sert en même temps que toi.</p>
-<p>Au départ, le comptoir compte deux postes : le tien et un poste à pourvoir. L’amélioration <b>Comptoir agrandi</b> ajoute un poste à chaque niveau (160 €, 750 € puis 2 400 €), jusqu’à cinq postes au total.</p>
+<p>Au départ, le comptoir compte deux postes : le tien et un poste à pourvoir. L’amélioration <b>Comptoir agrandi</b> ajoute un poste à chaque niveau (160 €, 750 €, 2 400 €, puis 15 000 € au niveau 12 et 60 000 € au niveau 24), jusqu’à <b>sept postes</b> au total. Avec plus de postes, la file d’attente s’allonge aussi.</p>
+<p>À partir du niveau 11, les <b>commis en cuisine</b> (onglet Travaux) accélèrent toutes les préparations de 10 % chacun, jusqu’à cinq commis. Ils préparent aussi les commandes à livrer, ce qui libère le comptoir. Chaque commis touche un salaire chaque soir.</p>
+<p>Pour asseoir plus de monde, les <b>tables bistrot</b> montent jusqu’à six tables, et la <b>salle voisine</b> (dès le niveau 9) ajoute six places par niveau, jusqu’à 36 places.</p>
 
 <h2>Les profils de candidats</h2>
 <p>Chaque candidat a un trait de caractère qui change sa façon de travailler, et un salaire journalier qui va avec :</p>

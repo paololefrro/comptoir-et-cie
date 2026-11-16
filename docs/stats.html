@@ -264,7 +264,7 @@ a{color:var(--accent);font-weight:800}
     return k.indexOf('.') < 0 ? k.charAt(0).toUpperCase() + k.slice(1) : k;
   }
   var ALIAS = { google: 'Google', tiktok: 'TikTok', instagram: 'Instagram', insta: 'Instagram', facebook: 'Facebook', fb: 'Facebook', youtube: 'YouTube', twitter: 'X (Twitter)', x: 'X (Twitter)', reddit: 'Reddit', discord: 'Discord', snapchat: 'Snapchat', snap: 'Snapchat', whatsapp: 'WhatsApp', twitch: 'Twitch', linkedin: 'LinkedIn' };
-  var LEVEL_NAMES = ["Kiosque","Petit café","Café de quartier","Adresse prisée","Café branché","Institution","Légende du quartier","Adresse mythique","Monument du café","Temple du café","Légende vivante","Mythe absolu"];
+  var LEVEL_NAMES = [];
   var DEV = { mobile: 'Téléphone', tablette: 'Tablette', ordinateur: 'Ordinateur', inconnu: 'Inconnu' };
 
   // ---------- Graphique en barres (une seule série, infobulle au survol)
@@ -467,7 +467,7 @@ a{color:var(--accent);font-weight:800}
     { k: 'money', icon: '💰', name: 'Argent', def: 10000, max: 100000000 },
     { k: 'followers', icon: '📱', name: 'Abonnés', def: 5000, max: 10000000 },
     { k: 'xp', icon: '⭐', name: 'Expérience (XP)', def: 1000, max: 1000000 },
-    { k: 'levels', icon: '🆙', name: 'Niveaux en plus', def: 1, max: 11 },
+    { k: 'levels', icon: '🆙', name: 'Niveaux en plus', def: 1, max: 49 },
     { k: 'rep', icon: '🌟', name: 'Réputation à 5 ★' },
     { k: 'stock', icon: '📦', name: 'Réserve pleine', hint: 'Tous ses produits au maximum de stock' },
     { k: 'menu', icon: '🍽️', name: 'Toute la carte débloquée' },
