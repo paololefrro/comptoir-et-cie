@@ -280,6 +280,16 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .bk-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bk-head p{margin:0}
 .bk-deal{color:var(--good)}
+.bk-seg{margin:0 0 4px}
+.bk-card{background:var(--card-2);border:2px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.bk-card p{margin:0}
+.bk-card-top{display:flex;gap:10px;align-items:center}
+.bk-card-top .grow{gap:1px}
+.bk-av{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:var(--card);border:2px solid var(--line)}
+.bk-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.bk-price>b{font-family:var(--font-display);font-weight:400;font-size:1.55rem}
+.bk-val{display:flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums}
+.lab-boost{font-weight:600}
 .bk-check{display:flex;gap:7px;align-items:center;font-size:.85rem;font-weight:700;margin:6px 0 0}
 .bk-check input{width:18px;height:18px;accent-color:var(--accent)}
 .bk-help summary{cursor:pointer;font-weight:900;font-size:.88rem}
@@ -558,7 +568,7 @@ const W=1000,H=520,FLOOR_Y=300,COUNTER_TOP=318,STAFF_Y=342,STATION_Y=410,DOOR_X=
 const STATION_X5=[575,655,735,815,895],STATION_X7=[566,630,694,758,822,886,950];
 const QUEUE=[[505,462],[466,470],[427,462],[388,470],[349,462],[310,470],[271,462],[232,470],[232,506],[271,500],[310,506],[349,500]];
 // 8 places dans la file, puis 2 de plus par poste au-delà de 5 (la file fait demi-tour en bas)
-const queueCap=()=>8+2*Math.max(0,maxStations()-5);
+const queueCap=()=>Math.min(QUEUE.length,8+2*Math.max(0,maxStations()-5));
 const TABLES=[{x:92,y:372},{x:226,y:372},{x:330,y:372},{x:92,y:452},{x:655,y:494},{x:835,y:494}];
 const WIN={x:40,y:56,w:320,h:138};
 const TERRACE=[{x:119,y:191,side:-1},{x:151,y:191,side:1},{x:259,y:191,side:-1},{x:291,y:191,side:1}];
@@ -595,6 +605,15 @@ const ITEMS=[
  {id:'tiramisu',name:'Tiramisu maison',short:'Tiramisu',emoji:'🍮',type:'sucre',cost:2.4,base:8.5,prep:1.6,unlock:19000,lvl:9,pop:1.1},
  {id:'mocktail',name:'Mocktail signature',short:'Mocktail',emoji:'🍹',type:'froid',cost:2.6,base:9.5,prep:2.8,unlock:24000,lvl:10,pop:1.05},
  {id:'panier',name:'Panier brunch royal',short:'Panier brunch',emoji:'🧺',type:'brunch',cost:7,base:24,prep:5,unlock:32000,lvl:11,pop:1},
+ {id:'cappu',name:'Cappuccino crémeux',short:'Cappuccino',emoji:'🥛',type:'chaud',cost:1.2,base:5.5,prep:2.2,unlock:40000,lvl:12,pop:1.15},
+ {id:'crepe',name:'Crêpe sucre-cannelle',short:'Crêpe',emoji:'🫓',type:'sucre',cost:1.4,base:6,prep:1.4,unlock:52000,lvl:14,pop:1.1},
+ {id:'bretzel',name:'Bretzel au beurre salé',short:'Bretzel',emoji:'🥨',type:'brunch',cost:1.6,base:6.8,prep:1.2,unlock:68000,lvl:17,pop:1.05},
+ {id:'pizza',name:'Part de pizza fine',short:'Pizza',emoji:'🍕',type:'brunch',cost:3.5,base:12.5,prep:3.2,unlock:90000,lvl:20,pop:1.15},
+ {id:'frappe',name:'Frappé moka',short:'Frappé',emoji:'🧉',type:'froid',cost:2.2,base:8.5,prep:2.6,unlock:120000,lvl:23,pop:1.15},
+ {id:'burger',name:'Burger du brunch',short:'Burger',emoji:'🍔',type:'brunch',cost:5,base:17,prep:4,unlock:160000,lvl:26,pop:1.15},
+ {id:'fondant',name:'Fondant au chocolat',short:'Fondant',emoji:'🎂',type:'sucre',cost:2.8,base:10,prep:1.6,unlock:210000,lvl:30,pop:1.15},
+ {id:'bento',name:'Lunch box du chef',short:'Lunch box',emoji:'🍱',type:'brunch',cost:8,base:27,prep:5,unlock:300000,lvl:35,pop:1.1},
+ {id:'sorbet',name:'Sorbet artisanal',short:'Sorbet',emoji:'🍦',type:'froid',cost:2.5,base:9.5,prep:1.4,unlock:420000,lvl:40,pop:1.15},
  {id:'fraises',name:'Fraises chantilly',short:'Fraises',emoji:'🍓',type:'sucre',cost:1.2,base:5.5,prep:1.2,unlock:150,lvl:1,pop:1.3,season:'printemps'},
  {id:'granite',name:'Granité citron',short:'Granité',emoji:'🍧',type:'froid',cost:.9,base:4.5,prep:1.2,unlock:150,lvl:1,pop:1.3,season:'ete'},
  {id:'potiron',name:'Latte potiron',short:'Latte potiron',emoji:'🎃',type:'chaud',cost:1.1,base:5.2,prep:2.2,unlock:150,lvl:1,pop:1.3,season:'automne'},
@@ -617,6 +636,7 @@ const UPGRADES=[
  {id:'salle',icon:'🚪',name:'Salle voisine',desc:'Tu rachètes la boutique d’à côté et tu ouvres le mur : +6 places assises par niveau, à gauche de la salle.',costs:[8000,22000,55000,130000,300000,700000],req:[9,15,22,30,39,48]},
  {id:'comptoir',icon:'🧑‍🍳',name:'Comptoir agrandi',desc:'+1 poste de service par niveau, jusqu’à 7 : tu peux recruter une personne de plus.',costs:[160,750,2400,15000,60000],req:[1,2,4,12,24]},
  {id:'brigade',icon:'👨‍🍳',name:'Commis en cuisine',desc:'Un commis de plus en cuisine à chaque niveau : toutes les commandes sont préparées 10 % plus vite, et chaque commis prépare aussi les commandes à livrer en cuisine. Chaque commis touche un salaire chaque soir.',costs:[5000,15000,40000,100000,250000],req:[11,19,27,36,46]},
+ {id:'comptoir2',icon:'🏪',name:'Second comptoir',desc:'Un comptoir à emporter dans la boutique d’à côté : +2 postes par niveau, donc 2 personnes de plus à recruter. Les clients y vont par la gauche de la salle.',costs:[120000,350000,900000],req:[20,30,42]},
  {id:'machine',icon:'⚙️',name:'Machine espresso',desc:'Boissons préparées 18 % plus vite à chaque niveau.',costs:[140,650,2100,9000,30000,90000,250000],req:[1,2,4,9,18,29,41]},
  {id:'four',icon:'🔥',name:'Four de pâtissier',desc:'Pâtisseries et brunch 22 % plus rapides à chaque niveau.',costs:[220,950,6000,25000,90000],req:[1,3,8,19,33]},
  {id:'deco',icon:'🪴',name:'Déco cosy',desc:'Plantes, cadres, guirlande, lustre (+4 % de passage chacun), puis mobilier de designer (+1 %) : des clients plus heureux.',costs:[70,230,620,1500,8000,30000,100000,320000],req:[1,1,2,4,11,21,32,44]},
@@ -626,7 +646,8 @@ const UPGRADES=[
  {id:'enseigne',icon:'💡',name:'Enseigne néon',desc:'+15 % de passants qui poussent la porte, puis +3 % par niveau : enseigne lumineuse, écran géant, façade monumentale.',costs:[340,12000,60000,250000],req:[2,14,27,40]},
  {id:'terrasse',icon:'⛱️',name:'Terrasse',desc:'+4 places dehors et +20 % de clients quand il fait beau. Niveau 2 : terrasse chauffée, ouverte par tous les temps.',costs:[2200,20000],req:[3,16]},
  {id:'fournisseur',icon:'🚚',name:'Contrat fournisseur',desc:'Chaque soir, une commande part toute seule pour remplir la réserve le lendemain matin.',costs:[1400],req:[3]},
- {id:'vitrine',icon:'🧊',name:'Vitrine réfrigérée',desc:'Les pâtisseries et le brunch invendus se gardent mieux : 8 % de pertes par nuit au lieu de 25 %.',costs:[380],req:[2]},
+ {id:'vitrine',icon:'🧊',name:'Vitrine réfrigérée',desc:'Les pâtisseries et le brunch invendus se gardent mieux : 5 % de pertes par nuit au lieu de 18 %.',costs:[380],req:[2]},
+ {id:'alarme',icon:'🚨',name:'Alarme et caméras',desc:'Les voleurs passent leur chemin : beaucoup moins de cambriolages la nuit et de clients qui partent sans payer.',costs:[900],req:[4]},
  {id:'brasdroit',icon:'🤵',name:'Bras droit',desc:'Ramasse les pourboires, répond aux avis négatifs et débloque le mode continu (les journées s’enchaînent toutes seules).',costs:[4500],req:[5]},
 ];
 const UPG=Object.fromEntries(UPGRADES.map(u=>[u.id,u]));
@@ -694,6 +715,16 @@ const QUESTS_BASE=[
 ];
 
 const EVENTS=[
+ {cond:()=>S.day>5&&Math.random()<.5,build(){
+   if(S.upg.alarme&&Math.random()<.85)return null;
+   const cash=Math.round(Math.min(Math.max(0,S.money)*.04,1500*levelScale()));
+   const hit=ITEMS.filter(i=>S.items[i.id].unlocked&&S.items[i.id].stock>8);const loot=[];for(let k=0;k<3&&hit.length;k++){loot.push(hit.splice(Math.floor(Math.random()*hit.length),1)[0]);}
+   const steal=()=>{S.money-=cash;book('vols',-cash);loot.forEach(i=>{const st=S.items[i.id];st.stock=Math.floor(st.stock*.6);});};
+   const what=`${money(cash)} ont disparu de la caisse${loot.length?`, et une partie du stock de ${loot.map(i=>i.emoji).join(' ')} aussi`:''}`;
+   return {icon:'🦹',title:'Cambriolage cette nuit !',text:`Un voleur a forcé la porte de service : ${what}.`,choices:[
+    {label:'Porter plainte',fx(){steal();if(Math.random()<.4){const back=Math.round(cash*.6);S.money+=back;book('vols',back);return `La police retrouve une partie du butin : ${money(back)} te sont rendus.`;}return 'La plainte est enregistrée… mais le voleur court toujours.';}},
+    S.upg.alarme?{label:'Renforcer la sécurité',cost:300,fx(){steal();return 'Serrures changées : la prochaine fois, ce sera plus dur.';}}:{label:'Installer une alarme',cost:900,fx(){steal();S.upg.alarme=1;return 'Alarme et caméras installées : les voleurs y réfléchiront à deux fois.';}}]};
+ }},
  {icon:'✍️',title:'Un blogueur culinaire passe',text:'Il propose d’écrire un article sur ton café en échange d’un goûter offert.',
   choices:[{label:'Offrir le goûter',cost:25,fx(){addCampaign({id:'buzz',name:'Article de blog',icon:'✍️',traffic:1.3,days:2});return 'L’article sort demain : +30 % de clients pendant 2 jours !';}},{label:'Non merci',fx(){return 'Il repart un peu vexé, tant pis.';}}]},
  {build(){const cap=stockCap();const opts=ITEMS.filter(i=>S.items[i.id].unlocked&&cap-S.items[i.id].stock>=15);if(!opts.length)return null;const it=pick(opts);const q=Math.min(40,cap-S.items[it.id].stock);const cost=Math.round(q*it.cost*.5*100)/100;
@@ -757,6 +788,14 @@ const QUARTIERS=[
  {id:'vieux',short:'Vieille ville',name:'Vieille ville',icon:'🏰',cost:6000,potential:1.45,rent:90,desc:'Touristes, prix élevés acceptés.',req:4},
  {id:'affaires',short:'Affaires',name:'Quartier d’affaires',icon:'🏙️',cost:9000,potential:1.8,rent:120,desc:'Cadres pressés et gros tickets au déjeuner.',req:5},
  {id:'canal',short:'Canal',name:'Bord du canal',icon:'🌊',cost:12000,potential:2.2,rent:150,desc:'L’adresse la plus chic de la ville.',req:6},
+ {id:'plage',short:'Front de mer',name:'Front de mer',icon:'🏖️',cost:40000,potential:2.8,rent:260,desc:'Touristes en été, glaces et boissons fraîches à volonté.',req:10},
+ {id:'stade',short:'Stade',name:'Abords du stade',icon:'🏟️',cost:70000,potential:3.3,rent:340,desc:'Des milliers de supporters les soirs de match.',req:14},
+ {id:'aeroport',short:'Aéroport',name:'Terminal de l’aéroport',icon:'✈️',cost:120000,potential:4,rent:480,desc:'Voyageurs pressés, prêts à payer cher.',req:18},
+ {id:'musees',short:'Musées',name:'Quartier des musées',icon:'🖼️',cost:200000,potential:4.8,rent:620,desc:'Visiteurs du monde entier et belles terrasses.',req:23},
+ {id:'ski',short:'Station',name:'Station de ski',icon:'🏔️',cost:320000,potential:5.6,rent:800,desc:'Chocolats chauds et crêpes après le ski.',req:28},
+ {id:'parc',short:'Parc',name:'Parc d’attractions',icon:'🎡',cost:500000,potential:6.5,rent:1050,desc:'Des familles affamées toute la journée.',req:33},
+ {id:'tour',short:'Gratte-ciel',name:'Sommet d’un gratte-ciel',icon:'🌆',cost:800000,potential:7.6,rent:1400,desc:'Vue panoramique et clientèle très chic.',req:39},
+ {id:'palace',short:'Palace',name:'Hall d’un palace',icon:'🏨',cost:1300000,potential:9,rent:1900,desc:'Le café le plus prestigieux du pays.',req:45},
 ];
 const LOANS=[
  {id:'micro',name:'Microcrédit',icon:'🪙',amount:500,rate:.08,days:10,req:1,firm:false},
@@ -1039,9 +1078,11 @@ function genCandidates(st){
 }
 const rollWeather=d=>{const se=seasonOf(d||S.day+1);const sw=SEASON_W[se.id]||{};return wpick(Object.keys(WEATHERS),k=>sw[k]!=null?sw[k]:WEATHERS[k].w);};
 const unlockedCount=()=>ITEMS.filter(i=>S.items[i.id].unlocked).length;
-const maxStations=()=>Math.min(7,2+S.upg.comptoir);
-const slotCount=()=>maxStations()>5?7:5;
-const SX=i=>(slotCount()>5?STATION_X7:STATION_X5)[i];
+const visStations=()=>Math.min(7,2+S.upg.comptoir);
+const maxStations=()=>visStations()+2*(S.upg.comptoir2||0);
+const slotCount=()=>visStations()>5?7:5;
+// Les postes du second comptoir sont dans la boutique d'à côté, hors de l'écran à gauche
+const SX=i=>i<visStations()?(slotCount()>5?STATION_X7:STATION_X5)[i]:-44;
 const stockCap=()=>STOCK_CAP[Math.min(S.upg.reserve,STOCK_CAP.length-1)];
 const rentCost=()=>15+12*(lvE()-1);
 const salaryTotal=()=>S.staff.reduce((s,m)=>s+m.salary,0)+(S.chef&&S.chef.hired?CHEF.salary:0)+(S.upg.brigade||0)*commisSal()+(S.dl?S.dl.fleet*courierSal():0);
@@ -1052,7 +1093,7 @@ const campCost=c=>Math.round(c.cost*(1+.5*(lvE()-1)));
 const avgRecipe=()=>{const u=ITEMS.filter(i=>S.items[i.id].unlocked);return u.reduce((a,i)=>a+S.items[i.id].recipe,0)/Math.max(1,u.length);};
 const staffAt=i=>i===0?null:S.staff[i-1];
 function staffSpeed(m){const el=1;if(!m)return el;const T=TRAITS[m.trait];const mo=m.morale??80;return T.speed*(1+.1*trainLvl(m))*(1+Math.min(.3,m.days*(m.trait==='novice'?.03:.02)))*(mo<35?.85:mo>75?1.05:1)*el;}
-function fairPrice(it,budget){return it.base*(1+.12*(S.items[it.id].recipe-1))*(.85+S.rep*.05)*(budget||1)*(1+SUP[S.supplier].quality*1.33)*(1+MASTERY_BONUS[masteryTier(it.id)]);}
+function fairPrice(it,budget){return it.base*(1+.12*(S.items[it.id].recipe-1))*(.85+S.rep*.05)*(budget||1)*(1+SUP[S.supplier].quality*1.33)*(1+MASTERY_BONUS[masteryTier(it.id)])*(it.sig?1+.05*(it.stars-2):1);}
 function acceptProb(p,fair){return p<=fair?1:clamp(1-(p/fair-1)*2.5,0,1);}
 function recipeCost(it,lvl){return lvl===1?Math.round(Math.max(60,it.unlock*.45+50)):Math.round(Math.max(220,it.unlock*1.3+200));}
 function trafficParts(){
@@ -1190,9 +1231,9 @@ function checkStockWarn(it){
 function decideOrder(c){
   const avail=ITEMS.filter(onMenu);if(!avail.length)return {order:[],missed:null,refused:1};
   const T=CTYPES[c.type],Wm=WEATHERS[S.weather].mods;
-  const wf=it=>it.pop*(Wm[it.type]||1)*(1+.15*(S.items[it.id].recipe-1))*(T.fav.includes(it.id)?2.2:1)*(it.id===S.social.trend?1.6:1)*(S.social.boost[it.id]||1)*festItemMult(it.id)*(1+[0,0,.05,.1][masteryTier(it.id)]);
-  let n=1;const r=Math.random();
-  if(c.type==='gourmand')n=r<.35?3:2;else if(c.type==='critique')n=2;else if(r<.28)n=2;
+  const wf=it=>it.pop*(Wm[it.type]||1)*(1+.15*(S.items[it.id].recipe-1))*(T.fav.includes(it.id)?2.2:1)*(it.id===S.social.trend?1.6:1)*(S.social.boost[it.id]||1)*festItemMult(it.id)*(1+[0,0,.05,.1][masteryTier(it.id)])*(it.sig?1.35+.2*(it.stars-3):1);
+  let n=1;const r=Math.random(),ex=.012*clamp(menuCount()-6,0,20);
+  if(c.type==='gourmand')n=r<.35+ex?3:2;else if(c.type==='critique')n=2;else n=r<ex*.5?3:r<.28+ex?2:1;
   const order=[],used=new Set();let missed=null,refused=0;
   for(let k=0;k<n;k++){
     const pool=avail.filter(it=>!used.has(it.id));if(!pool.length)break;
@@ -1254,6 +1295,9 @@ function findSeat(){
 function serve(c,i){
   if(c.delivery){dlReady(c,i);return;}
   const st=R.stations[i];st.customer=null;st.prog=0;st.total=0;
+  // Rarement, un client file sans payer (beaucoup moins avec l'alarme et les caméras)
+  if(S.day>3&&Math.random()<(S.upg.alarme?.0002:.0012)){c.mood='angry';c.bubble={e:'🦹',t:1.8};c.state='leaving';floatTxt('Parti sans payer !',c.x,c.y-128,RED,14);R.day.thefts=(R.day.thefts||0)+1;Snd.sad();
+    if(!R.theftToast){R.theftToast=1;toast('🦹 Un client est parti sans payer ! L’alarme et les caméras (onglet Travaux) découragent les voleurs.','bad');}return;}
   const m=staffAt(i);
   const price=c.order.reduce((s,o)=>s+o.price,0);
   let sat=computeSat(c,m);
@@ -1376,8 +1420,11 @@ function orderStock(id,q,silent){
   if(!silent)toastOnce('order',`🧾 Commande passée : livraison ${deliveryWhen()}.`);
   return true;
 }
-function orderAllCost(){const cap=stockCap();return ITEMS.reduce((a,it)=>{const s=S.items[it.id];if(!onMenu(it)||blocked(it))return a;return a+Math.max(0,cap-s.stock-pendingQty(it.id))*unitCost(it);},0);}
-function orderAll(silent){let n=0;ITEMS.forEach(it=>{if(onMenu(it)&&orderStock(it.id,9999,true))n++;});if(n&&!silent)toast(`🧾 ${n} commande${n>1?'s':''} passée${n>1?'s':''} : livraison ${deliveryWhen()}.`);return n;}
+// Ventes moyennes par jour (3 derniers jours, livraisons comprises) et stock visé : plein pour les boissons, au plus juste pour le frais
+function avgDaily(id){const H=S.bookHist.slice(-3);if(!H.length)return null;return H.reduce((a,h)=>a+((h.sales&&h.sales[id]&&h.sales[id].n)||0),0)/H.length;}
+function stockTarget(it){const cap=stockCap();if(!PERISH[it.type])return cap;const a=avgDaily(it.id);if(a==null)return cap;return clamp(Math.ceil(a*1.35+8),12,cap);}
+function orderAllCost(){return ITEMS.reduce((a,it)=>{const s=S.items[it.id];if(!onMenu(it)||blocked(it))return a;return a+Math.max(0,stockTarget(it)-s.stock-pendingQty(it.id))*unitCost(it);},0);}
+function orderAll(silent){let n=0;ITEMS.forEach(it=>{const s=S.items[it.id];if(onMenu(it)&&orderStock(it.id,Math.max(0,stockTarget(it)-s.stock-pendingQty(it.id)),true))n++;});if(n&&!silent)toast(`🧾 ${n} commande${n>1?'s':''} passée${n>1?'s':''} : livraison ${deliveryWhen()}.`);return n;}
 function expressStock(id,q){const it=ITEM[id],s=S.items[id];q=Math.min(q,stockCap()-s.stock);if(q<=0)return false;const cost=Math.round(q*unitCost(it,true)*100)/100;if(!spend(cost,'stock'))return false;s.stock+=q;toast(`🛵 Coursier express : ${q} ${it.emoji} livrés tout de suite !`);return true;}
 function cancelOrder(id){if(R.phase!=='closed')return;const i=S.orders.findIndex(o=>o.id===id);if(i<0)return;const o=S.orders[i];S.orders.splice(i,1);S.money+=o.cost;S.ledger.stock-=o.cost;book('stock',o.cost);toast('Commande annulée et remboursée.');saveSoon();}
 function applyDelivery(orders,ratio){
@@ -1395,7 +1442,7 @@ function deliverMorning(){
   else if(Math.random()<.5){R.lateDelivery={orders,at:DAY_LEN*rand(.18,.4),ratio:1};toastLater(`⏰ ${sup.name} est en retard : livraison dans la matinée…`,'bad',600);}
   else{const res=applyDelivery(orders,.6);toastLater(`⚠️ Livraison incomplète : 60 % reçus seulement (${eur(res.refund)} remboursés).`,'bad',600);}
 }
-function perish(){let n=0,val=0;const rate=S.upg.vitrine?.08:.25;ITEMS.forEach(it=>{if(!PERISH[it.type])return;const s=S.items[it.id];if(!s.unlocked||s.stock<=0)return;const l=Math.floor(s.stock*rate);if(l>0){s.stock-=l;n+=l;val+=l*it.cost;}});return {n,val};}
+function perish(){let n=0,val=0;const rate=S.upg.vitrine?.05:.18;ITEMS.forEach(it=>{if(!PERISH[it.type])return;const s=S.items[it.id];if(!s.unlocked||s.stock<=0)return;const l=Math.floor(s.stock*rate);if(l>0){s.stock-=l;n+=l;val+=l*it.cost;}});return {n,val};}
 function evolveMarket(){S.marketPrev=Object.assign({},S.market);Object.keys(S.market).forEach(t=>{const m=S.market[t];S.market[t]=clamp(m+(1-m)*.25+rand(-.08,.08),.72,2.2);});}
 
 /* ---------- Réseaux sociaux ---------- */
@@ -1525,7 +1572,9 @@ function locDay(l){
 }
 const avgOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const locValue=l=>Math.round(Math.max(0,avgOf(l.history))*40+1500*l.level*l.potential);
-const renoCost=l=>Math.round(1500*l.level*l.potential/50)*50;
+const renoCost=l=>Math.round(1500*l.level*l.potential*(l.level>=5?1.6:1)/50)*50;
+// Rénovations jusqu'au niveau 10 ; à partir du niveau 6, il faut un café plus expérimenté
+const LOC_MAX=10,renoReq=l=>[1,1,1,1,1,12,18,25,33,42][l.level]||1;
 const managerCost=()=>Math.round(250*levelScale());
 function openLocation(qid){
   const q=QUARTIERS.find(x=>x.id===qid);if(!q||!S.firm.created||S.firm.locations.some(l=>l.qid===q.id)||S.level<(q.req||1))return;
@@ -1578,9 +1627,9 @@ const BOOK={
  franchise:{i:'🗺️',l:'Services de la franchise'},invest:{i:'💼',l:'Autres investissements'},
  capital:{i:'🔔',l:'Capital (entrée en Bourse, émissions et rachats d’actions)'},bourse:{i:'📈',l:'Bourse (dividendes reçus, ventes d’actions)'},
  placements:{i:'💹',l:'Achats d’actions'},dividendes:{i:'🧾',l:'Dividendes versés aux actionnaires'},
- livraison:{i:'🛵',l:'Ventes en livraison (Livr’Éclair)'},commissions:{i:'🧾',l:'Commissions Livr’Éclair'},dlfrais:{i:'🛵',l:'Livraison : inscription et améliorations'},
+ vols:{i:'🦹',l:'Vols'},livraison:{i:'🛵',l:'Ventes en livraison (Livr’Éclair)'},commissions:{i:'🧾',l:'Commissions Livr’Éclair'},dlfrais:{i:'🛵',l:'Livraison : inscription et améliorations'},
 };
-const CAT_BY_ACT={train:'equipe',cands:'equipe',dlsign:'dlfrais',dlup:'dlfrais',dlboost:'pub',express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
+const CAT_BY_ACT={train:'equipe',cands:'equipe',dlsign:'dlfrais',dlup:'dlfrais',dlboost:'pub',express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',labexpress:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
 function book(cat,amt){if(!amt||!isFinite(amt)||!S.book)return;S.book[cat]=(S.book[cat]||0)+amt;R.bookVer=(R.bookVer||0)+1;}
 function bookSale(id,v){const b=S.bookSales[id]||(S.bookSales[id]={n:0,v:0});b.n++;b.v+=v;}
 function bilanData(p){
@@ -1646,7 +1695,7 @@ function chefRun(news){
   const done=[],added=[],upg=[];const room=()=>S.money-C.reserve;
   if(C.tasks.carte){R.cat='carte';BASE_ITEMS.filter(i=>!S.items[i.id].unlocked&&S.level>=i.lvl&&inSeason(i)).sort((a,b)=>a.unlock-b.unlock).forEach(it=>{if(it.unlock<=room()&&spend(it.unlock,'invest')){const s=S.items[it.id];s.unlocked=true;s.stock=Math.max(s.stock,10);added.push(it.emoji);}});}
   if(C.tasks.recettes){R.cat='carte';ITEMS.filter(i=>!i.sig&&S.items[i.id].unlocked&&S.items[i.id].recipe<3).sort((a,b)=>(S.items[b.id].sold||0)-(S.items[a.id].sold||0)).forEach(it=>{const s=S.items[it.id];const c=recipeCost(it,s.recipe);if(c<=room()&&spend(c,'invest')){s.recipe++;upg.push(it.emoji+'★'.repeat(s.recipe));}});}
-  if(C.tasks.labo&&S.level>=3&&!S.lab.pending&&S.sig.length<5&&labCost()<=room()){
+  if(C.tasks.labo&&S.level>=3&&!S.lab.pending&&S.sig.length<sigMax()&&labCost()<=room()){
     const untried=[];LAB_BASES.forEach(b=>LAB_TWISTS.forEach(t=>{if(!S.lab.tried[b.id+':'+t.id])untried.push([b.id,t.id]);}));
     if(untried.length){const good=untried.filter(([b,t])=>(COMBO[b+':'+t]||0)>=4);const pc=good.length&&Math.random()<.6?pick(good):pick(untried);R.cat='labo';
       if(spend(labCost(),'invest')){S.lab.pending={base:pc[0],twist:pc[1],by:'chef'};done.push(`test au labo : ${LB[pc[0]].name} ${LT[pc[1]].name}`);}}
@@ -1811,6 +1860,20 @@ function tabFranchise(){
 
 /* ---------- Labo de création ---------- */
 const labCost=()=>Math.round(250*levelScale());
+const labExpressCost=()=>Math.round(labCost()*2.5);
+// Une place de plus sur la carte signature tous les 5 niveaux, jusqu'à 12
+const sigMax=()=>Math.min(12,5+Math.floor(Math.max(0,S.level-3)/5));
+function labExpress(){
+  if(S.lab.pending||S.sig.length>=sigMax()||S.level<3)return;
+  const b=R.labBase||'cafe',t=R.labTwist||'caramel';
+  if(S.sig.some(x=>x.id===`sig_${b}_${t}`)){toast('Cette création est déjà à ta carte.');return;}
+  if(!spend(labExpressCost(),'invest'))return;
+  const st=comboStars(b,t);S.lab.tried[b+':'+t]=st;const name=`${LB[b].name} ${LT[t].name}`;Snd.level();
+  const verdict=['','Raté… les testeurs ont grimacé.','Bof, c’est mangeable sans plus.','Pas mal du tout, les clients devraient aimer.','Excellente recette, un futur best-seller !','Un chef-d’œuvre ! Les testeurs en redemandent.'][st];
+  openModal(`<div class="modal-head"><span class="modal-ic">⚡</span><div><p class="eyebrow">Test express au labo</p><h2>${LB[b].emoji} ${name} : ${'★'.repeat(st)}${'☆'.repeat(5-st)}</h2></div></div><p class="ev-text">${verdict} ${st>=4?'Elle se vendra cher et partira vite.':st<=2?'Tu peux quand même la proposer, à toi de voir.':''}</p><div class="btns"><button class="btn btn-primary" data-choice="0">Ajouter à la carte</button><button class="btn" data-choice="1">Jeter la recette</button></div>`,null,
+    ch=>{closeModal();if(ch===0){createSig(b,t,st);toast(`✨ ${name} rejoint ta carte avec 10 portions offertes !`,'gold');confettiBurst(70);}else toast('La recette reste notée dans ton carnet.');saveSoon();renderPanel();});
+  saveSoon();renderPanel();
+}
 function comboStars(b,t){const k=b+':'+t;if(COMBO[k])return COMBO[k];let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))%997;return 2+(h%2);}
 function createSig(b,t,st){
   const B=LB[b],T=LT[t];const id=`sig_${b}_${t}`;const lvlF=1+.12*Math.max(0,lvE()-3);const base=Math.round(LAB_REF[B.type]*lvlF*(.7+st*.15)*10)/10;
@@ -1821,7 +1884,7 @@ function createSig(b,t,st){
 }
 function removeSig(id){if(R.phase!=='closed')return;S.sig=S.sig.filter(x=>x.id!==id);S.orders=S.orders.filter(o=>{if(o.id===id){S.money+=o.cost;S.ledger.stock-=o.cost;book('stock',o.cost);return false;}return true;});delete S.items[id];rebuildItems();toast('Création retirée de la carte.');saveSoon();renderPanel();}
 function labGo(){
-  if(S.lab.pending||S.sig.length>=5||S.level<3)return;
+  if(S.lab.pending||S.sig.length>=sigMax()||S.level<3)return;
   const b=R.labBase||'cafe',t=R.labTwist||'caramel';
   if(S.sig.some(s=>s.id===`sig_${b}_${t}`)){toast('Cette création est déjà à ta carte.');return;}
   if(!spend(labCost(),'invest'))return;
@@ -1832,7 +1895,7 @@ function labNight(news){
   const st=comboStars(base,twist);S.lab.tried[base+':'+twist]=st;const name=`${LB[base].name} ${LT[twist].name}`;
   if(by==='chef'){
     const stars='★'.repeat(st)+'☆'.repeat(5-st);
-    if(st>=3&&S.sig.length<5){createSig(base,twist,st);news.push(`🧪 Labo : ${LB[base].emoji} ${name} ${stars}, ajouté à la carte par ton responsable.`);}
+    if(st>=3&&S.sig.length<sigMax()){createSig(base,twist,st);news.push(`🧪 Labo : ${LB[base].emoji} ${name} ${stars}, ajouté à la carte par ton responsable.`);}
     else news.push(`🧪 Labo : ${name} ${stars}, recette jugée trop faible et mise de côté.`);
     return;
   }
@@ -1845,10 +1908,11 @@ function tabLabo(){
   if(S.level<3)return h+`<p class="notice">🔒 Le labo ouvre au niveau 3 (${LEVELS[2].name}).</p>`;
   const b=R.labBase||'cafe',t=R.labTwist||'caramel';
   if(S.lab.pending){const p=S.lab.pending;h+=`<p class="notice">🧪 En cours : ${LB[p.base].emoji} ${LB[p.base].name} + ${LT[p.twist].name}. Résultat après le prochain bilan du soir.</p>`;}
-  else if(S.sig.length>=5)h+=`<p class="notice">Ta carte signature est pleine (5 créations). Retire une création pour en tester une nouvelle.</p>`;
+  else if(S.sig.length>=sigMax())h+=`<p class="notice">Ta carte signature est pleine (${sigMax()} créations). Retire une création pour en tester une nouvelle.</p>`;
   else{const tried=S.lab.tried[b+':'+t];
-    h+=`<div class="composer"><div class="lab-form"><label class="lbl" for="labBase">Base</label><select id="labBase" class="txt">${LAB_BASES.map(x=>`<option value="${x.id}" ${x.id===b?'selected':''}>${x.emoji} ${x.name}</option>`).join('')}</select><label class="lbl" for="labTwist">Parfum</label><select id="labTwist" class="txt">${LAB_TWISTS.map(x=>`<option value="${x.id}" ${x.id===t?'selected':''}>${x.name}</option>`).join('')}</select></div><p class="muted small">${tried?`Déjà testé : ${'★'.repeat(tried)}${'☆'.repeat(5-tried)}.`:'Association jamais testée : surprise !'} Les tests durent une nuit.</p><button class="btn btn-primary" data-act="labgo" data-cost="${labCost()}">🧪 Lancer les tests · ${costTxt(labCost())}</button></div>`;}
-  h+=`<h4>Tes créations signature · ${S.sig.length} / 5</h4>`;
+    h+=`<div class="composer"><div class="lab-form"><label class="lbl" for="labBase">Base</label><select id="labBase" class="txt">${LAB_BASES.map(x=>`<option value="${x.id}" ${x.id===b?'selected':''}>${x.emoji} ${x.name}</option>`).join('')}</select><label class="lbl" for="labTwist">Parfum</label><select id="labTwist" class="txt">${LAB_TWISTS.map(x=>`<option value="${x.id}" ${x.id===t?'selected':''}>${x.name}</option>`).join('')}</select></div><p class="muted small">${tried?`Déjà testé : ${'★'.repeat(tried)}${'☆'.repeat(5-tried)}.`:'Association jamais testée : surprise !'} Les tests durent une nuit.</p><div class="btns"><button class="btn btn-primary" data-act="labgo" data-cost="${labCost()}">🧪 Tester cette nuit · ${costTxt(labCost())}</button><button class="btn btn-gold" data-act="labexpress" data-cost="${labExpressCost()}">⚡ Résultat immédiat · ${costTxt(labExpressCost())}</button></div></div>`;}
+  h+=`<p class="notice lab-boost">✨ Tes créations se vendent bien mieux que la carte classique : jusqu’à <b>×1,75</b> pour une recette 5 ★, et les clients acceptent de les payer jusqu’à <b>15 % plus cher</b>. Elles partent aussi en livraison. Une place de plus tous les 5 niveaux (${sigMax()} aujourd’hui, 12 au maximum).</p>`;
+  h+=`<h4>Tes créations signature · ${S.sig.length} / ${sigMax()}</h4>`;
   h+=S.sig.length?S.sig.map(s=>`<div class="upg"><div class="upg-ic" aria-hidden="true">${s.emoji}</div><div class="grow"><b>${esc(s.name)}</b><p class="muted small">${'★'.repeat(s.stars)}${'☆'.repeat(5-s.stars)} · prix conseillé ${pr(s.base)} · ${(S.items[s.id]&&S.items[s.id].sold)||0} vendus</p></div><button class="btn btn-sm" data-act="sigdel" data-id="${s.id}" ${R.phase==='closed'?'':'disabled'} title="${R.phase==='closed'?'Retirer de la carte':'Possible après la fermeture'}">Retirer</button></div>`).join(''):'<p class="muted small">Aucune création pour l’instant.</p>';
   h+=`<h4>Carnet de recettes</h4><div class="book-wrap"><table class="book"><thead><tr><th></th>${LAB_TWISTS.map(x=>`<th>${x.name}</th>`).join('')}</tr></thead><tbody>${LAB_BASES.map(bb=>`<tr><th>${bb.emoji}</th>${LAB_TWISTS.map(tt=>{const v=S.lab.tried[bb.id+':'+tt.id];return `<td class="${v?'s'+v:''}" title="${bb.name} ${tt.name}">${v?v+'★':'?'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div><p class="muted small">${Object.keys(S.lab.tried).length} / ${LAB_BASES.length*LAB_TWISTS.length} associations testées.</p>`;
   return h;
@@ -2006,6 +2070,7 @@ async function bkSync(sm){
 async function bkMpAction(a,el){
   const B=S.bourse,id=el.dataset.id,q=Math.floor(+el.dataset.q||0);
   if(a==='bkreload'){BK.t=0;bkLoad(true);return;}
+  if(a==='bkview'){BK.view=el.dataset.v;renderPanel();return;}
   if(a==='bkdisc'){const d=clamp(q/100,0,.5);if(!DISC_RATES.includes(d))return;B.disc=d;saveSoon();renderPanel();const r=await bkPush(0);
     if(r&&r.ok)toast(d?`🏷️ Tes actions sont bradées à −${Math.round(d*100)} %${B.discClub?' pour les membres de ton club':' pour tous les joueurs'}.`:'🏷️ Tes actions sont de nouveau au prix normal.','gold');else toast('🌍 '+((r&&r.error)||'Impossible de mettre à jour ton offre pour l’instant.'),'bad');
     BK.t=0;bkLoad(true);return;}
@@ -2056,40 +2121,51 @@ function rivalStocksHtml(){
     <div class="bk-btns">${[.1,.25,.5].map(f=>`<button class="btn btn-sm btn-primary" data-act="bkrbuy" data-id="${r.id}" data-v="${f}" ${S.money>=x.p*(1+TRADE_FEE)?'':'disabled'}>Investir ${f*100} %</button>`).join('')}${hd?`<button class="btn btn-sm" data-act="bkrsell" data-id="${r.id}" data-v=".5">Vendre ½</button><button class="btn btn-sm" data-act="bkrsell" data-id="${r.id}" data-v="1">Tout vendre</button>`:''}</div></div></div>`;}).join('')
     +`<p class="muted small">« Investir 10 % » place 10 % de ta trésorerie. Frais de 1 % à l’achat et à la vente. Les cours bougent chaque soir avec l’humeur du marché.</p>`;
 }
+function bkListingCard(x,ko){
+  const ch=x.prev_price>0?x.price/x.prev_price-1:0,mp=+(x.my_price??x.price)||x.price,brade=mp<x.price-.004,offC=x.discount>0&&x.disc_club&&!brade;
+  const maxQ=Math.min(x.offer,Math.floor(Math.max(0,S.money)/mp)),qs=[...new Set([10,100,maxQ].map(q=>Math.min(q,maxQ)).filter(q=>q>0))];
+  return `<div class="bk-card"><div class="bk-card-top"><span class="bk-av" aria-hidden="true">${esc(x.emoji)}</span><div class="grow"><b>${esc(x.firm_name)}</b><span class="muted small">${esc(x.pseudo)}${x.holders?` · ${x.holders} actionnaire${x.holders>1?'s':''}`:''}</span></div>${sparkSvg(x.hist||[],'',true)}</div>
+  <div class="bk-price"><b class="${brade?'bk-deal':''}">${pr2(mp)}</b>${brade?`<s class="muted">${pr2(x.price)}</s><span class="tag up">🏷️ −${Math.round((1-mp/x.price)*100)} %${x.disc_club?' club':''}</span>`:''}<span class="${ch>=0?'bk-up':'bk-down'}">${pctTxt(ch)}</span></div>
+  <p class="muted small">${fmtN(x.offer)} action${x.offer>1?'s':''} en vente · dividende ${x.div_rate>0?Math.round(x.div_rate*100)+' % du bénéfice':'aucun'}${offC?' · 🤝 remise réservée à son club':''}${x.mine?` · tu en as déjà ${fmtN(x.mine)}`:''}</p>
+  <div class="bk-btns">${qs.length&&!ko?qs.map(q=>`<button class="btn btn-sm btn-primary" data-mp="bkbuy" data-id="${x.id}" data-q="${q}" data-p="${mp}">${q===maxQ&&q!==10&&q!==100?'Max ×'+fmtN(q):'×'+fmtN(q)} · ${fmtK(q*mp)} €</button>`).join(''):`<span class="muted small">${ko?'Achat impossible (codes secrets).':'Pas assez d’argent pour une action.'}</span>`}</div></div>`;
+}
+function bkHoldingCard(x){
+  const val=x.qty*x.price,g=val-x.cost;
+  return `<div class="bk-card"><div class="bk-card-top"><span class="bk-av" aria-hidden="true">${esc(x.emoji)}</span><div class="grow"><b>${esc(x.firm_name)}</b><span class="muted small">${esc(x.pseudo)}</span></div><div class="bk-val"><b>${money(val)}</b><span class="${g>=0?'bk-up':'bk-down'}">${g>=0?'+':'−'}${money(Math.abs(g))}</span></div></div>
+  <p class="muted small">${fmtN(x.qty)} actions à ${pr2(x.price)}${x.div_rate>0?` · dividende ${Math.round(x.div_rate*100)} % du bénéfice`:' · pas de dividende'}</p>
+  <div class="bk-btns"><button class="btn btn-sm" data-mp="bksell" data-id="${x.company}" data-q="${Math.ceil(x.qty/2)}">Vendre la moitié</button><button class="btn btn-sm" data-mp="bksell" data-id="${x.company}" data-q="${x.qty}">Tout vendre · ${fmtK(val*.98)} €</button></div></div>`;
+}
 function playerStocksHtml(){
   const B=S.bourse;
   if(!mpOn())return '<p class="muted small">Le marché entre joueurs est disponible sur www.comptoir-et-cie.fr.</p>';
-  if(!MP.me)return `<p class="notice">Rejoins le multijoueur pour acheter des actions des cafés des autres joueurs${B.listed?' et leur proposer les tiennes':''}.</p><button class="btn btn-sm" data-act="bkgomp">🌍 Aller à l’onglet En ligne</button>`;
+  if(!MP.me)return `<div class="firm-card"><p class="small"><b>Achète des actions des cafés des autres joueurs</b> et touche leurs dividendes chaque soir${B.listed?', ou vends-leur les tiennes':''}. Il suffit de rejoindre le multijoueur avec un pseudo.</p><button class="btn btn-primary btn-sm" data-act="bkgomp">🌍 Rejoindre le multijoueur</button></div>`;
   bkLoad();
-  const ko=!!MP.me.cheater;
-  let h=ko?'<p class="notice">🔐 Ta partie a utilisé des codes secrets : tu peux suivre le marché et revendre tes actions, mais plus en acheter ni proposer les tiennes aux joueurs.</p>':'';
-  if(B.listed&&!ko){const N=shN(),km=issueMax();const add=[.01,.05].map(f=>Math.min(km,Math.round(N*f)));
-    h+=`<div class="upg"><div class="upg-ic" aria-hidden="true">🤝</div><div class="grow"><b>Proposer tes actions aux joueurs</b><p class="muted small">Ils achètent au cours de ta dernière clôture (${pr2(B.hist[B.hist.length-1]||stockPrice())}). L’argent arrive dans ta caisse à ta prochaine connexion ou à la fin de la journée. ${B.offer?`En vente : <b>${fmtN(B.offer)}</b> actions.`:'Aucune action en vente pour l’instant.'}${B.held?` ${fmtN(B.held)} actions déjà chez des joueurs.`:''}</p><div class="bk-btns">${add.map(k=>`<button class="btn btn-sm btn-gold" data-mp="bkoffer" data-q="${k}" ${k>0?'':'disabled'}>Proposer ${fmtN(k)}</button>`).join('')}${B.offer?`<button class="btn btn-sm" data-mp="bkoffer" data-q="${-B.offer}">Retirer l’offre</button>`:''}</div>${(()=>{const base=B.hist[B.hist.length-1]||stockPrice(),club=!!MP.me.club_id;return `<p class="lbl-full">🏷️ Brader tes actions</p><div class="seg" role="group" aria-label="Remise sur tes actions">${DISC_RATES.map(d=>`<button data-mp="bkdisc" data-q="${Math.round(d*100)}" aria-pressed="${B.disc===d}">${d?'−'+Math.round(d*100)+' %':'Prix normal'}</button>`).join('')}</div><label class="bk-check"><input type="checkbox" id="bkDiscClub" ${B.discClub?'checked':''} ${club?'':'disabled'}> Remise seulement pour les membres de mon club${club?'':' (rejoins un club pour l’activer)'}</label><p class="muted small">Prix pour les joueurs : <b>${pr2(base*(1-B.disc))}</b>${B.disc?` au lieu de ${pr2(base)}${B.discClub&&club?', seulement pour ton club (les autres paient le prix normal)':', pour tout le monde'}`:''}. Le cours de ton action ne change pas : seule ton offre est bradée, et tu touches le prix bradé.</p>`;})()}</div></div>`;}
-  else if(!ko)h+='<p class="muted small">Entre en Bourse pour proposer tes propres actions aux autres joueurs.</p>';
-  const P=BK.port,M=BK.market;
-  h+='<p class="lbl-full">Ton portefeuille</p>';
-  h+=P==null?'<p class="muted small">Chargement…</p>':P.length?P.map(x=>{const val=x.qty*x.price,g=val-x.cost;
-    return `<div class="upg"><div class="upg-ic" aria-hidden="true">${esc(x.emoji)}</div><div class="grow"><b>${esc(x.firm_name)}</b><p class="muted small">${esc(x.pseudo)} · ${fmtN(x.qty)} actions à ${pr2(x.price)} · ${money(val)} <span class="${g>=0?'bk-up':'bk-down'}">(${g>=0?'+':'−'}${money(Math.abs(g))})</span>${x.div_rate>0?` · dividende ${Math.round(x.div_rate*100)} %`:''}</p><div class="bk-btns"><button class="btn btn-sm" data-mp="bksell" data-id="${x.company}" data-q="${Math.ceil(x.qty/2)}">Vendre ½</button><button class="btn btn-sm" data-mp="bksell" data-id="${x.company}" data-q="${x.qty}">Tout vendre · ${fmtK(val*.98)} €</button></div></div></div>`;}).join(''):'<p class="muted small">Tu n’as pas encore d’actions de cafés de joueurs.</p>';
-  h+='<p class="lbl-full">Actions proposées par les joueurs</p>';
-  const L=M&&M.filter(x=>!x.me&&x.offer>0);
-  h+=M==null?'<p class="muted small">Chargement…</p>':L.length?L.map(x=>{const ch=x.prev_price>0?x.price/x.prev_price-1:0;
-    const mp=+(x.my_price??x.price)||x.price,brade=mp<x.price-.004,offC=x.discount>0&&x.disc_club&&!brade;
-    const qs=[.1,.5].map(f=>Math.min(x.offer,Math.floor(Math.max(0,S.money)*f/mp)));
-    return `<div class="upg"><div class="upg-ic" aria-hidden="true">${esc(x.emoji)}</div><div class="grow"><div class="bk-head"><div><b>${esc(x.firm_name)}</b><p class="muted small">${esc(x.pseudo)} · ${brade?`<s>${pr2(x.price)}</s> <b class="bk-deal">${pr2(mp)}</b> <span class="tag up">🏷️ −${Math.round((1-mp/x.price)*100)} %${x.disc_club?' club':''}</span>`:pr2(x.price)} <span class="${ch>=0?'bk-up':'bk-down'}">${pctTxt(ch)}</span>${offC?' · 🤝 remise réservée à son club':''} · dividende ${x.div_rate>0?Math.round(x.div_rate*100)+' % du bénéfice':'aucun'} · ${fmtN(x.offer)} en vente</p></div>${sparkSvg(x.hist||[],'',true)}</div>${x.mine?`<p class="small">Tu en détiens déjà ${fmtN(x.mine)}.</p>`:''}<div class="bk-btns">${qs.map(q=>`<button class="btn btn-sm btn-primary" data-mp="bkbuy" data-id="${x.id}" data-q="${q}" data-p="${mp}" ${q>0&&!ko?'':'disabled'}>Acheter ${fmtN(q)} · ${fmtK(q*mp)} €</button>`).join('')}</div></div></div>`;}).join(''):'<p class="muted small">Aucun joueur ne propose d’actions pour l’instant.</p>';
-  h+='<button class="btn btn-sm" data-mp="bkreload">🔄 Actualiser</button>';
+  const ko=!!MP.me.cheater,M=BK.market,P=BK.port,L=M?M.filter(x=>!x.me&&x.offer>0):null,v=BK.view||'buy';
+  const tabs=[['buy','🛒 Acheter'+(L&&L.length?` (${L.length})`:'')],['port','💼 Mes actions'+(P&&P.length?` (${P.length})`:'')],['sell','🤝 Vendre les miennes']];
+  let h=`<div class="seg bk-seg" role="group" aria-label="Bourse des joueurs">${tabs.map(([k,l])=>`<button data-mp="bkview" data-v="${k}" aria-pressed="${v===k}">${l}</button>`).join('')}</div>`;
+  if(ko)h+='<p class="notice">🔐 Ta partie a utilisé des codes secrets : tu peux suivre le marché et revendre tes actions, mais plus en acheter ni proposer les tiennes aux joueurs.</p>';
+  if(v==='buy')h+=M==null?'<p class="muted small">Chargement…</p>':L.length?L.map(x=>bkListingCard(x,ko)).join(''):'<p class="muted small">Aucun joueur ne propose d’actions pour l’instant. Reviens plus tard, ou propose les tiennes dans « Vendre les miennes » !</p>';
+  else if(v==='port'){if(P==null)h+='<p class="muted small">Chargement…</p>';else if(!P.length)h+='<p class="muted small">Tu n’as pas encore d’actions de cafés de joueurs. Va voir dans « Acheter » !</p>';
+    else{const tot=P.reduce((a,x)=>a+x.qty*x.price,0),gain=tot-P.reduce((a,x)=>a+x.cost,0);h+=`<p class="small">Valeur de ton portefeuille : <b>${money(tot)}</b> <span class="${gain>=0?'bk-up':'bk-down'}">(${gain>=0?'+':'−'}${money(Math.abs(gain))})</span></p>`+P.map(bkHoldingCard).join('');}}
+  else{
+    if(!S.firm.created)h+='<p class="notice">🔒 Crée ta société (onglet 🏢 Groupe), puis entre en Bourse, pour vendre tes actions aux autres joueurs.</p>';
+    else if(!B.listed)h+='<p class="notice">🔔 Entre d’abord en Bourse, juste en dessous dans « Ton action » : tu pourras ensuite proposer tes actions aux joueurs, et même les brader pour tes amis.</p>';
+    else if(!ko){if(B.listed&&!ko){const N=shN(),km=issueMax();const add=[.01,.05].map(f=>Math.min(km,Math.round(N*f)));
+    h+=`<div class="upg"><div class="upg-ic" aria-hidden="true">🤝</div><div class="grow"><b>Proposer tes actions aux joueurs</b><p class="muted small">Ils achètent au cours de ta dernière clôture (${pr2(B.hist[B.hist.length-1]||stockPrice())}). L’argent arrive dans ta caisse à ta prochaine connexion ou à la fin de la journée. ${B.offer?`En vente : <b>${fmtN(B.offer)}</b> actions.`:'Aucune action en vente pour l’instant.'}${B.held?` ${fmtN(B.held)} actions déjà chez des joueurs.`:''}</p><div class="bk-btns">${add.map(k=>`<button class="btn btn-sm btn-gold" data-mp="bkoffer" data-q="${k}" ${k>0?'':'disabled'}>Proposer ${fmtN(k)}</button>`).join('')}${B.offer?`<button class="btn btn-sm" data-mp="bkoffer" data-q="${-B.offer}">Retirer l’offre</button>`:''}</div>${(()=>{const base=B.hist[B.hist.length-1]||stockPrice(),club=!!MP.me.club_id;return `<p class="lbl-full">🏷️ Brader tes actions</p><div class="seg" role="group" aria-label="Remise sur tes actions">${DISC_RATES.map(d=>`<button data-mp="bkdisc" data-q="${Math.round(d*100)}" aria-pressed="${B.disc===d}">${d?'−'+Math.round(d*100)+' %':'Prix normal'}</button>`).join('')}</div><label class="bk-check"><input type="checkbox" id="bkDiscClub" ${B.discClub?'checked':''} ${club?'':'disabled'}> Remise seulement pour les membres de mon club${club?'':' (rejoins un club pour l’activer)'}</label><p class="muted small">Prix pour les joueurs : <b>${pr2(base*(1-B.disc))}</b>${B.disc?` au lieu de ${pr2(base)}${B.discClub&&club?', seulement pour ton club (les autres paient le prix normal)':', pour tout le monde'}`:''}. Le cours de ton action ne change pas : seule ton offre est bradée, et tu touches le prix bradé.</p>`;})()}</div></div>`;}}
+  }
+  h+='<div class="bk-btns"><button class="btn btn-sm" data-mp="bkreload">🔄 Actualiser</button></div>';
   return h;
 }
 function tabBourse(){
-  let h=`<div class="sec-head"><div><h3>Bourse</h3><p class="muted small">Fais coter ton groupe, investis dans tes rivaux et dans les cafés des autres joueurs.</p></div></div>`;
-  if(!S.firm.created)return h+'<p class="notice">🔒 La Bourse ouvre quand tu as créé ta société (onglet 🏢 Groupe).</p>';
-  h+=`<p class="small">Humeur du marché : <b>${moodTxt()}</b>. Elle change chaque soir et fait bouger tous les cours.</p>`;
-  h+='<h4>🔔 Ton action</h4>'+(S.bourse.listed?myStockHtml():ipoHtml());
+  let h=`<div class="sec-head"><div><h3>Bourse</h3><p class="muted small">Achète les actions des autres joueurs, fais coter ton groupe et investis dans tes rivaux.</p></div></div>`;
+  h+='<h4>🌍 Bourse des joueurs</h4>'+playerStocksHtml();
+  if(!S.firm.created)return h+'<h4>🔔 Ton action</h4><p class="notice">🔒 Crée ta société (onglet 🏢 Groupe) pour entrer en Bourse et investir dans les groupes rivaux.</p>';
+  h+=`<h4>🔔 Ton action</h4><p class="small">Humeur du marché : <b>${moodTxt()}</b>. Elle change chaque soir et fait bouger tous les cours.</p>`+(S.bourse.listed?myStockHtml():ipoHtml());
   h+='<h4>🏦 Groupes rivaux</h4>'+rivalStocksHtml();
-  h+='<h4>🌍 Cafés des joueurs</h4>'+playerStocksHtml();
   h+=`<details class="bk-help"><summary>Comment ça marche ?</summary><ul class="advice">
+  <li>Dans « Bourse des joueurs », achète les actions que les autres joueurs mettent en vente (parfois bradées) et touche leurs dividendes chaque soir.</li>
   <li>Le cours de ton action suit la valeur de ton groupe et tes bénéfices des 7 derniers jours, avec un bonus si tu verses des dividendes et si ta réputation est bonne.</li>
   <li>Entrer en Bourse ou émettre des actions te rapporte de l’argent tout de suite. Tu gardes toujours au moins 51 % du capital.</li>
-  <li>Les dividendes sont versés chaque soir où tu fais un bénéfice, aux investisseurs et aux joueurs qui ont tes actions.</li>
   <li>Les actions de joueurs se revendent au marché au cours du jour, moins 2 % de frais.</li></ul></details>`;
   return h;
 }
@@ -2117,7 +2193,7 @@ function spawnDelivery(){
   const avail=ITEMS.filter(it=>onMenu(it)&&S.items[it.id].stock>0);if(!avail.length)return;
   const r=Math.random(),n=r<.45?1:r<.8?2:3,order=[],used=new Set();
   for(let k=0;k<n;k++){const pool=avail.filter(it=>!used.has(it.id)&&S.items[it.id].stock>0);if(!pool.length)break;
-    const it=wpick(pool,x=>x.pop*(x.id===S.social.trend?1.6:1)*(S.social.boost[x.id]||1));used.add(it.id);S.items[it.id].stock--;order.push({id:it.id,price:S.items[it.id].price});checkStockWarn(it);}
+    const it=wpick(pool,x=>x.pop*(x.id===S.social.trend?1.6:1)*(S.social.boost[x.id]||1)*(x.sig?1.35+.2*(x.stars-3):1));used.add(it.id);S.items[it.id].stock--;order.push({id:it.id,price:S.items[it.id].price});checkStockWarn(it);}
   if(!order.length)return;
   R.dq.push({delivery:true,num:100+Math.floor(Math.random()*900),order,age:0,limit:rand(24,32),state:'queued'});
   R.day.dlN=(R.day.dlN||0)+1;Snd.pop();
@@ -2186,13 +2262,14 @@ function drawCourier(c,k){
   c.fillStyle='#fffaf0';c.font='900 11px Nunito, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(k.own?'☕':'⚡',bx+10,by+11);
 }
 function drawSalle(c){
-  if(!S.upg.salle)return;
+  if(!S.upg.salle&&!S.upg.comptoir2)return;
   const g=c.createLinearGradient(0,0,40,0);g.addColorStop(0,'rgba(40,25,15,.4)');g.addColorStop(1,'rgba(40,25,15,0)');c.fillStyle=g;c.fillRect(0,FLOOR_Y,40,H-FLOOR_Y);
-  const seats=R.seats.filter(s=>s.salle),occ=seats.filter(s=>s.occ).length;
-  c.fillStyle='#6b3f2a';c.fillRect(48,486,3,30);
-  c.fillStyle='#2b1d16';rr(c,8,474,84,30,6);c.fill();c.strokeStyle='#d6a447';c.lineWidth=1.5;rr(c,8,474,84,30,6);c.stroke();
-  c.fillStyle='#fffaf0';c.font='900 9px Nunito, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⬅ Salle voisine',50,483);
-  c.fillStyle='#ffd36e';c.fillText(`${occ} / ${seats.length} places`,50,495);
+  const seats=R.seats.filter(s=>s.salle),occ=seats.filter(s=>s.occ).length,k2=2*(S.upg.comptoir2||0),lines=[];
+  if(seats.length)lines.push([`${occ} / ${seats.length} places`,'#ffd36e']);if(k2)lines.push([`🏪 +${k2} postes`,'#9be3b8']);
+  const h=16+lines.length*12;c.fillStyle='#6b3f2a';c.fillRect(48,474+h-4,3,516-(474+h-4));
+  c.fillStyle='#2b1d16';rr(c,8,474,84,h,6);c.fill();c.strokeStyle='#d6a447';c.lineWidth=1.5;rr(c,8,474,84,h,6);c.stroke();
+  c.fillStyle='#fffaf0';c.font='900 9px Nunito, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⬅ Boutique voisine',50,483);
+  lines.forEach(([t,col],k)=>{c.fillStyle=col;c.fillText(t,50,495+k*12);});
 }
 /* Onglet Livraison */
 function dlNext(id){
@@ -2242,6 +2319,16 @@ function tabLivraison(){
 // Pour une nouvelle note : ajoute en tête de PATCHES une entrée avec un nouvel id. Chaque joueur la verra une fois, au lancement suivant.
 // La plus récente en premier. Un joueur voit en une fois toutes les notes qu'il n'a pas encore vues.
 const PATCHES=[
+{id:'2026-11-17',date:'17 novembre',items:[
+ ['🏙️','Plus de bâtiments','8 nouveaux quartiers à acheter, du front de mer au hall d’un palace, et des rénovations jusqu’au niveau 10.'],
+ ['🏪','Un second comptoir','Jusqu’à 13 postes et 12 employés grâce au comptoir à emporter de la boutique voisine : beaucoup moins de clients repartent.'],
+ ['🧪','Le labo au centre','Tes créations se vendent bien mieux (jusqu’à ×1,75), jusqu’à 12 créations sur la carte, et un test ⚡ à résultat immédiat.'],
+ ['🍕','9 nouvelles recettes','Cappuccino, crêpe, bretzel, pizza, frappé, burger, fondant, lunch box et sorbet, jusqu’au niveau 40. Une grande carte donne envie de prendre plus de choses.'],
+ ['📦','Moins de pertes','« Tout commander » et le contrat fournisseur commandent les pâtisseries et le brunch selon tes ventes, et les invendus se gardent mieux.'],
+ ['📈','Bourse des joueurs en haut','Acheter, suivre ses actions et vendre les siennes, en trois rubriques simples, tout en haut de l’onglet Bourse.'],
+ ['🦹','Attention aux voleurs','Rarement, un cambrioleur passe la nuit ou un client file sans payer. L’alarme et les caméras (onglet Travaux) les découragent.'],
+ ['🐞','Corrigé','La fiche que tu améliores reste à sa place à l’écran, sur tous les navigateurs.'],
+]},
 {id:'2026-11-16d',date:'16 novembre',items:[
  ['✏️','Renomme ta boutique en ligne','Dans l’onglet En ligne, le bouton ✏️ Modifier (à côté de « Ma vitrine ») permet de changer le nom de ta boutique, ton pseudo et ton emblème. Tu peux aussi reprendre le nom de ton enseigne en un clic.'],
 ]},
@@ -2308,7 +2395,7 @@ function maxOut(){
   // Labo : toutes les associations testées, une création 5 ★ par base sur la carte
   LAB_BASES.forEach(b=>LAB_TWISTS.forEach(t=>{S.lab.tried[b.id+':'+t.id]=comboStars(b.id,t.id);}));S.lab.pending=null;
   S.sig.forEach(s=>{delete S.items[s.id];});S.sig=[];
-  const bases=new Set();Object.keys(S.lab.tried).filter(k=>S.lab.tried[k]>=5).forEach(k=>{const [b,t]=k.split(':');if(bases.has(b)||S.sig.length>=5)return;bases.add(b);createSig(b,t,5);});
+  const bases=new Set();Object.keys(S.lab.tried).filter(k=>S.lab.tried[k]>=5).forEach(k=>{const [b,t]=k.split(':');if(bases.has(b)||S.sig.length>=sigMax())return;bases.add(b);createSig(b,t,5);});
   // Carte complète : recettes ★★★, maîtrise or et réserve pleine
   rebuildItems();const cap=STOCK_CAP[STOCK_CAP.length-1];
   ITEMS.forEach(it=>{const s=S.items[it.id];s.unlocked=true;s.off=false;s.recipe=3;s.sold=Math.max(s.sold||0,MASTERY[3]);s.stock=Math.max(s.stock||0,cap);});
@@ -2322,7 +2409,7 @@ function maxOut(){
   if(!S.firm.created){S.firm.created=true;S.firm.createdDay=S.day;}
   QUARTIERS.forEach(q=>{if(!S.firm.locations.some(l=>l.qid===q.id))S.firm.locations.push(newLocation({name:`Le Petit Comptoir ${q.short}`,icon:q.icon,quartier:q.name,kind:'new',potential:q.potential,rent:q.rent,qid:q.id}));});
   S.comps.forEach(c=>{if(c.owned||c.closed)return;const def=COMP[c.id];c.owned=true;S.firm.locations.push(newLocation({name:def.name,icon:def.icon,quartier:'Ton quartier',kind:'rachat',potential:c.size>1?.85*c.size:1,rent:40*c.size,rep:c.rep,from:c.id}));});
-  S.firm.locations.forEach(l=>{l.level=5;l.rep=5;});
+  S.firm.locations.forEach(l=>{l.level=LOC_MAX;l.rep=5;});
   // Franchise : toutes les villes complètes, avec des franchisés excellents
   S.fr.launched=true;S.fr.centrale=true;S.fr.academie=true;S.fr.cands=[];
   CITIES.forEach(c=>{while(S.fr.list.filter(f=>f.city===c.id).length<c.slots)S.fr.list.push({id:'F'+(S.fr.seq=(S.fr.seq||0)+1),city:c.id,owner:pick(NAMES)+' '+pick(SURNAMES),quality:1.35,sat:100,day:S.day,last:0});});
@@ -3004,7 +3091,7 @@ function mpPaintVisit(el,p){
     syncStations();syncSeats();
     const c=el.getContext('2d'),sc=el.width/W;c.setTransform(sc,0,0,sc,0,0);
     paintStatic(c);drawWindow(c);drawSign(c);drawDoor(c);drawWallDecor(c);drawBoard(c);drawShelves(c);drawTurntable(c);drawBackBar(c);
-    R.stations.forEach((st,i)=>{const m=staffAt(i);drawPerson(c,SX(i),STAFF_Y,m&&m.look?m.look:meLook(),{apron:true,working:false,mood:'happy',noShadow:true});});
+    R.stations.forEach((st,i)=>{if(i>=visStations())return;const m=staffAt(i);drawPerson(c,SX(i),STAFF_Y,m&&m.look?m.look:meLook(),{apron:true,working:false,mood:'happy',noShadow:true});});
     drawCounter(c);drawSalle(c);
     const ents=[];R.seats.forEach(s=>{if(!s.terrace&&!s.salle)ents.push({y:s.y-.5,f:()=>drawChair(c,s)});});
     for(let i=0;i<Math.min(S.upg.tables,TABLES.length);i++){const t=TABLES[i];ents.push({y:t.y,f:()=>drawTable(c,t,i)});}
@@ -3169,6 +3256,7 @@ function endDay(){
   const sm={day:S.day,wd:weekday().n,sales:d.revenue,tips:d.tips,stock:S.ledger.stock,invest:S.ledger.invest,salaries,rent,loans,locs,nLocs:S.firm.locations.length,fr:frr.roy,frSup:frr.support,nFr:S.fr.list.length,waste,served:d.served,lost:d.lost,impatient:d.impatient,full:d.full,price:d.price,stockout:d.stockout,avg:d.sats.length?d.sats.reduce((a,b)=>a+b,0)/d.sats.length:null,followers:S.social.gainedToday||0};
   sm.profit=sm.sales+sm.tips-sm.stock-salaries-rent-loans+locs+frr.roy-frr.support;
   sm.dl=S.dl.on?{n:d.dlN||0,done:d.dlDone||0,cancel:d.dlCancel||0,gross:d.dlGross||0,fee:d.dlFee||0,tips:d.dlTips||0,rating:S.dl.rating}:null;
+  sm.thefts=d.thefts||0;
   if(sm.dl){sm.profit+=sm.dl.gross-sm.dl.fee+sm.dl.tips;S.dl.last=Object.assign({day:S.day},sm.dl);}
   evalMissionsEnd(d);sm.mis=S.missions.list.filter(m=>m.done).length;sm.misN=S.missions.list.length;
   if(d.served>=40&&d.lost===0)S.flags.perfect=true;
@@ -3442,7 +3530,7 @@ function drawCounter(c){
   c.fillStyle=K[2];c.fillRect(x1+3,top+60,x2-x1-3,4);
   c.fillStyle=K[3];rr(c,x1,top,x2-x1+2,11,3);c.fill();c.fillStyle='#d6cdbd';c.fillRect(x1,top+9,x2-x1+2,2);
   c.strokeStyle='rgba(170,160,150,.5)';c.lineWidth=1;c.beginPath();for(let k=0;k<6;k++){const vx=x1+30+k*80;c.moveTo(vx,top+2);c.quadraticCurveTo(vx+20,top+8,vx+44,top+3);}c.stroke();
-  for(let i=0;i<slotCount();i++){const sx=SX(i);if(i>=maxStations())drawVitrine(c,sx,i);else if(i>=R.stations.length)drawRecruit(c,sx);}
+  for(let i=0;i<slotCount();i++){const sx=SX(i);if(i>=visStations())drawVitrine(c,sx,i);else if(i>=R.stations.length)drawRecruit(c,sx);}
   c.fillStyle='#d6a447';rr(c,524,top-22,30,22,4);c.fill();c.fillStyle='#2b1d16';rr(c,528,top-19,22,7,2);c.fill();c.fillStyle='#7fe0a8';c.font='900 6px Nunito, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('€',539,top-15.5);
   if(S.upg.tpe){c.fillStyle='#2b2b2b';rr(c,603,top-15,12,15,2);c.fill();c.fillStyle='#7fc8ff';c.fillRect(605,top-13,8,5);}
 }
@@ -3589,7 +3677,7 @@ function draw(){
   const c=ctx;c.setTransform(1,0,0,1,0,0);c.drawImage(bg,0,0);
   c.setTransform(scale,0,0,scale,0,0);
   drawWindow(c);drawSign(c);drawDoor(c);drawWallDecor(c);drawBoard(c);drawShelves(c);drawTurntable(c);drawBackBar(c);
-  R.stations.forEach((st,i)=>{const m=staffAt(i);const working=!!(st.customer&&st.customer.state==='waiting');drawPerson(c,SX(i),STAFF_Y,m?m.look:meLook(),{apron:true,working,mood:'happy',noShadow:true});});
+  R.stations.forEach((st,i)=>{if(i>=visStations())return;const m=staffAt(i);const working=!!(st.customer&&st.customer.state==='waiting');drawPerson(c,SX(i),STAFF_Y,m?m.look:meLook(),{apron:true,working,mood:'happy',noShadow:true});});
   drawCounter(c);drawSalle(c);
   const ents=[];
   R.seats.forEach(s=>{if(!s.terrace&&!s.salle)ents.push({y:s.y-.5,f:()=>drawChair(c,s)});});
@@ -3691,6 +3779,7 @@ function showSummary(sm,next){
   ${sm.waste.n?`<p class="muted small">🗑️ Invendus jetés cette nuit : ${sm.waste.n} portions (${eur(sm.waste.val)}).</p>`:''}
   ${sm.followers?`<p class="muted small">📱 +${fmtK(sm.followers)} abonnés aujourd’hui, ${fmtK(S.social.followers)} au total.</p>`:''}
   ${sm.dl?`<p class="muted small">${DL.icon} ${DL.name} : ${sm.dl.done} commande${sm.dl.done>1?'s':''} livrée${sm.dl.done>1?'s':''}${sm.dl.cancel?`, ${sm.dl.cancel} annulée${sm.dl.cancel>1?'s':''}`:''} · note ${num1(sm.dl.rating)} ★.</p>`:''}
+  ${sm.thefts?`<p class="muted small">🦹 ${sm.thefts} client${sm.thefts>1?'s sont partis':' est parti'} sans payer aujourd’hui.${S.upg.alarme?'':' Pense à l’alarme (onglet Travaux).'}</p>`:''}
   ${sm.bk&&(sm.bk.price||sm.bk.divIn)?`<p class="muted small">📈 Bourse : ${[sm.bk.price?`ton action clôture à ${pr2(sm.bk.price)} (${pctTxt(sm.bk.chg)})`:'',sm.bk.paid?`${eur(sm.bk.paid)} de dividendes versés`:'',sm.bk.divIn?`${eur(sm.bk.divIn)} de dividendes reçus`:''].filter(Boolean).join(' · ')}.</p>`:''}
   ${sm.autoOrder>0?`<p class="muted small">🚚 Commande automatique passée pour demain : ${eur(sm.autoOrder)}.</p>`:''}
   ${sm.news&&sm.news.length?`<div><h4>Dans le quartier</h4><ul class="advice">${sm.news.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`:''}
@@ -3761,10 +3850,13 @@ function lockedRow(it){
 function tabCarte(){
   const cap=stockCap();const unl=ITEMS.filter(i=>S.items[i.id].unlocked&&inSeason(i)),locked=ITEMS.filter(i=>!S.items[i.id].unlocked&&inSeason(i)&&!i.sig);const Wt=WEATHERS[S.weather];
   locked.sort((a,b)=>(b.season?1:0)-(a.season?1:0)||a.unlock-b.unlock);
-  let h=`<div class="sec-head"><div><h3>La carte</h3><p class="muted small">${unl.length} produit${unl.length>1?'s':''} · réserve de ${cap} portions chacun</p></div><button class="btn btn-gold btn-sm" data-act="orderall" data-orderall data-cost="0">🧾 Tout commander</button></div>`;
+  let h=`<div class="sec-head"><div><h3>La carte</h3><p class="muted small">${unl.length} produit${unl.length>1?'s':''} · réserve de ${cap} portions chacun</p></div><button class="btn btn-gold btn-sm" data-act="orderall" data-orderall data-cost="0" title="Les boissons remplissent la réserve ; les pâtisseries et le brunch sont commandés selon tes ventes des derniers jours, pour limiter les pertes.">🧾 Tout commander</button></div>`;
   const tr=ITEM[S.social.trend];
   h+=`<p class="hint">${seasonOf().icon} ${seasonOf().name}, jour ${dayInSeason()} / ${SEASON_LEN}${festivalToday()?` · ${festivalToday().icon} <b>${festivalToday().name}</b>`:''}.<br>${R.phase==='closed'?'Demain':'Aujourd’hui'} : ${Wt.icon} ${Wt.name}. ${Wt.tip}<br>🔥 Tendance : ${tr.emoji} ${tr.name}${S.items[tr.id].unlocked?', plus demandé aujourd’hui':''}.<br>🧾 Les commandes arrivent ${deliveryWhen()}. 🛵 L’express livre tout de suite, mais coûte plus cher.</p>`;
-  unl.forEach(it=>h+=itemRow(it));
+  const sigs=unl.filter(i=>i.sig),classics=unl.filter(i=>!i.sig);
+  if(sigs.length){h+=`<h4>✨ Tes créations signature</h4>`;sigs.forEach(it=>h+=itemRow(it));h+='<h4>☕ La carte classique</h4>';}
+  else if(S.level>=3)h+=`<p class="notice">🧪 Invente tes propres recettes au <b>Labo</b> : elles se vendent beaucoup mieux que la carte classique.</p>`;
+  classics.forEach(it=>h+=itemRow(it));
   if(locked.length)h+=`<h4>Nouvelles recettes</h4>`;
   locked.slice(0,3).forEach(it=>h+=lockedRow(it));
   if(locked.length>3)h+=`<p class="muted center small">+ ${locked.length-3} autres recettes à découvrir en montant de niveau</p>`;
@@ -3808,7 +3900,7 @@ function pubSection(){
 }
 function trafficBreakdown(){return `<div class="tbreak">${trafficParts().map((p,i)=>`<div><span>${p[0]}</span><b data-tp="${i}">×${num2(p[1])}</b></div>`).join('')}<div class="tot"><span>Clients attendus sur une journée</span><b data-tptot>≈ ${Math.round(BASE_RATE*DAY_LEN*trafficMult())}</b></div></div>`;}
 function tabAppro(){
-  let h=`<div class="sec-head"><div><h3>Approvisionnement</h3><p class="muted small">Commande le soir, livraison à l’ouverture.</p></div><button class="btn btn-gold btn-sm" data-act="orderall" data-orderall data-cost="0">🧾 Tout commander</button></div>`;
+  let h=`<div class="sec-head"><div><h3>Approvisionnement</h3><p class="muted small">Commande le soir, livraison à l’ouverture.</p></div><button class="btn btn-gold btn-sm" data-act="orderall" data-orderall data-cost="0" title="Les boissons remplissent la réserve ; les pâtisseries et le brunch sont commandés selon tes ventes des derniers jours, pour limiter les pertes.">🧾 Tout commander</button></div>`;
   if(S.shortage)h+=`<p class="notice">🥛 Pénurie de ${TYPE_PLURAL[S.shortage.type]} encore ${S.shortage.days} jour${S.shortage.days>1?'s':''} : seul l’express est possible.</p>`;
   if(S.strike)h+=`<p class="notice">🚛 Grève des transporteurs : livraisons vers midi (encore ${S.strike} j).</p>`;
   h+=`<h4>Commandes en cours</h4>`;
@@ -3882,8 +3974,8 @@ function financeChart(){
 }
 function locCard(l){
   const reno=renoCost(l),mc=managerCost(),sell=Math.round(locValue(l)*.7);
-  const pips=`<span class="pips" aria-label="Niveau ${l.level} sur 5">${Array.from({length:5},(_,i)=>`<i class="${i<l.level?'on':''}"></i>`).join('')}</span>`;
-  return `<div class="loc"><div class="upg-ic" aria-hidden="true">${l.icon}</div><div class="grow"><div class="item-top"><b>${esc(l.name)}</b>${pips}</div><p class="muted small">${esc(l.quartier)} · gérance : ${esc(l.manager.name)} (${Math.round(l.manager.skill*100)} %) · ${num1(l.rep)} ★ · loyer ${l.rent} €</p>${spark(l.history)}<p class="small">Dernier jour : <b class="${l.last>=0?'v-pos':'v-neg'}">${l.last>=0?'+':'−'}${eur(Math.abs(l.last),0)}</b> · moyenne ${eur(avgOf(l.history),0)}</p><div class="btns">${l.level<5?`<button class="btn btn-primary btn-sm" data-act="reno" data-id="${l.id}" data-cost="${reno}">🛠️ Rénover · ${costTxt(reno)}</button>`:'<span class="tag ok">Niveau max</span>'}<button class="btn btn-sm" data-act="manager" data-id="${l.id}" data-cost="${mc}">👔 Nouvelle gérance · ${costTxt(mc)}</button>${R.confirmSell===l.id?`<button class="btn btn-sm btn-primary" data-act="sellyes" data-id="${l.id}">Confirmer la vente · ${costTxt(sell)}</button>`:`<button class="btn btn-sm" data-act="sell" data-id="${l.id}">Vendre</button>`}</div></div></div>`;
+  const pips=`<span class="pips" aria-label="Niveau ${l.level} sur ${LOC_MAX}">${Array.from({length:LOC_MAX},(_,i)=>`<i class="${i<l.level?'on':''}"></i>`).join('')}</span>`;
+  return `<div class="loc"><div class="upg-ic" aria-hidden="true">${l.icon}</div><div class="grow"><div class="item-top"><b>${esc(l.name)}</b>${pips}</div><p class="muted small">${esc(l.quartier)} · gérance : ${esc(l.manager.name)} (${Math.round(l.manager.skill*100)} %) · ${num1(l.rep)} ★ · loyer ${l.rent} €</p>${spark(l.history)}<p class="small">Dernier jour : <b class="${l.last>=0?'v-pos':'v-neg'}">${l.last>=0?'+':'−'}${eur(Math.abs(l.last),0)}</b> · moyenne ${eur(avgOf(l.history),0)}</p><div class="btns">${l.level>=LOC_MAX?'<span class="tag ok">Niveau max</span>':S.level<renoReq(l)?`<span class="tag lock">🔒 Rénovation ${l.level+1} au niveau ${renoReq(l)}</span>`:`<button class="btn btn-primary btn-sm" data-act="reno" data-id="${l.id}" data-cost="${reno}">🛠️ Rénover (niv. ${l.level+1}) · ${costTxt(reno)}</button>`}<button class="btn btn-sm" data-act="manager" data-id="${l.id}" data-cost="${mc}">👔 Nouvelle gérance · ${costTxt(mc)}</button>${R.confirmSell===l.id?`<button class="btn btn-sm btn-primary" data-act="sellyes" data-id="${l.id}">Confirmer la vente · ${costTxt(sell)}</button>`:`<button class="btn btn-sm" data-act="sell" data-id="${l.id}">Vendre</button>`}</div></div></div>`;
 }
 function tabGroupe(){
   const rk=ranking();const myR=rk.findIndex(x=>x.me)+1;const n=S.firm.locations.length;
@@ -4006,12 +4098,13 @@ function act(a,el){
     case 'buycomp':buyComp(id);break;
     case 'firm':createFirm();break;
     case 'openloc':openLocation(id);break;
-    case 'reno':{const l=S.firm.locations.find(x=>x.id===id);if(!l||l.level>=5)return;if(spend(renoCost(l),'invest')){l.level++;toast(`🛠️ ${l.name} rénové : niveau ${l.level} !`,'gold');confettiBurst(60);renderPanel();}break;}
+    case 'reno':{const l=S.firm.locations.find(x=>x.id===id);if(!l||l.level>=LOC_MAX||S.level<renoReq(l))return;if(spend(renoCost(l),'invest')){l.level++;toast(`🛠️ ${l.name} rénové : niveau ${l.level} !`,'gold');confettiBurst(60);renderPanel();}break;}
     case 'manager':{const l=S.firm.locations.find(x=>x.id===id);if(!l)return;if(spend(managerCost(),'invest')){const sk=rand(.85,1.35);l.manager={name:pick(NAMES),skill:sk,salary:Math.round(45+sk*25)};toast(`👔 ${l.manager.name} prend la gérance (${Math.round(sk*100)} %).`);renderPanel();}break;}
     case 'sell':R.confirmSell=id;renderPanel();break;
     case 'sellyes':sellLocation(id);break;
     case 'toggleoff':{const s=S.items[id];if(!s)return;s.off=!s.off;toast(s.off?`${it.emoji} ${it.short} est retiré de la carte.`:`${it.emoji} ${it.short} revient à la carte !`);saveSoon();renderPanel();break;}
     case 'labgo':labGo();break;
+    case 'labexpress':labExpress();break;
     case 'sigdel':removeSig(id);break;
     case 'frlaunch':frLaunch();break;
     case 'fraccept':frAccept(id);break;
@@ -4086,12 +4179,18 @@ function updateHud(){
   else{const d=R.day;const avg=d.sats.length?d.sats.reduce((a,b)=>a+b,0)/d.sats.length:null;th=`<span class="pill">😋 ${d.served} servis</span><span class="pill">🚶 ${d.lost} partis</span><span class="pill">💶 ${eur(d.revenue)}</span><span class="pill">⭐ ${avg?num1(avg):'–'} aujourd’hui</span><span class="pill">🧾 file : ${R.queue.length}</span>`;}
   if(tk._h!==th){tk._h=th;tk.innerHTML=th;}
 }
+function keepInView(cls,idx,top){const body=$('#tabBody');const el=body.querySelectorAll('.'+cls)[idx];if(!el)return;const d=el.getBoundingClientRect().top-top;if(Math.abs(d)<2)return;
+  if(body.scrollHeight>body.clientHeight+2&&getComputedStyle(body).overflowY!=='visible')body.scrollTop+=d;else window.scrollBy(0,d);}
 function setSpeedUI(){document.querySelectorAll('.speed button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.speed===R.speed?'true':'false'));}
 
 /* Évènements */
 function bindUI(){
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;R.confirmReset=false;R.confirmSell=null;R.bkConfirm=null;renderPanel();$('#tabBody').scrollTop=0;}));
-  $('#tabBody').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;Snd.init();act(b.dataset.act,b);});
+  $('#tabBody').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;Snd.init();
+    // La fiche cliquée reste exactement à la même place à l'écran, quel que soit le navigateur
+    const card=b.closest('.item,.upg,.member,.loc,.comp,.firm-card');let cls='',idx=-1,top=0;
+    if(card){cls=card.classList[0];idx=[...$('#tabBody').querySelectorAll('.'+cls)].indexOf(card);top=card.getBoundingClientRect().top;}
+    const t0=tab;act(b.dataset.act,b);if(idx>=0&&tab===t0)keepInView(cls,idx,top);});
   $('#tabBody').addEventListener('change',e=>{const t=e.target;if(t.id==='postItem')R.postItem=t.value;
     if(t.id==='bkDiscClub'){S.bourse.discClub=t.checked;saveSoon();bkPush(0).then(r=>{if(r&&r.ok&&S.bourse.disc)toast(t.checked?'🤝 Ta remise est réservée aux membres de ton club.':'🏷️ Ta remise vaut maintenant pour tous les joueurs.','gold');BK.t=0;bkLoad(true);});}
     if(t.id&&t.id.startsWith('chefT-')){S.chef.tasks[t.id.slice(6)]=t.checked;saveSoon();}

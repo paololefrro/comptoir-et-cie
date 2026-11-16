@@ -119,14 +119,14 @@ module.exports = [
 </table>
 
 <h2>Les pertes de la nuit</h2>
-<p>Les boissons se conservent, mais pas les produits frais. Chaque nuit, environ <b>25 % des pâtisseries et du brunch invendus</b> partent à la poubelle. La <b>vitrine réfrigérée</b> (380 €, dès le niveau 2) réduit ces pertes à 8 %. Si tu vends beaucoup de gâteaux, de sandwichs ou de pancakes, c’est l’un des meilleurs investissements du jeu.</p>
+<p>Les boissons se conservent, mais pas les produits frais. Chaque nuit, environ <b>18 % des pâtisseries et du brunch invendus</b> partent à la poubelle. La <b>vitrine réfrigérée</b> (380 €, dès le niveau 2) réduit ces pertes à 5 %. Si tu vends beaucoup de gâteaux, de sandwichs ou de pancakes, c’est l’un des meilleurs investissements du jeu.</p>
 <p>Astuce : commande les produits frais au plus près de tes ventes réelles. Le bilan du soir indique combien tu en as vendu ; vise un peu au-dessus, pas le double.</p>
 
 <h2>Pénuries et grèves</h2>
 <p>De temps en temps, un événement vient compliquer l’approvisionnement : une <b>pénurie</b> rend un ingrédient rare pendant quelques jours, ou une <b>grève des transporteurs</b> perturbe les livraisons. Les nouvelles du quartier t’en avertissent. Dans ces moments-là, mets en avant les produits qui ne sont pas touchés et ajuste tes prix.</p>
 
 <h2>Le contrat fournisseur</h2>
-<p>Dès le niveau 3, le <b>contrat fournisseur</b> (1 400 €) passe automatiquement chaque soir une commande pour remplir ta réserve. Tu gagnes un temps précieux, surtout quand ta carte compte plus de vingt produits. Pense quand même à vérifier de temps en temps les produits frais, pour ne pas sur-stocker.</p>
+<p>Dès le niveau 3, le <b>contrat fournisseur</b> (1 400 €) passe automatiquement chaque soir une commande. Les boissons, qui se conservent, remplissent la réserve ; les pâtisseries et le brunch sont commandés <b>selon tes ventes des trois derniers jours</b>, avec un peu de marge, pour éviter de jeter. Le bouton « Tout commander » fait pareil. Tu gagnes un temps précieux, surtout quand ta carte compte plus de vingt produits.</p>
 
 <h2>En résumé</h2>
 <ul>
@@ -145,7 +145,7 @@ module.exports = [
   html: `
 <h2>Quand recruter ?</h2>
 <p>Le signal est simple : si la file d’attente dépasse régulièrement quatre clients et que des clients repartent à cause de l’attente, il est temps d’embaucher. Chaque personne recrutée occupe un poste au comptoir et sert en même temps que toi.</p>
-<p>Au départ, le comptoir compte deux postes : le tien et un poste à pourvoir. L’amélioration <b>Comptoir agrandi</b> ajoute un poste à chaque niveau (160 €, 750 €, 2 400 €, puis 15 000 € au niveau 12 et 60 000 € au niveau 24), jusqu’à <b>sept postes</b> au total. Avec plus de postes, la file d’attente s’allonge aussi.</p>
+<p>Au départ, le comptoir compte deux postes : le tien et un poste à pourvoir. L’amélioration <b>Comptoir agrandi</b> ajoute un poste à chaque niveau (160 €, 750 €, 2 400 €, puis 15 000 € au niveau 12 et 60 000 € au niveau 24), jusqu’à <b>sept postes</b> au total. Avec plus de postes, la file d’attente s’allonge aussi. Dès le niveau 20, le <b>second comptoir</b> (dans la boutique voisine) ajoute encore deux postes par niveau, jusqu’à <b>13 postes et 12 employés</b> : c’est ce qui fait fondre le nombre de clients qui repartent.</p>
 <p>À partir du niveau 11, les <b>commis en cuisine</b> (onglet Travaux) accélèrent toutes les préparations de 10 % chacun, jusqu’à cinq commis. Ils préparent aussi les commandes à livrer, ce qui libère le comptoir. Chaque commis touche un salaire chaque soir.</p>
 <p>Pour asseoir plus de monde, les <b>tables bistrot</b> montent jusqu’à six tables, et la <b>salle voisine</b> (dès le niveau 9) ajoute six places par niveau, jusqu’à 36 places.</p>
 
@@ -195,12 +195,13 @@ module.exports = [
   intro: 'Au niveau 3, le labo de création ouvre ses portes. Tu y associes une base et un parfum pour inventer des recettes signature, que tu es seul à proposer.',
   html: `
 <h2>Le principe</h2>
-<p>Dans l’onglet <b>Labo</b>, choisis une <b>base</b> et un <b>parfum</b>, puis lance les tests. Le résultat arrive le lendemain matin, après le bilan du soir : ta recette reçoit une note de une à cinq étoiles.</p>
+<p>Dans l’onglet <b>Labo</b>, choisis une <b>base</b> et un <b>parfum</b>, puis lance les tests. Le résultat arrive le lendemain matin, après le bilan du soir : ta recette reçoit une note de une à cinq étoiles. Pressé ? Le bouton <b>⚡ Résultat immédiat</b> donne la note tout de suite, pour un peu plus cher.</p>
 <p>Six bases sont disponibles : <b>café</b>, <b>thé</b>, <b>chocolat</b>, <b>boisson glacée</b>, <b>tartelette</b> et <b>tartine</b>. Elles se combinent avec neuf parfums : vanille, caramel, pistache, framboise, épices, coco, noisette, citron et miel. Cela fait 54 associations à découvrir.</p>
 
 <h2>Que valent les étoiles ?</h2>
 <p>Plus une création a d’étoiles, plus son prix conseillé est élevé et plus elle est populaire. Une recette cinq étoiles devient vite l’un des produits les plus rentables de ta carte. Une recette à une ou deux étoiles peut quand même être proposée, mais elle se vendra mal.</p>
-<p>Ta carte signature peut accueillir <b>cinq créations</b> au maximum. Pour en tester une nouvelle quand elle est pleine, retire d’abord la moins bonne. Chaque recette testée reste notée dans ton carnet : tu ne perds jamais une découverte.</p>
+<p>Tes créations se vendent <b>bien mieux que la carte classique</b> : jusqu’à 1,75 fois plus pour une recette cinq étoiles, et les clients acceptent de les payer jusqu’à 15 % plus cher. Elles apparaissent en haut de l’onglet Carte et partent aussi en livraison.</p>
+<p>Ta carte signature peut accueillir <b>cinq créations</b> au départ, puis une de plus tous les cinq niveaux, jusqu’à douze. Pour en tester une nouvelle quand elle est pleine, retire d’abord la moins bonne. Chaque recette testée reste notée dans ton carnet : tu ne perds jamais une découverte.</p>
 
 <h2>Quelques pistes pour démarrer</h2>
 <p>Sans tout dévoiler, voici des associations qui ont fait leurs preuves auprès des testeurs :</p>
@@ -240,9 +241,17 @@ module.exports = [
     <tr><td>🏰 Vieille ville (niveau 4)</td><td>6 000 €</td><td>×1,45</td><td>90 €</td></tr>
     <tr><td>🏙️ Quartier d’affaires (niveau 5)</td><td>9 000 €</td><td>×1,8</td><td>120 €</td></tr>
     <tr><td>🌊 Bord du canal (niveau 6)</td><td>12 000 €</td><td>×2,2</td><td>150 €</td></tr>
+    <tr><td>🏖️ Front de mer (niveau 10)</td><td>40 000 €</td><td>×2,8</td><td>260 €</td></tr>
+    <tr><td>🏟️ Abords du stade (niveau 14)</td><td>70 000 €</td><td>×3,3</td><td>340 €</td></tr>
+    <tr><td>✈️ Terminal de l’aéroport (niveau 18)</td><td>120 000 €</td><td>×4</td><td>480 €</td></tr>
+    <tr><td>🖼️ Quartier des musées (niveau 23)</td><td>200 000 €</td><td>×4,8</td><td>620 €</td></tr>
+    <tr><td>🏔️ Station de ski (niveau 28)</td><td>320 000 €</td><td>×5,6</td><td>800 €</td></tr>
+    <tr><td>🎡 Parc d’attractions (niveau 33)</td><td>500 000 €</td><td>×6,5</td><td>1 050 €</td></tr>
+    <tr><td>🌆 Sommet d’un gratte-ciel (niveau 39)</td><td>800 000 €</td><td>×7,6</td><td>1 400 €</td></tr>
+    <tr><td>🏨 Hall d’un palace (niveau 45)</td><td>1 300 000 €</td><td>×9</td><td>1 900 €</td></tr>
   </tbody>
 </table>
-<p>Chaque adresse est tenue par une personne en gérance, plus ou moins douée. Tu peux rénover tes adresses jusqu’au niveau 5 pour augmenter leurs ventes, et changer de gérance si les résultats déçoivent.</p>
+<p>Chaque adresse est tenue par une personne en gérance, plus ou moins douée. Tu peux rénover tes adresses jusqu’au niveau 10 pour augmenter leurs ventes (à partir du niveau 6 de rénovation, ton café doit avoir assez d’expérience : niveau 12, puis 18, 25, 33 et 42), et changer de gérance si les résultats déçoivent.</p>
 
 <h2>Racheter la concurrence</h2>
 <p>Ton quartier compte quatre concurrents : une boulangerie, un bar à bubble tea, une chaîne de coffee shops et un salon de thé. L’onglet <b>Quartier</b> montre leurs parts de marché, leur réputation et leurs difficultés. Un concurrent en difficulté se rachète moins cher. Chaque rachat devient une nouvelle adresse de ton groupe et t’apporte une partie de ses abonnés.</p>

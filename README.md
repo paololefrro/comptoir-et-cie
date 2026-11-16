@@ -148,6 +148,17 @@ Modération :
 - **Nouveaux paliers jusqu’au niveau 50** : tables (6 tables), salle voisine (+6 places par niveau, jusqu’à 36), comptoir (7 postes, et une file d’attente qui s’allonge), commis en cuisine (5 niveaux, +10 % de vitesse chacun et préparation des livraisons, salaire chaque soir), machine espresso, four, déco, réserve (jusqu’à 2 000 portions), enseigne et terrasse chauffée.
 - Les nouveaux grands objectifs, missions et trophées sont ajoutés à la fin des listes pour ne pas décaler les sauvegardes.
 
+### Mise à jour du 17 novembre
+
+- **Pertes** : invendus frais 18 % par nuit (5 % avec la vitrine). « Tout commander » et le contrat fournisseur visent, pour les produits périssables, les ventes moyennes des 3 derniers jours × 1,35 + 8 (`stockTarget`), au lieu de remplir la réserve. Une grande carte fait prendre plus d’articles par client.
+- **9 recettes de base** de plus, du niveau 12 au niveau 40 (cappuccino, crêpe, bretzel, pizza, frappé, burger, fondant, lunch box, sorbet).
+- **Labo** : créations ×(1,35 + 0,2 × (étoiles − 3)) en demande et jusqu’à +15 % de prix accepté, en haut de la Carte, `sigMax()` de 5 à 12 places, test ⚡ immédiat (2,5 × le prix d’un test).
+- **Second comptoir** (`comptoir2`, niveaux 20, 30 et 42) : +2 postes par niveau, hors de l’écran à gauche (`SX` renvoie −44 pour ces postes), jusqu’à 13 postes.
+- **Bâtiments** : 8 quartiers de plus (niveaux 10 à 45) et rénovations jusqu’au niveau 10 (`LOC_MAX`, `renoReq`).
+- **Vols** : cambriolage rare la nuit (événement) et client qui part sans payer (0,12 % des clients) ; l’amélioration « Alarme et caméras » les réduit fortement. Catégorie de bilan « Vols ».
+- **Bourse des joueurs** en haut de l’onglet, en trois rubriques (Acheter ×10 / ×100 / Max, Mes actions, Vendre les miennes).
+- Après chaque clic dans le panneau, la fiche cliquée est remise à la même place à l’écran (`keepInView`).
+
 ### Équipe : profils et formation
 
 - Profils débloqués avec le niveau : barista confirmé (8), champion de latte art (15), maître barista (25), légende du comptoir (38). Plus rapides, mais avec des salaires bien plus élevés (jusqu’à 1 650 € par jour). Les meilleurs profils débloqués sortent plus souvent dans les candidatures, et le bouton « Publier une annonce » renouvelle les CV contre de l’argent.
