@@ -84,8 +84,14 @@ th:first-child,td:first-child{text-align:left}
 .field:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .gift-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
 .gift-row .field{flex:1 1 220px}
-.gift-presets{display:flex;gap:6px;flex-wrap:wrap}
-.gift-kinds{display:flex;flex-wrap:wrap;margin:6px 0}
+.gift-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:8px;margin:6px 0 10px}
+.gift-item{display:flex;align-items:center;gap:8px;background:var(--card-2);border:2px solid transparent;border-radius:12px;padding:8px 10px;cursor:pointer;min-width:0}
+.gift-item:has(input:checked){border-color:var(--accent)}
+.gift-item input[type=checkbox]{width:18px;height:18px;flex:none;accent-color:var(--accent);margin:0}
+.gi-name{flex:1;min-width:0;font-weight:800;font-size:.9rem}
+.gi-name small{display:block;font-weight:700;font-size:.75rem;color:var(--ink-2)}
+.gi-qty{width:118px;flex:none;padding:5px 8px}
+.gi-qty:disabled{opacity:.45}
 .gift-lbl{display:block;font-weight:800;font-size:.85rem;margin-top:6px}
 .gift-player{display:flex;gap:12px;align-items:center;background:var(--card-2);border-radius:14px;padding:10px 12px;margin:8px 0}
 .gift-player .av{font-size:1.6rem}
@@ -192,21 +198,14 @@ a{color:var(--accent);font-weight:800}
       </form>
       <p class="msg" id="giftMsg" role="status"></p>
       <div id="giftPlayer"></div>
-      <form id="giftForm" hidden autocomplete="off">
-        <div class="seg gift-kinds" role="group" aria-label="Type de cadeau">
-          <button type="button" data-gk="money" aria-pressed="true">💰 Argent</button>
-          <button type="button" data-gk="followers" aria-pressed="false">📱 Abonnés</button>
-          <button type="button" data-gk="xp" aria-pressed="false">⭐ XP</button>
-          <button type="button" data-gk="max" aria-pressed="false">👑 Tout au max</button>
-        </div>
-        <div class="gift-row" id="giftAmountRow">
-          <input id="giftAmount" class="field" type="number" min="1" step="1" value="10000" aria-label="Quantité offerte">
-          <span class="gift-presets" id="giftPresets"></span>
-        </div>
-        <p class="hint" id="giftKindHint"></p>
+      <form id="giftForm" autocomplete="off">
+        <h3 class="mod-h">Choisis ce que tu offres</h3>
+        <p class="hint">Coche un ou plusieurs cadeaux et règle les quantités : tout part en un seul envoi.</p>
+        <div class="gift-items" id="giftItems"></div>
         <label class="gift-lbl" for="giftNote">Petit message pour le joueur (facultatif)</label>
         <div class="gift-row"><input id="giftNote" class="field" maxlength="120" placeholder="Par exemple : bravo pour ta victoire au concours !"></div>
-        <button class="btn go" type="submit" id="giftSend">🎁 Envoyer le cadeau</button>
+        <p class="hint" id="giftSummary"></p>
+        <button class="btn go" type="submit" id="giftSend" disabled>🎁 Envoyer le cadeau</button>
       </form>
       <h3 class="mod-h">Derniers cadeaux envoyés</h3>
       <div id="giftRecent"></div>
@@ -462,28 +461,56 @@ a{color:var(--accent);font-weight:800}
     if (state !== 'denied' && state !== 'dash') $('msg').textContent = '';
   }
   // ---------- Cadeaux aux joueurs
-  var giftUser = null, giftKind = 'money';
-  var GIFT_PRESETS = { money: [1000, 10000, 100000, 1000000], followers: [1000, 10000, 100000], xp: [500, 5000, 50000] };
-  var GIFT_HINT = {
-    money: 'Ajouté à sa trésorerie. Au plus 100 000 000 € par cadeau.',
-    followers: 'Ajoutés à ses abonnés sur les réseaux. Au plus 10 millions par cadeau.',
-    xp: 'Peut lui faire passer un ou plusieurs niveaux. Au plus 1 million d’XP par cadeau.',
-    max: 'Met toute sa partie au maximum (niveau, carte, labo, équipe, adresses, franchise). Comme un code secret, cela place sa vitrine hors classement.'
-  };
-  var GIFT_UNIT = { money: ' €', followers: ' abonnés', xp: ' XP' };
+  var giftUser = null;
+  // Ce que l'on peut offrir ; « def » = quantité proposée, « max » = plafond (les mêmes que côté serveur)
+  var GIFT_ITEMS = [
+    { k: 'money', icon: '💰', name: 'Argent', def: 10000, max: 100000000 },
+    { k: 'followers', icon: '📱', name: 'Abonnés', def: 5000, max: 10000000 },
+    { k: 'xp', icon: '⭐', name: 'Expérience (XP)', def: 1000, max: 1000000 },
+    { k: 'levels', icon: '🆙', name: 'Niveaux en plus', def: 1, max: 11 },
+    { k: 'shares', icon: '🏅', name: 'Parts de fondateur', def: 5, max: 100 },
+    { k: 'rep', icon: '🌟', name: 'Réputation à 5 ★' },
+    { k: 'stock', icon: '📦', name: 'Réserve pleine', hint: 'Tous ses produits au maximum de stock' },
+    { k: 'menu', icon: '🍽️', name: 'Toute la carte débloquée' },
+    { k: 'max', icon: '👑', name: 'Tout au maximum', hint: 'Place sa partie hors classement' }
+  ];
   function giftWho(u) { return u.pseudo || u.email || 'ce joueur'; }
-  function giftLabel() {
-    if (!giftUser) return '🎁 Envoyer le cadeau';
-    if (giftKind === 'max') return '👑 Offrir « tout au maximum » à ' + giftWho(giftUser);
-    return '🎁 Offrir ' + fmt(+$('giftAmount').value || 0) + GIFT_UNIT[giftKind] + ' à ' + giftWho(giftUser);
+  function giftText(kind, a) {
+    switch (kind) {
+      case 'money': return fmt(a) + ' €';
+      case 'followers': return fmt(a) + ' abonnés';
+      case 'xp': return fmt(a) + ' XP';
+      case 'levels': return a + (a > 1 ? ' niveaux' : ' niveau');
+      case 'shares': return a + (a > 1 ? ' parts' : ' part') + ' de fondateur';
+      case 'rep': return 'réputation à 5 ★';
+      case 'stock': return 'réserve pleine';
+      case 'menu': return 'toute la carte débloquée';
+      case 'max': return 'tout au maximum';
+    }
+    return kind;
   }
-  function giftKindUI() {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-gk]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-gk') === giftKind)); });
-    $('giftAmountRow').hidden = giftKind === 'max';
-    $('giftPresets').innerHTML = (GIFT_PRESETS[giftKind] || []).map(function (v) { return '<button type="button" class="btn sm" data-ga="' + v + '">' + fmt(v) + (GIFT_UNIT[giftKind] || '') + '</button>'; }).join('');
-    $('giftKindHint').textContent = GIFT_HINT[giftKind];
-    var b = $('giftSend'); delete b.dataset.armed; b.textContent = giftLabel();
+  function giftChosen() {
+    return GIFT_ITEMS.filter(function (it) { var c = document.querySelector('[data-gi="' + it.k + '"]'); return c && c.checked; })
+      .map(function (it) {
+        var q = document.querySelector('[data-gq="' + it.k + '"]');
+        return { kind: it.k, amount: it.def ? Math.max(1, Math.min(it.max, Math.round(+(q && q.value) || 0))) : null };
+      });
   }
+  function giftUpdate() {
+    GIFT_ITEMS.forEach(function (it) { var q = document.querySelector('[data-gq="' + it.k + '"]'), c = document.querySelector('[data-gi="' + it.k + '"]'); if (q) q.disabled = !c.checked; });
+    var ch = giftChosen(), b = $('giftSend');
+    delete b.dataset.armed; b.disabled = !giftUser || !ch.length;
+    b.textContent = giftUser && ch.length ? '🎁 Offrir à ' + giftWho(giftUser) : '🎁 Envoyer le cadeau';
+    $('giftSummary').textContent = !giftUser ? 'Cherche d’abord un joueur ci-dessus, puis coche ce que tu veux lui offrir.'
+      : !ch.length ? 'Coche au moins un cadeau.'
+      : 'À offrir à ' + giftWho(giftUser) + ' : ' + ch.map(function (c) { return giftText(c.kind, c.amount); }).join(', ') + '.' +
+        (ch.some(function (c) { return c.kind === 'max'; }) ? ' Le boost « tout au maximum » placera sa partie hors classement.' : '');
+  }
+  $('giftItems').innerHTML = GIFT_ITEMS.map(function (it) {
+    return '<label class="gift-item"><input type="checkbox" data-gi="' + it.k + '"><span class="gi-name">' + it.icon + ' ' + it.name + (it.hint ? '<small>' + it.hint + '</small>' : '') + '</span>' +
+      (it.def ? '<input type="number" class="field gi-qty" data-gq="' + it.k + '" min="1" max="' + it.max + '" step="1" value="' + it.def + '" aria-label="Quantité : ' + it.name + '" disabled>' : '') + '</label>';
+  }).join('');
+  giftUpdate();
   function giftPlayerHtml(u) {
     var seen = u.updated_at || u.last_sign_in_at;
     return '<div class="gift-player"><span class="av" aria-hidden="true">' + esc(u.emoji || '☕') + '</span><div>' +
@@ -499,7 +526,8 @@ a{color:var(--accent);font-weight:800}
       $('gift').hidden = false;
       var L = r.data || [];
       $('giftRecent').innerHTML = L.length ? L.map(function (g) {
-        var what = g.kind === 'max' ? '👑 Tout au maximum' : (g.kind === 'money' ? '💰 ' : g.kind === 'xp' ? '⭐ ' : '📱 ') + fmt(g.amount) + GIFT_UNIT[g.kind];
+        var def = GIFT_ITEMS.filter(function (x) { return x.k === g.kind; })[0];
+        var what = (def ? def.icon + ' ' : '') + giftText(g.kind, +g.amount || 0);
         return '<div class="mod-row"><span class="who">' + esc(g.pseudo || g.email || 'Joueur supprimé') + '</span><span class="meta">' + when(g.created_at) + '</span>' +
           '<span class="chip' + (g.claimed_at ? '' : ' warn') + '">' + (g.claimed_at ? 'Reçu le ' + when(g.claimed_at) : 'En attente') + '</span>' +
           '<span class="body">' + what + (g.note ? ' · « ' + esc(g.note) + ' »' : '') + '</span></div>';
@@ -573,44 +601,38 @@ a{color:var(--accent);font-weight:800}
     var r = await sb.rpc('admin_find_player', { p_target: t });
     if (r.error) { $('giftMsg').textContent = 'Recherche impossible : ' + r.error.message; return; }
     if (!r.data) {
-      giftUser = null; $('giftPlayer').innerHTML = ''; $('giftForm').hidden = true;
+      giftUser = null; $('giftPlayer').innerHTML = ''; giftUpdate();
       $('giftMsg').textContent = 'Aucun joueur trouvé avec cet e-mail ou ce pseudo. Seuls les joueurs qui ont créé un compte (e-mail ou multijoueur) peuvent recevoir un cadeau.';
       return;
     }
     giftUser = r.data; $('giftMsg').textContent = '';
     $('giftPlayer').innerHTML = giftPlayerHtml(giftUser);
-    $('giftForm').hidden = false; giftKindUI();
+    giftUpdate();
   });
-  $('giftForm').addEventListener('click', function (e) {
-    var k = e.target.closest('[data-gk]');
-    if (k) { giftKind = k.getAttribute('data-gk'); var p = GIFT_PRESETS[giftKind]; if (p) $('giftAmount').value = p[1] || p[0]; giftKindUI(); return; }
-    var a = e.target.closest('[data-ga]');
-    if (a) { $('giftAmount').value = a.getAttribute('data-ga'); giftKindUI(); }
-  });
-  $('giftAmount').addEventListener('input', function () { var b = $('giftSend'); delete b.dataset.armed; b.textContent = giftLabel(); });
+  $('giftForm').addEventListener('change', giftUpdate);
+  $('giftForm').addEventListener('input', function (e) { if (e.target.matches && e.target.matches('[data-gq]')) giftUpdate(); });
   $('giftForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    if (!giftUser) return;
+    var ch = giftChosen();
+    if (!giftUser || !ch.length) return;
     var b = $('giftSend');
-    var amount = Math.round(+$('giftAmount').value || 0);
-    if (giftKind !== 'max' && amount < 1) { $('giftMsg').textContent = 'Indique une quantité d’au moins 1.'; return; }
     // Deux clics pour éviter les envois par erreur
     if (!b.dataset.armed) {
-      b.dataset.armed = '1'; b.textContent = '✅ Confirmer : ' + giftLabel().replace(/^\S+\s/, '');
-      setTimeout(function () { if (b.dataset.armed) { delete b.dataset.armed; b.textContent = giftLabel(); } }, 5000);
+      b.dataset.armed = '1'; b.textContent = '✅ Confirmer l’envoi à ' + giftWho(giftUser);
+      setTimeout(function () { if (b.dataset.armed) giftUpdate(); }, 5000);
       return;
     }
     delete b.dataset.armed; b.disabled = true;
-    var r = await sb.rpc('admin_gift', { p_user: giftUser.id, p_kind: giftKind, p_amount: giftKind === 'max' ? null : amount, p_note: $('giftNote').value.trim() || null });
-    b.disabled = false;
+    var r = await sb.rpc('admin_gift_many', { p_user: giftUser.id, p_items: ch, p_note: $('giftNote').value.trim() || null });
     if (r.error || !r.data || !r.data.ok) {
       $('giftMsg').textContent = 'Envoi impossible : ' + ((r.data && r.data.error) || (r.error && r.error.message) || 'erreur inconnue') + '.';
     } else {
-      $('giftMsg').textContent = '✅ Cadeau envoyé ! ' + giftWho(giftUser) + ' le recevra à sa prochaine ouverture du jeu, ou à la fin de sa journée.';
-      $('giftNote').value = ''; giftUser.pending = (giftUser.pending || 0) + 1;
+      $('giftMsg').textContent = '✅ Cadeau envoyé à ' + giftWho(giftUser) + ' : ' + ch.map(function (c) { return giftText(c.kind, c.amount); }).join(', ') + '. Il le recevra à sa prochaine ouverture du jeu, ou à la fin de sa journée.';
+      $('giftNote').value = ''; giftUser.pending = (giftUser.pending || 0) + ch.length;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-gi]'), function (c) { c.checked = false; });
       $('giftPlayer').innerHTML = giftPlayerHtml(giftUser); loadGifts();
     }
-    giftKindUI();
+    giftUpdate();
   });
 
   $('mod').addEventListener('click', async function (e) {

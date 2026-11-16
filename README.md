@@ -50,20 +50,25 @@ Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à c
 
 ### Cadeaux aux joueurs
 
-Sur `stats.html`, la carte **🎁 Offrir un cadeau à un joueur** permet d’offrir à un joueur :
+Sur `stats.html`, la carte **🎁 Offrir un cadeau à un joueur** permet de choisir ce que tu offres, et d’en cocher plusieurs à la fois :
 
-- de l’argent, au plus 100 000 000 € par cadeau ;
-- des abonnés, au plus 10 millions ;
-- de l’XP, au plus 1 million ;
-- le boost **tout au maximum**.
+- 💰 de l’argent, au plus 100 000 000 € ;
+- 📱 des abonnés, au plus 10 millions ;
+- ⭐ de l’XP, au plus 1 million ;
+- 🆙 des niveaux en plus, jusqu’au niveau maximum ;
+- 🏅 des parts de fondateur, au plus 100 ;
+- 🌟 une réputation à 5 ★ ;
+- 📦 une réserve pleine ;
+- 🍽️ toute la carte débloquée ;
+- 👑 le boost **tout au maximum**.
 
 Pour l’utiliser :
 
 1. Tape l’e-mail de son compte ou son pseudo du multijoueur, puis clique sur **Chercher** : sa fiche s’affiche (enseigne, niveau, dernière activité, cadeaux en attente).
-2. Choisis le cadeau et la quantité, ajoute si tu veux un petit message, puis clique deux fois sur le bouton d’envoi : le deuxième clic confirme.
+2. Coche les cadeaux et règle les quantités : un récapitulatif s’affiche sous la liste. Ajoute si tu veux un petit message, puis clique deux fois sur le bouton d’envoi : le deuxième clic confirme.
 3. Le joueur reçoit le cadeau tout seul, avec une animation et ton message, à sa prochaine ouverture du jeu ou à la fin de sa prochaine journée. La liste « Derniers cadeaux envoyés » indique s’il l’a reçu.
 
-L’argent, les abonnés et l’XP ne changent rien au classement. Le boost tout au maximum, lui, place la partie hors classement, comme un code secret. Seuls les joueurs qui ont un compte (e-mail ou multijoueur) peuvent recevoir un cadeau. L’installation demande `supabase-cadeaux.sql`, à exécuter après les autres fichiers SQL.
+Ces cadeaux ne changent rien au classement, sauf le boost tout au maximum. Celui-ci place la partie hors classement, comme un code secret. Seuls les joueurs qui ont un compte (e-mail ou multijoueur) peuvent recevoir un cadeau. L’installation demande `supabase-cadeaux.sql`, à exécuter après les autres fichiers SQL.
 
 ## Sauvegarde des joueurs
 

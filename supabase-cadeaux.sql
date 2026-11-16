@@ -103,3 +103,59 @@ revoke all on function public.claim_gifts() from public, anon;
 grant execute on function public.claim_gifts() to authenticated;
 revoke all on function public.admin_find_player(text), public.admin_gift(uuid, text, bigint, text), public.admin_gifts_recent() from public, anon;
 grant execute on function public.admin_find_player(text), public.admin_gift(uuid, text, bigint, text), public.admin_gifts_recent() to authenticated;
+
+-- 2. Plus de choix et envoi groupé ------------------------------------------
+alter table public.gifts drop constraint if exists gifts_kind_check;
+alter table public.gifts add constraint gifts_kind_check
+  check (kind in ('max', 'money', 'followers', 'xp', 'levels', 'rep', 'stock', 'menu', 'shares'));
+
+-- Plafond par type de cadeau (null pour les cadeaux sans quantité)
+create or replace function public.gift_amount(p_kind text, p_amount bigint)
+returns bigint language sql immutable
+as $$
+  select case p_kind
+    when 'money'     then least(greatest(coalesce(p_amount, 0), 1), 100000000)
+    when 'followers' then least(greatest(coalesce(p_amount, 0), 1), 10000000)
+    when 'xp'        then least(greatest(coalesce(p_amount, 0), 1), 1000000)
+    when 'levels'    then least(greatest(coalesce(p_amount, 0), 1), 11)
+    when 'shares'    then least(greatest(coalesce(p_amount, 0), 1), 100)
+  end;
+$$;
+
+-- Plusieurs cadeaux en un envoi : p_items = [{"kind":"money","amount":10000}, {"kind":"rep"}, …]
+create or replace function public.admin_gift_many(p_user uuid, p_items jsonb, p_note text default null)
+returns jsonb
+language plpgsql security definer set search_path = public, auth
+as $$
+declare
+  it jsonb;
+  k  text;
+  n  int := 0;
+  nt text := left(nullif(btrim(coalesce(p_note, '')), ''), 120);
+begin
+  if not public.is_admin() then raise exception 'Accès refusé.' using errcode = '42501'; end if;
+  if not exists (select 1 from auth.users where id = p_user) then
+    return jsonb_build_object('ok', false, 'error', 'Ce joueur n’existe plus.');
+  end if;
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    return jsonb_build_object('ok', false, 'error', 'Choisis au moins un cadeau.');
+  end if;
+  for it in select * from jsonb_array_elements(p_items) loop
+    k := it->>'kind';
+    if k not in ('max', 'money', 'followers', 'xp', 'levels', 'rep', 'stock', 'menu', 'shares') then
+      return jsonb_build_object('ok', false, 'error', 'Type de cadeau inconnu : ' || coalesce(k, '?'));
+    end if;
+  end loop;
+  for it in select * from jsonb_array_elements(p_items) loop
+    k := it->>'kind';
+    insert into public.gifts (user_id, kind, amount, note)
+    values (p_user, k, public.gift_amount(k, nullif(it->>'amount', '')::bigint), nt);
+    nt := null; -- le message n'accompagne que le premier cadeau
+    n := n + 1;
+  end loop;
+  return jsonb_build_object('ok', true, 'count', n);
+end $$;
+
+revoke all on function public.gift_amount(text, bigint) from public, anon, authenticated;
+revoke all on function public.admin_gift_many(uuid, jsonb, text) from public, anon;
+grant execute on function public.admin_gift_many(uuid, jsonb, text) to authenticated;

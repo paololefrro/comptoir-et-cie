@@ -1846,24 +1846,23 @@ async function claimGifts(){
   if(!Cloud.user||giftBusy)return;giftBusy=true;
   let gifts=[];try{gifts=await mpRpc('claim_gifts')||[];}catch(e){gifts=[];}
   giftBusy=false;if(!gifts.length)return;
+  const got=[],notes=[];
   gifts.forEach(g=>{
-    const a=Math.max(0,+g.amount||0),note=g.note?` « ${g.note} »`:'';
-    if(g.kind==='max'){
-      const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;
-      showBanner('👑 Compte boosté !','Tout est au maximum');
-      toast('👑 '+(g.note||'Ton compte a été boosté au maximum !'),'gold');
-    }else if(g.kind==='money'&&a){
-      S.money+=a;book('recompenses',a);showBanner('🎁 Un cadeau pour toi !',`+${money(a)} en caisse`);
-      toast(`🎁 Cadeau de l’équipe : +${money(a)}${note}`,'gold');
-    }else if(g.kind==='followers'&&a){
-      S.social.followers+=a;showBanner('🎁 Un cadeau pour toi !',`+${fmtK(a)} abonnés`);
-      toast(`🎁 Cadeau de l’équipe : +${fmtK(a)} abonnés${note}`,'gold');
-    }else if(g.kind==='xp'&&a){
-      addXP(a);showBanner('🎁 Un cadeau pour toi !',`+${fmtK(a)} XP`);
-      toast(`🎁 Cadeau de l’équipe : +${fmtK(a)} XP${note}`,'gold');
-    }
+    const a=Math.max(0,+g.amount||0);if(g.note)notes.push(g.note);
+    if(g.kind==='max'){const mb=S.money;maxOut();book('recompenses',S.money-mb);S.flags.cheats=(S.flags.cheats||0)+1;got.push('👑 tout au maximum');}
+    else if(g.kind==='money'&&a){S.money+=a;book('recompenses',a);got.push(`+${money(a)}`);}
+    else if(g.kind==='followers'&&a){S.social.followers+=a;got.push(`+${fmtK(a)} abonnés`);}
+    else if(g.kind==='xp'&&a){addXP(a);got.push(`+${fmtK(a)} XP`);}
+    else if(g.kind==='levels'&&a){let n=0;for(let i=0;i<a&&S.level<LEVELS.length;i++){addXP(Math.max(0,LEVELS[S.level].xp-S.xp));n++;}if(n)got.push(`+${n} niveau${n>1?'x':''}`);}
+    else if(g.kind==='rep'){S.rep=5;got.push('réputation à 5 ★');}
+    else if(g.kind==='stock'){const cap=stockCap();ITEMS.forEach(i=>{const s=S.items[i.id];if(s&&s.unlocked)s.stock=Math.max(s.stock,cap);});got.push('réserve pleine');}
+    else if(g.kind==='menu'){BASE_ITEMS.forEach(i=>{const s=S.items[i.id];if(s&&!s.unlocked){s.unlocked=true;s.stock=Math.max(s.stock,10);}});got.push('toute la carte débloquée');}
+    else if(g.kind==='shares'&&a){S.legacy.points+=a;got.push(`+${a} part${a>1?'s':''} de fondateur`);}
   });
-  confettiBurst(200);Snd.level();save();renderPanel();updateHud();
+  if(!got.length)return;
+  showBanner(gifts.some(g=>g.kind==='max')?'👑 Compte boosté !':'🎁 Un cadeau pour toi !',got.slice(0,3).join(' · '));
+  toast(`🎁 Cadeau de l’équipe : ${got.join(', ')}${notes.length?' « '+notes.join(' ')+' »':''}`,'gold');
+  confettiBurst(200);Snd.level();checkTier();save();renderPanel();updateHud();
   if(Cloud.linked())Cloud.push(true).catch(()=>{});if(MP.me){MP.lastPub=0;mpPublish(true);}
 }
 const CHEATS={
