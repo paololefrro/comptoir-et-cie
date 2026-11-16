@@ -80,6 +80,14 @@ La partie s'enregistre toute seule dans le navigateur. Le bouton **💾 Sauvegar
 
 Le joueur se connecte avec son e-mail : il reçoit un lien de connexion, sans mot de passe. Sa partie part ensuite en ligne chaque soir, et il la retrouve sur tous ses appareils.
 
+Comment ça se passe :
+
+- **Avant l’envoi du lien**, la partie part déjà en ligne sous un compte provisoire (celui du multijoueur s’il existe). En confirmant l’e-mail, ce compte devient le compte du joueur. Le lien peut donc s’ouvrir dans un autre navigateur ou sur un autre appareil (l’appli mail d’un téléphone, par exemple) : la partie est retrouvée.
+- **Après la connexion** : s’il n’y a rien en ligne, la partie de l’appareil est envoyée ; si l’appareil a une partie toute neuve, la partie en ligne est reprise automatiquement ; si les deux parties diffèrent, le jeu demande laquelle garder.
+- **Chaque soir**, la partie est envoyée en ligne, sauf si la partie en ligne est plus avancée de plus d’un jour : elle n’est jamais écrasée sans demander.
+- Si l’adresse a déjà un compte, le joueur reçoit un lien de connexion à ce compte et retrouve la partie qui y est enregistrée.
+- Tant que le SMTP personnalisé n’est pas branché, les e-mails sont ceux de Supabase par défaut, en anglais, et leur nombre par heure est limité.
+
 1. Crée un compte sur https://supabase.com, puis un projet. Choisis une région en Europe (par exemple Paris ou Francfort).
 2. Ouvre **SQL Editor → New query**, colle le contenu de `supabase.sql`, puis clique sur **Run**.
 3. Ouvre **Authentication → URL Configuration**. Renseigne dans **Site URL** l'adresse du site (par exemple `https://www.comptoir-et-cie.fr`), puis ajoute la même adresse dans **Redirect URLs**.
