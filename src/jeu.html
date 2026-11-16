@@ -396,6 +396,11 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .mp-newbtn{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);border:0;border-radius:99px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:900;font-size:.82rem;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
 .mp-send{display:flex;gap:6px;align-items:center}
 .tr-max{margin:2px 0 0;color:var(--good);font-weight:800}
+.patch-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;max-height:min(52vh,430px);overflow-y:auto;overscroll-behavior:contain}
+.patch-list li{display:flex;gap:10px;align-items:flex-start;background:var(--card-2);border:2px solid var(--line);border-radius:14px;padding:8px 11px}
+.patch-list .pi{font-size:1.45rem;line-height:1.2;flex:none}
+.patch-list b{font-size:.92rem}
+.patch-list p{margin:2px 0 0;font-size:.82rem;color:var(--ink-2);line-height:1.35}
 .dl-q{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .dl-q li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--card-2);border:2px solid var(--line);border-left:5px solid #1aa179;border-radius:12px;padding:6px 10px;font-size:.85rem}
 .dl-q li.late{border-left-color:var(--bad)}
@@ -2221,6 +2226,28 @@ function tabLivraison(){
   return h;
 }
 
+/* ---------- Notes de mise à jour (une seule fois par version) ---------- */
+// Pour une nouvelle note : change PATCH.id et la liste. Chaque joueur la verra une fois, au lancement suivant.
+const PATCH={id:'2026-11-16b',date:'16 novembre',items:[
+ ['📈','Une toute nouvelle Bourse','Entrer en Bourse ne fait plus rien perdre : tu lèves de l’argent et tu gardes tout. Cours en direct, dividendes, placements dans les groupes rivaux, et tu peux acheter les actions des cafés des autres joueurs. Tes anciennes parts de fondateur ont été converties en argent.'],
+ ['🛵','La livraison à domicile','Nouvel onglet Livraison dès le niveau 4 : inscris ton café sur Livr’Éclair, prépare les commandes et regarde les livreurs passer les chercher.'],
+ ['🏛️','50 niveaux','Le café monte maintenant jusqu’au niveau 50, le Panthéon du café. Après le niveau 12, chaque client rapporte plus d’expérience.'],
+ ['🪑','Plus de place et plus d’améliorations','Jusqu’à 7 postes au comptoir, 6 tables, la salle voisine (36 places), des commis en cuisine, une terrasse chauffée et de nouveaux paliers jusqu’au niveau 50.'],
+ ['👑','Des employés plus rapides','Quatre nouveaux profils jusqu’à la Légende du comptoir, et la formation 🎓 pour rendre ton équipe plus rapide, jusqu’à un maximum par profil. Moins de clients repartent à cause de l’attente.'],
+ ['💬','Un chat plus lisible','La terrasse et les salons de club ont des bulles de discussion, des émojis rapides et un bouton « Nouveaux messages ».'],
+ ['☁️','Sauvegarde en ligne plus sûre','Ta partie n’est plus perdue quand le lien de l’e-mail s’ouvre dans un autre navigateur, et une partie plus avancée n’est plus jamais écrasée sans te demander.'],
+ ['🐞','Corrigé','Le panneau ne saute plus quand tu améliores une recette.'],
+]};
+function patchSeen(){let ls=null;try{ls=localStorage.getItem('cc-patch-seen');}catch(e){}return ls===PATCH.id||S.flags.patchSeen===PATCH.id;}
+function markPatchSeen(){S.flags.patchSeen=PATCH.id;try{localStorage.setItem('cc-patch-seen',PATCH.id);}catch(e){}save();}
+function showPatch(next){
+  markPatchSeen(); // marquée vue dès l'affichage : elle ne revient jamais, même si la page est rechargée
+  openModal(`<div class="modal-head"><span class="modal-ic">🎉</span><div><p class="eyebrow">Mise à jour du ${PATCH.date}</p><h2>Quoi de neuf ?</h2></div></div>
+  <ul class="patch-list">${PATCH.items.map(([i,t,d])=>`<li><span class="pi" aria-hidden="true">${i}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ul>
+  <p class="muted small" style="margin:0">Une idée ou un bug ? Dis-le-nous avec le bouton 💡 Proposer une idée.</p>
+  <button class="btn btn-primary btn-lg" data-modal-ok>C’est parti !</button>`,next);
+}
+
 /* ---------- Retour du joueur ---------- */
 function todayKey(t){const d=t?new Date(t):new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function checkDaily(){const k=todayKey(),L=S.login;if(L.last===k)return null;L.streak=L.last===todayKey(Date.now()-864e5)?L.streak+1:1;L.last=k;L.total=(L.total||0)+1;saveSoon();return {streak:L.streak,idx:(L.streak-1)%7};}
@@ -2237,8 +2264,8 @@ function showOffline(off,next){
 }
 function startupModals(){
   const q=[];
-  if(!S.flags.welcome){S.login={last:todayKey(),streak:1,total:1};q.push(()=>showWelcome());}
-  else{const off=computeOffline();if(off)q.push(n=>showOffline(off,n));const dl=checkDaily();if(dl)q.push(n=>showDaily(dl,n));}
+  if(!S.flags.welcome){S.login={last:todayKey(),streak:1,total:1};markPatchSeen();q.push(()=>showWelcome());}
+  else{if(!patchSeen())q.push(n=>showPatch(n));const off=computeOffline();if(off)q.push(n=>showOffline(off,n));const dl=checkDaily();if(dl)q.push(n=>showDaily(dl,n));}
   if(S.flags.legacyNote){delete S.flags.legacyNote;setTimeout(()=>toast(`📈 La Bourse a changé : tes ${S.flags.legacyDone} parts de fondateur sont converties en ${money(S.flags.legacyDone*10000)}, déjà dans ta caisse.`,'gold'),1500);saveSoon();}
   const run=()=>{const f=q.shift();if(f)f(run);};run();
 }

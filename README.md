@@ -29,6 +29,14 @@ Pour le tester sur ton ordinateur, lance `node serve.js`, puis ouvre http://loca
 - **Tutoriel** : à la première visite, l'accueil propose un tour guidé en 11 étapes. Chaque zone de l'écran est mise en lumière avec une bulle d'explication, et on navigue avec les flèches du clavier ou Échap. Le bouton **🧭 Tuto**, en bas du panneau de gestion, permet de le revoir.
 - **Ma boutique** : en haut de l'onglet Travaux, le bouton **Personnaliser** permet de choisir le nom sur l'enseigne et les teintes des murs, du lambris et de la porte, du sol, du comptoir et de l'enseigne, ainsi que la couleur de la maison (liseré du comptoir et tenue). L'aperçu en direct est libre, et les travaux se paient à la validation : couleur de la maison 20 €, nom de l'enseigne 30 €, style d'enseigne 40 €, lambris 50 €, murs 60 €, comptoir 70 €, sol 80 €. Certaines teintes se débloquent avec le niveau. Les autres joueurs voient ces couleurs quand ils visitent le café dans le multijoueur, mais l'enseigne y affiche le nom choisi pour le multijoueur, qui est modéré.
 
+## Notes de mise à jour (patch note)
+
+Au lancement du jeu, un joueur qui revient voit une fois la fenêtre « Quoi de neuf ? ». Elle est définie dans `src/jeu.html` par la constante `PATCH` : un identifiant (`id`), une date et une liste de nouveautés (émoji, titre, texte).
+
+- Chaque joueur la voit **une seule fois par identifiant** : elle est marquée vue dès son affichage, dans la sauvegarde (`flags.patchSeen`) et dans le navigateur (`cc-patch-seen`).
+- Un tout nouveau joueur ne la voit pas : elle est marquée vue avec l’écran d’accueil.
+- Pour une nouvelle note : remplace la liste et **change l’identifiant** (par exemple `2026-11-20`). Sans changement d’identifiant, personne ne la revoit.
+
 ## Codes secrets
 
 Pour ouvrir la case cachée, clique **5 fois rapidement sur la tasse rose** à côté du nom du café. Les majuscules, les accents et les espaces ne comptent pas.
