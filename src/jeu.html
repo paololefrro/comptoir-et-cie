@@ -452,6 +452,10 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .duel-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--gold)}
 .duel-bar i{display:block;height:100%;background:var(--accent)}
 .duel-scores{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.mp-me-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.mp-edit-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mp-edit-row .btn{white-space:normal;text-align:left;max-width:100%}
+.mp-usesign{align-self:flex-start;white-space:normal;text-align:left;max-width:100%;overflow-wrap:anywhere}
 .mp-edit summary{cursor:pointer;font-weight:900;font-size:.85rem;color:var(--ink-2);padding:6px 0}
 .visit-cv{display:block;width:100%;aspect-ratio:1000/520;border-radius:14px;border:2px solid var(--line);background:var(--card-2)}
 .sugg-form .txt{flex:none;width:100%}
@@ -2238,6 +2242,9 @@ function tabLivraison(){
 // Pour une nouvelle note : ajoute en tête de PATCHES une entrée avec un nouvel id. Chaque joueur la verra une fois, au lancement suivant.
 // La plus récente en premier. Un joueur voit en une fois toutes les notes qu'il n'a pas encore vues.
 const PATCHES=[
+{id:'2026-11-16d',date:'16 novembre',items:[
+ ['✏️','Renomme ta boutique en ligne','Dans l’onglet En ligne, le bouton ✏️ Modifier (à côté de « Ma vitrine ») permet de changer le nom de ta boutique, ton pseudo et ton emblème. Tu peux aussi reprendre le nom de ton enseigne en un clic.'],
+]},
 {id:'2026-11-16c',date:'16 novembre',items:[
  ['🏷️','Actions bradées','Dans l’onglet Bourse, tu peux maintenant brader tes actions proposées aux joueurs (−10 %, −25 % ou −50 %), pour tout le monde ou seulement pour les membres de ton club. Le cours de ton action ne change pas.'],
 ]},
@@ -2908,20 +2915,26 @@ function mpJoinHtml(){
 }
 function mpMeHtml(){
   const m=MP.me,tips=m.tips_pending||0;
-  return `<div class="mp-me"><span class="mp-av" aria-hidden="true">${esc(m.emoji)}</span><div class="grow"><b>${esc(m.firm_name)}</b><span class="muted small">${esc(m.pseudo)} · ${m.cheater?'🎭 hors classement':m.rank?`n° ${m.rank} sur ${m.players}`:'pas encore classé'}</span></div><button type="button" class="btn btn-sm" data-mp="visit" data-id="${esc(m.id)}">👀 Ma vitrine</button></div>
+  return `<div class="mp-me"><span class="mp-av" aria-hidden="true">${esc(m.emoji)}</span><div class="grow"><b>${esc(m.firm_name)}</b><span class="muted small">${esc(m.pseudo)} · ${m.cheater?'🎭 hors classement':m.rank?`n° ${m.rank} sur ${m.players}`:'pas encore classé'}</span></div><div class="mp-me-btns"><button type="button" class="btn btn-sm" data-mp="editprof">✏️ Modifier</button><button type="button" class="btn btn-sm" data-mp="visit" data-id="${esc(m.id)}">👀 Ma vitrine</button></div></div>
   ${tips?`<p class="notice mp-tips">💝 ${tips>1?`${tips} pourboires t’attendent`:'Un pourboire t’attend'} ! <button type="button" class="btn btn-gold btn-sm" data-mp="claim">Récupérer ${money(mpTipValue()*tips)}</button></p>`:''}`;
 }
 function mpEditHtml(){
-  const m=MP.me;
-  return `<details class="mp-edit"><summary>⚙️ Mon profil en ligne</summary>
+  return `<div class="mp-edit-row"><button type="button" class="btn btn-sm" data-mp="editprof">⚙️ Modifier mon profil : pseudo, nom de la boutique, emblème</button><button class="btn btn-sm" type="button" data-mp="leave">Quitter le multijoueur</button></div>`;
+}
+function openMpProfile(){
+  const m=MP.me;if(!m)return;MP.editEmoji=null;const sign=signName();
+  openModal(`<div class="modal-head"><span class="modal-ic">✏️</span><div><p class="eyebrow">Multijoueur</p><h2>Ma boutique en ligne</h2></div></div>
   <form id="mpEditForm" class="sugg-form" autocomplete="off" novalidate>
    <label class="lbl-full" for="mpEditPseudo">Pseudo</label><input id="mpEditPseudo" class="txt" maxlength="20" value="${esc(m.pseudo)}">
-   <label class="lbl-full" for="mpEditFirm">Enseigne</label><input id="mpEditFirm" class="txt" maxlength="40" value="${esc(m.firm_name)}">
+   <label class="lbl-full" for="mpEditFirm">Nom de la boutique</label><input id="mpEditFirm" class="txt" maxlength="40" value="${esc(m.firm_name)}" placeholder="Le Petit Comptoir">
+   ${sign!==m.firm_name?`<button type="button" class="btn btn-sm mp-usesign" data-mp="usesign" data-v="${esc(sign)}">↩️ Reprendre le nom de mon enseigne : « ${esc(sign)} »</button>`:''}
+   <p class="muted small" style="margin:0">C’est le nom que voient les autres joueurs dans le classement, l’annuaire et sur ta vitrine. 2 à 40 caractères, sans lien ni coordonnées.</p>
    <span class="lbl-full" id="mpEditEmoLbl">Emblème</span>
    <div class="mp-emojis" role="group" aria-labelledby="mpEditEmoLbl">${MP_EMOJIS.map(e=>`<button type="button" data-mp="emoji" data-v="${e}" aria-pressed="${(MP.editEmoji||m.emoji)===e}" aria-label="Emblème ${e}">${e}</button>`).join('')}</div>
    <p class="muted small" id="mpEditOut" aria-live="polite" style="margin:0"></p>
-   <div class="btns"><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button><button class="btn btn-sm" type="button" data-mp="leave">Quitter le multijoueur</button></div>
-  </form></details>`;
+   <div class="btns"><button class="btn btn-primary" type="submit" id="mpEditSave">Enregistrer</button><button class="btn" type="button" data-modal-ok>Annuler</button></div>
+  </form>`);
+  setTimeout(()=>{const i=$('#mpEditFirm');if(i){i.focus();i.select();}},90);
 }
 function tabMonde(){
   if(!mpOn())return '<p class="hint">Le multijoueur est disponible sur le site du jeu.</p>';
@@ -2957,9 +2970,10 @@ async function mpJoin(){
 }
 async function mpSaveProfile(){
   const out=$('#mpEditOut');const ps=($('#mpEditPseudo').value||'').trim(),fn=($('#mpEditFirm').value||'').trim();
-  out.textContent='Enregistrement…';
-  const r=await mpPublish(true,ps,fn,MP.editEmoji||MP.me.emoji);
-  if(r===true){MP.editEmoji=null;MP.board=null;toast('🌍 Profil mis à jour !','gold');renderPanel();}
+  if(fn.length<2){out.textContent='☝️ Le nom de la boutique doit faire au moins 2 caractères.';return;}
+  const b=$('#mpEditSave');if(b)b.disabled=true;out.textContent='Enregistrement…';
+  const r=await mpPublish(true,ps,fn,MP.editEmoji||MP.me.emoji);if(b)b.disabled=false;
+  if(r===true){MP.editEmoji=null;MP.board=null;MP.dir=null;if(!$('#modal').hidden)closeModal();toast(`🌍 C’est enregistré : ta boutique s’appelle « ${MP.me.firm_name} » en ligne.`,'gold');Snd.coin();renderPanel();}
   else out.textContent='❌ '+(typeof r==='string'?r:'L’enregistrement a échoué. Réessaie dans un instant.');
 }
 async function mpSend(room,input){
@@ -3125,6 +3139,8 @@ async function mpAction(a,el){
     case 'reportp':{
       if(!mpArm(el,'⚑ Confirmer le signalement ?'))return;el.disabled=true;let r=null;try{r=await mpRpc('mp_report_profile',{p_target:id});}catch(e){}
       toast(r&&r.ok?'⚑ Merci, ce café a été signalé à la modération.':'⚑ '+((r&&r.error)||'Signalement impossible pour l’instant.'),r&&r.ok?'':'bad');break;}
+    case 'editprof':openMpProfile();break;
+    case 'usesign':{const i=$('#mpEditFirm');if(i){i.value=v;i.focus();}el.remove();break;}
     case 'leave':{
       if(!mpArm(el,'Confirmer : supprimer ma vitrine ?'))return;el.disabled=true;
       try{await mpRpc('mp_leave');MP.me=null;MP.board=null;MP.dir=null;MP.rooms={};MP.duels=null;MP.club=null;MP.clubs=null;mpBadge();toast('🌍 Tu as quitté le multijoueur. Ta vitrine et tes messages sont supprimés.');renderPanel();}
