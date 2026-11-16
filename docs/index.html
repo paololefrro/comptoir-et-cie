@@ -561,6 +561,14 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .duel-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--gold)}
 .duel-bar i{display:block;height:100%;background:var(--accent)}
 .duel-scores{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.mp-cta{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--gold-soft),var(--card));border:2px solid var(--gold);border-radius:16px;padding:10px 12px;margin:8px 0}
+.mp-cta-ic{font-size:1.9rem;line-height:1;flex:none}
+.mp-cta .grow{gap:2px}
+.mp-cta .grow b{font-size:.95rem}
+.mp-cta .grow span{font-size:.82rem;color:var(--ink-2);font-weight:700}
+.mp-cta-x{border:0;background:none;color:var(--ink-2);font-size:1rem;cursor:pointer;padding:4px 6px;flex:none;align-self:flex-start}
+.mp-gap{margin:4px 0 0;font-size:.86rem;font-weight:800}
+@media (max-width:560px){.mp-cta{flex-wrap:wrap}.mp-cta .btn{flex:1 1 auto}}
 .mp-me-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .mp-edit-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .mp-edit-row .btn{white-space:normal;text-align:left;max-width:100%}
@@ -642,6 +650,7 @@ mark{background:#ffe08a;color:#2b1d16;padding:0 4px;border-radius:4px}
       </div>
       <div class="ticker" id="ticker"></div>
       <div class="missions" id="missions" aria-label="Missions du jour"></div>
+      <div id="mpCta" hidden></div>
       <div class="ad-slot" id="ad-game" hidden></div>
     </section>
 
@@ -2446,6 +2455,7 @@ function tabLivraison(){
 // La plus récente en premier. Un joueur voit en une fois toutes les notes qu'il n'a pas encore vues.
 const PATCHES=[
 {id:'2026-11-17',date:'17 novembre',items:[
+ ['🏆','Deviens le n° 1 !','Choisis un pseudo dans l’onglet 🌍 En ligne : ton café entre dans le classement national, tu vois qui est juste devant toi et combien il te manque pour le dépasser, et tu peux défier les autres en duel. Ajoute ton e-mail pour garder ton compte sur tous tes appareils.'],
  ['🏙️','Plus de bâtiments','8 nouveaux quartiers à acheter, du front de mer au hall d’un palace, et des rénovations jusqu’au niveau 10.'],
  ['🏪','Un second comptoir','Jusqu’à 13 postes et 12 employés grâce au comptoir à emporter de la boutique voisine : beaucoup moins de clients repartent.'],
  ['🧪','Le labo au centre','Tes créations se vendent bien mieux (jusqu’à ×1,75), jusqu’à 12 créations sur la carte, et un test ⚡ à résultat immédiat.'],
@@ -2483,6 +2493,7 @@ function showPatch(next){
   openModal(`<div class="modal-head"><span class="modal-ic">🎉</span><div><p class="eyebrow">Mise à jour du ${PATCH.date}</p><h2>Quoi de neuf ?</h2></div></div>
   <ul class="patch-list">${PATCH.items.map(([i,t,d])=>`<li><span class="pi" aria-hidden="true">${i}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ul>
   <p class="muted small" style="margin:0">Une idée ou un bug ? Dis-le-nous avec le bouton 💡 Proposer une idée.</p>
+  ${mpOn()&&!mpMember()?'<button class="btn btn-gold btn-lg" data-modal-ok data-cta="join">🏆 Rejoindre le classement</button>':''}
   <button class="btn btn-primary btn-lg" data-modal-ok>C’est parti !</button>`,next);
 }
 
@@ -2892,6 +2903,28 @@ const mpClubPrize=()=>Math.round(mpTipValue()*15);
 const mpRoom=r=>MP.rooms[r]||(MP.rooms[r]={list:[],last:0,t:0,busy:false});
 function mpReward(gain,xp,fans,msg){if(gain){S.money+=gain;book('recompenses',gain);}if(fans)S.social.followers+=fans;if(xp)addXP(xp);Snd.coin();confettiBurst(gain?90:25);toast(msg,'gold');saveSoon();updateHud();}
 const mpOn=()=>Cloud.on();
+const MPR={board:null,t:0,busy:false};
+async function mpLoadRankBoard(force){if(!mpOn()||MPR.busy)return;if(!force&&MPR.board&&Date.now()-MPR.t<120000)return;MPR.busy=true;
+  try{MPR.board=await mpRpc('mp_leaderboard',{p_kind:'value'})||[];}catch(e){MPR.board=MPR.board||[];}MPR.t=Date.now();MPR.busy=false;mpPaintCta();}
+function mpWouldRank(){const b=MPR.board;if(!b)return null;const v=firmValue(),others=b.filter(r=>!(MP.me&&r.id===MP.me.id)),ahead=others.filter(r=>r.firm_value>v);
+  return {pos:ahead.length+1,total:others.length+1,above:ahead.length?ahead[ahead.length-1]:null};}
+const mpMember=()=>{let m=null;try{m=localStorage.getItem('cc-mp-member');}catch(e){}return MP.me?true:m==='1';};
+function mpPaintCta(){
+  const el=$('#mpCta');if(!el)return;let hide=0;try{hide=+localStorage.getItem('cc-cta-hide')||0;}catch(e){}
+  if(!mpOn()||!MP.ready||Date.now()<hide||!S.flags.welcome||S.stats.days<1){el.hidden=true;return;}
+  let h='';
+  if(!MP.me){const r=S.flags.cheats?null:mpWouldRank();
+    h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">🏆</span><div class="grow"><b>${r?(r.pos===1?`Tu serais n° 1 sur ${r.total} au classement national !`:`Tu serais n° ${r.pos} sur ${r.total} au classement national !`):'Rejoins le classement national !'}</b><span>${r&&r.pos===1?'Personne ne fait mieux que toi : viens prendre la première place.':r&&r.above?`Juste derrière ${esc(r.above.pseudo)}. Choisis un pseudo en 10 secondes, montre ton café et défie les autres en duel.`:'Choisis un pseudo en 10 secondes, montre ton café et défie les autres en duel.'}</span></div><button class="btn btn-primary btn-sm" type="button" data-cta="join">🏆 Je rejoins</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;}
+  else if(Cloud.user&&Cloud.user.is_anonymous)
+    h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">🔒</span><div class="grow"><b>Garde ta place au classement !</b><span>Ton compte n’existe que sur cet appareil. Ajoute ton e-mail pour ne jamais le perdre et retrouver ton café partout.</span></div><button class="btn btn-gold btn-sm" type="button" data-cta="protect">Protéger mon compte</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;
+  el.innerHTML=h;el.hidden=!h;
+}
+function mpSummaryLine(){
+  if(!mpOn()||!MPR.board)return '';const r=mpWouldRank();if(!r)return '';
+  if(!MP.me)return S.flags.cheats?'':`<p class="small mp-gap">🏆 Avec ton café, tu serais <b>n° ${r.pos} sur ${r.total}</b> au classement national. Rejoins-le dans l’onglet 🌍 En ligne !</p>`;
+  if(MP.me.cheater)return '';
+  return `<p class="small mp-gap">🏆 Classement national : <b>n° ${r.pos} sur ${r.total}</b>${r.above?` · plus que ${money(Math.max(0,r.above.firm_value-firmValue()))} pour passer devant ${esc(r.above.pseudo)}`:' · tu es en tête, reste devant !'}</p>`;
+}
 async function mpRpc(fn,args){const {data,error}=await Cloud.sb.rpc(fn,args||{});if(error)throw error;return data;}
 const mpLevelName=l=>{const L=LEVELS[clamp((l||1)-1,0,LEVELS.length-1)];return L?L.name:'';};
 const mpTipValue=()=>Math.round(15*levelScale());
@@ -2905,7 +2938,7 @@ function mpPayload(pseudo,firm,emoji){
     p_snapshot:mySnapshot()};
 }
 function mySnapshot(){return {upg:Object.assign({},S.upg),items:mpUnlocked().map(it=>it.id).slice(0,80),staff:S.staff.slice(0,6).map(m=>m.look),art:!!S.flags.art,custom:CUSTOM_KEYS.reduce((o,k)=>(o[k]=custOpt(k).id,o),{})};}
-function mpBadge(){const b=$('#mBadge');if(!b)return;const n=MP.me?(MP.me.tips_pending||0)+(MP.me.duels_todo||0):0;b.hidden=!n;b.textContent=n;}
+function mpBadge(){try{localStorage.setItem('cc-mp-member',MP.me?'1':'0');}catch(e){}mpPaintCta();const b=$('#mBadge');if(!b)return;const n=MP.me?(MP.me.tips_pending||0)+(MP.me.duels_todo||0):0;b.hidden=!n;b.textContent=n;}
 async function mpRefreshMe(publish){
   try{MP.me=Cloud.user?await mpRpc('mp_me'):null;}catch(e){MP.me=null;}
   if(MP.me&&publish)await mpPublish(true);
@@ -2948,7 +2981,7 @@ async function mpInit(){
   await claimGifts();
   await mpRefreshMe(true);
   bkClaim();
-  MP.ready=true;if(tab==='monde')renderPanel();
+  MP.ready=true;mpLoadRankBoard();if(tab==='monde')renderPanel();
   setInterval(()=>{if(MP.me&&tab==='monde'&&MP.curRoom&&!document.hidden)mpLoadChat();},4000);
 }
 async function mpLoad(key,fn){
@@ -3114,8 +3147,10 @@ function mpClubHtml(){
 }
 function mpJoinHtml(){
   const firm=MP.firm!=null?MP.firm:(S.firm.created?S.firm.name:'Le Petit Comptoir');
-  return `<div class="cloud-box"><b>🌍 Rejoins les autres joueurs</b>
-  <p class="small" style="margin:0">Ton entreprise entre dans le classement national. Les autres peuvent visiter ton café, signer ton livre d’or, te laisser des pourboires et discuter avec toi sur la terrasse. Pas d’e-mail ni de mot de passe : choisis juste un pseudo.</p>
+  const r=S.flags.cheats?null:mpWouldRank();
+  return `<div class="cloud-box"><b>🏆 Entre dans le classement national</b>
+  ${r?`<p class="mp-gap" style="margin:0">Avec ton café, tu serais <b>n° ${r.pos} sur ${r.total}</b>${r.pos===1?' : la première place t’attend !':r.above?`, juste derrière ${esc(r.above.pseudo)}.`:'.'}</p>`:''}
+  <p class="small" style="margin:0">Montre ton café à toute la France, défie les autres en duel, fonde un club et vise la première place. Les autres peuvent visiter ton café, signer ton livre d’or et te laisser des pourboires. Pas d’e-mail ni de mot de passe : choisis juste un pseudo.</p>
   <form id="mpJoinForm" class="sugg-form" autocomplete="off" novalidate>
    <label class="lbl-full" for="mpPseudo">Ton pseudo</label><input id="mpPseudo" class="txt" maxlength="20" value="${esc(MP.pseudo)}" placeholder="3 à 20 caractères">
    <label class="lbl-full" for="mpFirm">Le nom de ton enseigne</label><input id="mpFirm" class="txt" maxlength="40" value="${esc(firm)}">
@@ -3123,12 +3158,14 @@ function mpJoinHtml(){
    <div class="mp-emojis" role="group" aria-labelledby="mpEmoLbl">${MP_EMOJIS.map(e=>`<button type="button" data-mp="emoji" data-v="${e}" aria-pressed="${MP.emoji===e}" aria-label="Emblème ${e}">${e}</button>`).join('')}</div>
    <label class="mp-rules small"><input type="checkbox" id="mpRules"><span>Je m’engage à respecter tout le monde et à ne partager aucune information personnelle. Les messages sont modérés, et les abus peuvent être bloqués.</span></label>
    <p class="muted small" id="mpJoinOut" aria-live="polite" style="margin:0"></p>
-   <div class="btns"><button class="btn btn-primary" type="submit" id="mpJoinBtn">🌍 Rejoindre le multijoueur</button></div>
+   <div class="btns"><button class="btn btn-primary" type="submit" id="mpJoinBtn">🏆 Rejoindre le classement</button></div>
   </form></div>`;
 }
 function mpMeHtml(){
   const m=MP.me,tips=m.tips_pending||0;
   return `<div class="mp-me"><span class="mp-av" aria-hidden="true">${esc(m.emoji)}</span><div class="grow"><b>${esc(m.firm_name)}</b><span class="muted small">${esc(m.pseudo)} · ${m.cheater?'🎭 hors classement':m.rank?`n° ${m.rank} sur ${m.players}`:'pas encore classé'}</span></div><div class="mp-me-btns"><button type="button" class="btn btn-sm" data-mp="editprof">✏️ Modifier</button><button type="button" class="btn btn-sm" data-mp="visit" data-id="${esc(m.id)}">👀 Ma vitrine</button></div></div>
+  ${(()=>{if(m.cheater)return '';const r=mpWouldRank();return r?`<p class="mp-gap">🏆 n° ${r.pos} sur ${r.total}${r.above?` · plus que ${money(Math.max(0,r.above.firm_value-firmValue()))} pour dépasser ${esc(r.above.emoji||'')} ${esc(r.above.pseudo)}`:' · tu es premier, reste devant !'}</p>`:'';})()}
+  ${Cloud.user&&Cloud.user.is_anonymous?`<p class="notice">🔒 Ton compte n’existe que sur cet appareil. Ajoute ton e-mail pour ne jamais perdre ta place au classement et retrouver ton café partout. <button class="btn btn-sm btn-gold" type="button" data-cta="protect">Protéger mon compte</button></p>`:''}
   ${tips?`<p class="notice mp-tips">💝 ${tips>1?`${tips} pourboires t’attendent`:'Un pourboire t’attend'} ! <button type="button" class="btn btn-gold btn-sm" data-mp="claim">Récupérer ${money(mpTipValue()*tips)}</button></p>`:''}`;
 }
 function mpEditHtml(){
@@ -3178,7 +3215,7 @@ async function mpJoin(){
       await Cloud.sb.auth.signOut();Cloud.user=null;await anon();r=await mpRpc('mp_publish',mpPayload(ps,fn,MP.emoji));}
     if(!r||!r.ok){out.textContent='❌ '+((r&&r.error)||'Impossible de rejoindre pour l’instant.');btn.disabled=false;MP.joining=false;return;}
     MP.me=r.me;MP.lastPub=Date.now();MP.board=null;MP.dir=null;MP.view='rank';MP.joining=false;
-    Snd.coin();confettiBurst(70);toast(`🌍 Bienvenue en ligne, ${MP.me.pseudo} !`,'gold');renderPanel();
+    Snd.coin();confettiBurst(70);toast(`🌍 Bienvenue en ligne, ${MP.me.pseudo} ! Ajoute ton e-mail (💾 Sauvegarde) pour garder ton compte sur tous tes appareils.`,'gold');mpLoadRankBoard(true);renderPanel();
   }catch(e){MP.joining=false;btn.disabled=false;out.textContent='❌ Connexion impossible. Réessaie dans un instant.';}
 }
 async function mpSaveProfile(){
@@ -3416,7 +3453,7 @@ function endDay(){
   sm.record=record;
   save();renderPanel();updateHud();statsPing('day');
   if(Cloud.linked())Cloud.push(true).catch(()=>{});
-  mpAfterDay(sm);
+  mpAfterDay(sm);mpLoadRankBoard(true);
   if(Cloud.user)setTimeout(claimGifts,4000);
   showSummary(sm,()=>maybeEvent(()=>{renderPanel();updateHud();save();if(autoOn())setTimeout(()=>{if(R.phase==='closed'&&$('#modal').hidden&&autoOn())openDay();},2500);}));
 }
@@ -3905,6 +3942,7 @@ function showSummary(sm,next){
   ${sm.waste.n?`<p class="muted small">🗑️ Invendus jetés cette nuit : ${sm.waste.n} portions (${eur(sm.waste.val)}).</p>`:''}
   ${sm.followers?`<p class="muted small">📱 +${fmtK(sm.followers)} abonnés aujourd’hui, ${fmtK(S.social.followers)} au total.</p>`:''}
   ${sm.dl?`<p class="muted small">${DL.icon} ${DL.name} : ${sm.dl.done} commande${sm.dl.done>1?'s':''} livrée${sm.dl.done>1?'s':''}${sm.dl.cancel?`, ${sm.dl.cancel} annulée${sm.dl.cancel>1?'s':''}`:''} · note ${num1(sm.dl.rating)} ★.</p>`:''}
+  ${mpSummaryLine()}
   ${sm.thefts?`<p class="muted small">🦹 ${sm.thefts} client${sm.thefts>1?'s sont partis':' est parti'} sans payer aujourd’hui.${S.upg.alarme?'':' Pense à l’alarme (onglet Travaux).'}</p>`:''}
   ${sm.bk&&(sm.bk.price||sm.bk.divIn)?`<p class="muted small">📈 Bourse : ${[sm.bk.price?`ton action clôture à ${pr2(sm.bk.price)} (${pctTxt(sm.bk.chg)})`:'',sm.bk.paid?`${eur(sm.bk.paid)} de dividendes versés`:'',sm.bk.divIn?`${eur(sm.bk.divIn)} de dividendes reçus`:''].filter(Boolean).join(' · ')}.</p>`:''}
   ${sm.autoOrder>0?`<p class="muted small">🚚 Commande automatique passée pour demain : ${eur(sm.autoOrder)}.</p>`:''}
@@ -4324,6 +4362,10 @@ function bindUI(){
   $('#tabBody').addEventListener('input',e=>{if(e.target.id==='firmName'){R.firmName=e.target.value;return;}if(e.target.id==='frRate'){S.fr.rate=+e.target.value;const v=$('#frRateV');if(v)v.textContent=S.fr.rate+' %';const hh=$('#frRateHint');if(hh)hh.textContent=rateHint();saveSoon();return;}const id=e.target.dataset&&e.target.dataset.price;if(!id)return;S.items[id].price=Math.round(+e.target.value*10)/10;updatePriceUI(id);saveSoon();});
   document.querySelectorAll('.speed button').forEach(b=>b.addEventListener('click',()=>{R.speed=+b.dataset.speed;if(R.speed>0)S.speed=R.speed;setSpeedUI();saveSoon();}));
   $('#openBtn').addEventListener('click',()=>openDay());
+  document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest('[data-cta]');if(!c)return;const k=c.dataset.cta;
+    if(k==='hide'){try{localStorage.setItem('cc-cta-hide',String(Date.now()+3*864e5));}catch(err){}mpPaintCta();return;}
+    if(k==='join'){tab='monde';MP.view='rank';renderPanel();const p=document.querySelector('.panel');if(p&&p.scrollIntoView)p.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});setTimeout(()=>{const i=$('#mpPseudo');if(i)i.focus({preventScroll:true});},450);return;}
+    if(k==='protect'){if($('#modal').hidden)openSaveBox();}});
   document.addEventListener('click',e=>{const s=e.target.closest&&e.target.closest('[data-suggest]');if(s&&$('#modal').hidden){e.preventDefault();openSuggest();}});
   const goBilan=()=>{tab='bilan';R.bilanP='today';renderPanel();const p=document.querySelector('.panel');if(p&&p.scrollIntoView)p.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
   $('#moneyStat').addEventListener('click',goBilan);

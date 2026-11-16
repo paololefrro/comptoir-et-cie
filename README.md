@@ -158,6 +158,7 @@ Modération :
 - **Vols** : cambriolage rare la nuit (événement) et client qui part sans payer (0,12 % des clients) ; l’amélioration « Alarme et caméras » les réduit fortement. Catégorie de bilan « Vols ».
 - **Bourse des joueurs** en haut de l’onglet, en trois rubriques (Acheter ×10 / ×100 / Max, Mes actions, Vendre les miennes).
 - Après chaque clic dans le panneau, la fiche cliquée est remise à la même place à l’écran (`keepInView`).
+- **Inciter à jouer en ligne** : sous les missions, une carte « 🏆 Tu serais n° X sur Y au classement national » pour les joueurs non inscrits (classement public chargé sans compte, `mpWouldRank`), puis « 🔒 Garde ta place au classement » pour les comptes anonymes (bouton vers la sauvegarde avec e-mail). Masquable 3 jours. Le bilan du soir et l’onglet En ligne affichent le rang et l’écart avec le joueur juste devant ; le patch note propose « Rejoindre le classement ».
 
 ### Équipe : profils et formation
 
