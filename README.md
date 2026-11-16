@@ -132,6 +132,13 @@ Modération :
 - **Nouveaux paliers jusqu’au niveau 50** : tables (6 tables), salle voisine (+6 places par niveau, jusqu’à 36), comptoir (7 postes, et une file d’attente qui s’allonge), commis en cuisine (5 niveaux, +10 % de vitesse chacun et préparation des livraisons, salaire chaque soir), machine espresso, four, déco, réserve (jusqu’à 2 000 portions), enseigne et terrasse chauffée.
 - Les nouveaux grands objectifs, missions et trophées sont ajoutés à la fin des listes pour ne pas décaler les sauvegardes.
 
+### Équipe : profils et formation
+
+- Profils débloqués avec le niveau : barista confirmé (8), champion de latte art (15), maître barista (25), légende du comptoir (38). Plus rapides, mais avec des salaires bien plus élevés (jusqu’à 1 650 € par jour). Les meilleurs profils débloqués sortent plus souvent dans les candidatures, et le bouton « Publier une annonce » renouvelle les CV contre de l’argent.
+- **Formation** (bouton 🎓 dans l’onglet Équipe) : +10 % de vitesse, +6 % de pourboires et un peu de satisfaction par niveau, salaire +12 %. Coût : salaire × (4 + 3 × niveau actuel). Maximum par profil (champ `max` de `TRAITS`) : 3 à 7. Une fois au maximum, il faut remercier l’employé et en former un plus doué.
+- La vitesse de l’employé raccourcit aussi la prise de commande, et les clients marchent plus vite vers un grand comptoir : c’est ce qui limite le plus les clients perdus à haut niveau.
+- Le boost « tout au maximum » donne une équipe complète du meilleur profil débloqué, formée au maximum.
+
 ### Livraison (onglet « 🛵 Livraison »)
 
 Plateforme fictive **Livr’Éclair**, dès le niveau 4 (inscription 500 €). Les commandes arrivent pendant la journée, avec des pics le midi et le soir, et sont plus nombreuses quand il pleut ou fait froid. Elles sont préparées par les commis en cuisine ou à un poste libre du comptoir (ticket vert), puis un livreur vient les chercher au comptoir de retrait près de la porte.

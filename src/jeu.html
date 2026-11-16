@@ -395,6 +395,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .mp-empty span{display:block;font-size:2.4rem;margin-bottom:6px}
 .mp-newbtn{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);border:0;border-radius:99px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:900;font-size:.82rem;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
 .mp-send{display:flex;gap:6px;align-items:center}
+.tr-max{margin:2px 0 0;color:var(--good);font-weight:800}
 .dl-q{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .dl-q li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--card-2);border:2px solid var(--line);border-left:5px solid #1aa179;border-radius:12px;padding:6px 10px;font-size:.85rem}
 .dl-q li.late{border-left-color:var(--bad)}
@@ -626,12 +627,21 @@ const CAMPAIGNS=[
 ];
 
 const TRAITS={
- novice:{label:'Novice',icon:'🌱',speed:.85,tips:1,sat:0,sal:[16,24],desc:'Débute, mais progresse vite : +3 % de vitesse par jour.'},
- rapide:{label:'Rapide',icon:'⚡',speed:1.3,tips:1,sat:0,sal:[34,44],desc:'Prépare les commandes 30 % plus vite.'},
- sympa:{label:'Sympa',icon:'😄',speed:1,tips:1.35,sat:.05,sal:[30,40],desc:'Clients plus heureux et +35 % de pourboires.'},
- touche:{label:'Touche-à-tout',icon:'🎯',speed:1.15,tips:1.15,sat:.02,sal:[32,42],desc:'Un peu de tout : +15 % de vitesse et de pourboires.'},
- star:{label:'Star du latte',icon:'⭐',speed:1.35,tips:1.3,sat:.06,sal:[62,80],desc:'Ultra rapide, et les clients en raffolent.',req:3},
+ novice:{label:'Novice',icon:'🌱',speed:.85,tips:1,sat:0,sal:[16,24],desc:'Débute, mais progresse vite : +3 % de vitesse par jour.',max:3,tier:0},
+ rapide:{label:'Rapide',icon:'⚡',speed:1.3,tips:1,sat:0,sal:[34,44],desc:'Prépare les commandes 30 % plus vite.',max:4,tier:1},
+ sympa:{label:'Sympa',icon:'😄',speed:1,tips:1.35,sat:.05,sal:[30,40],desc:'Clients plus heureux et +35 % de pourboires.',max:4,tier:1},
+ touche:{label:'Touche-à-tout',icon:'🎯',speed:1.15,tips:1.15,sat:.02,sal:[32,42],desc:'Un peu de tout : +15 % de vitesse et de pourboires.',max:4,tier:1},
+ star:{label:'Star du latte',icon:'⭐',speed:1.35,tips:1.3,sat:.06,sal:[62,80],desc:'Ultra rapide, et les clients en raffolent.',req:3,max:5,tier:2},
+ barista:{label:'Barista confirmé',icon:'☕',speed:1.65,tips:1.2,sat:.05,sal:[110,140],desc:'Des gestes sûrs : 65 % plus rapide qu’un débutant.',req:8,max:5,tier:3},
+ champion:{label:'Champion de latte art',icon:'🏅',speed:2.05,tips:1.4,sat:.07,sal:[250,310],desc:'Deux fois plus rapide, et ses dessins sur les cafés font fondre les clients.',req:15,max:6,tier:4},
+ maitre:{label:'Maître barista',icon:'🎖️',speed:2.55,tips:1.55,sat:.09,sal:[580,720],desc:'Une vitesse folle et un service impeccable.',req:25,max:6,tier:5},
+ legende:{label:'Légende du comptoir',icon:'👑',speed:3.15,tips:1.75,sat:.12,sal:[1350,1650],desc:'La meilleure main du pays : les clients viennent rien que pour la voir travailler.',req:38,max:7,tier:6},
 };
+// Formation : +10 % de vitesse, +6 % de pourboires et un peu plus de satisfaction par niveau ; le salaire augmente de 12 %
+const trainLvl=m=>Math.min(m.lvl||0,TRAITS[m.trait]?TRAITS[m.trait].max:0);
+const trainCost=m=>Math.round(m.salary*(4+3*trainLvl(m)));
+const candCost=()=>Math.round(80*levelScale());
+const bestTrait=()=>Object.keys(TRAITS).filter(k=>!TRAITS[k].req||S.level>=TRAITS[k].req).sort((a,b)=>TRAITS[b].tier-TRAITS[a].tier||TRAITS[b].speed-TRAITS[a].speed)[0];
 const NAMES=['Léa','Hugo','Inès','Malik','Chloé','Tom','Jade','Nora','Sacha','Yanis','Lina','Théo','Maëlle','Rayan','Zoé','Enzo','Camille','Noé','Lou','Adam','Salomé','Ilyes','Manon','Aya','Jules','Romane','Nathan','Mila','Gabin','Elsa'];
 
 const LEVELS=(()=>{const L=[
@@ -1008,7 +1018,8 @@ function genCandidates(st){
   const lvl=st.level||1;const pool=Object.keys(TRAITS).filter(k=>!TRAITS[k].req||lvl>=TRAITS[k].req);
   const used=new Set((st.staff||[]).map(m=>m.name));const out=[];
   for(let i=0;i<3;i++){
-    const trait=(i===0&&(st.day||1)<=2)?'novice':pick(pool);
+    const top=Math.max(...pool.map(k=>TRAITS[k].tier));
+    const trait=(i===0&&(st.day||1)<=2)?'novice':wpick(pool,k=>TRAITS[k].tier>=top-1?3:1);
     let name,g=0;do{name=pick(NAMES);g++;}while(used.has(name)&&g<50);used.add(name);
     const T=TRAITS[trait];out.push({name,trait,salary:Math.round(rand(T.sal[0],T.sal[1])),look:staffLook(),days:0,morale:80});
   }
@@ -1028,7 +1039,7 @@ const levelScale=()=>1+.6*(lvE()-1);
 const campCost=c=>Math.round(c.cost*(1+.5*(lvE()-1)));
 const avgRecipe=()=>{const u=ITEMS.filter(i=>S.items[i.id].unlocked);return u.reduce((a,i)=>a+S.items[i.id].recipe,0)/Math.max(1,u.length);};
 const staffAt=i=>i===0?null:S.staff[i-1];
-function staffSpeed(m){const el=1;if(!m)return el;const T=TRAITS[m.trait];const mo=m.morale??80;return T.speed*(1+Math.min(.3,m.days*(m.trait==='novice'?.03:.02)))*(mo<35?.85:mo>75?1.05:1)*el;}
+function staffSpeed(m){const el=1;if(!m)return el;const T=TRAITS[m.trait];const mo=m.morale??80;return T.speed*(1+.1*trainLvl(m))*(1+Math.min(.3,m.days*(m.trait==='novice'?.03:.02)))*(mo<35?.85:mo>75?1.05:1)*el;}
 function fairPrice(it,budget){return it.base*(1+.12*(S.items[it.id].recipe-1))*(.85+S.rep*.05)*(budget||1)*(1+SUP[S.supplier].quality*1.33)*(1+MASTERY_BONUS[masteryTier(it.id)]);}
 function acceptProb(p,fair){return p<=fair?1:clamp(1-(p/fair-1)*2.5,0,1);}
 function recipeCost(it,lvl){return lvl===1?Math.round(Math.max(60,it.unlock*.45+50)):Math.round(Math.max(220,it.unlock*1.3+200));}
@@ -1143,7 +1154,7 @@ function updCustomer(c,dt){
       break;}
     case 'toStation':
       c.pat-=dt*.7;c.wait+=dt*.7;
-      if(moveTo(c,SX(c.station),STATION_Y,dt)){c.state='ordering';c.think=.35;c.face=0;}
+      if(moveTo(c,SX(c.station),STATION_Y,dt*(1+.1*Math.max(0,maxStations()-2)))){c.state='ordering';c.think=.35/Math.sqrt(Math.max(1,staffSpeed(staffAt(c.station))));c.face=0;}
       break;
     case 'ordering':c.think-=dt;c.wait+=dt*.3;if(c.think<=0)placeOrder(c);break;
     case 'waiting':c.pat-=dt*.4;c.wait+=dt*.4;break;
@@ -1213,7 +1224,7 @@ function computeSat(c,m){
   s-=clamp(c.wait/c.patMax,0,1.3)*.35;
   const rl=c.order.reduce((a,o)=>a+S.items[o.id].recipe,0)/c.order.length;s+=(rl-1)*.06;
   s+=Math.min(4,S.upg.deco)*.025+Math.max(0,S.upg.deco-4)*.01+(S.upg.musique?.03:0)+(S.flags.art?.02:0);
-  if(m)s+=TRAITS[m.trait].sat;
+  if(m)s+=TRAITS[m.trait].sat+.01*trainLvl(m);
   if(c.missed)s-=.12;
   if(c.type==='critique')s-=.05;
   s+=SUP[S.supplier].quality;
@@ -1238,7 +1249,7 @@ function serve(c,i){
   const seat=wantSit?findSeat():null;
   if(wantSit&&!seat)sat-=.06;if(seat)sat+=.04;
   sat=clamp(sat,0,1);
-  const tipMult=(m?TRAITS[m.trait].tips:1)*(S.upg.tpe?1.15:1);
+  const tipMult=(m?TRAITS[m.trait].tips*(1+.06*trainLvl(m)):1)*(S.upg.tpe?1.15:1);
   const tip=sat>.45?Math.round(price*(.04+sat*.14)*tipMult*10)/10:0;
   const gainP=price*incomeMult();
   book('ventes',gainP);c.order.forEach(o=>bookSale(o.id,o.price*incomeMult()));
@@ -1550,14 +1561,14 @@ const BOOK={
  evenements:{i:'🎲',l:'Événements du soir'},emprunts:{i:'🏦',l:'Emprunts reçus'},cessions:{i:'🏷️',l:'Ventes d’adresses'},triche:{i:'🔐',l:'Codes secrets'},
  stock:{i:'📦',l:'Achats de stock'},express:{i:'🛵',l:'Livraisons express'},salaires:{i:'👥',l:'Salaires'},loyer:{i:'🏠',l:'Loyer'},
  reseau:{i:'📡',l:'Animation du réseau de franchise'},remboursements:{i:'🏦',l:'Remboursements d’emprunt'},carte:{i:'🍽️',l:'Nouveaux produits et recettes'},
- travaux:{i:'🛠️',l:'Améliorations'},pub:{i:'📣',l:'Publicité et réseaux sociaux'},equipe:{i:'🎉',l:'Primes et embauches'},rachats:{i:'🤝',l:'Rachats de concurrents'},
+ travaux:{i:'🛠️',l:'Améliorations'},pub:{i:'📣',l:'Publicité et réseaux sociaux'},equipe:{i:'🎉',l:'Primes, embauches et formations'},rachats:{i:'🤝',l:'Rachats de concurrents'},
  adresses:{i:'🏙️',l:'Ouvertures, rénovations et gérance'},societe:{i:'🏛️',l:'Création de la société'},labo:{i:'🧪',l:'Labo de création'},
  franchise:{i:'🗺️',l:'Services de la franchise'},invest:{i:'💼',l:'Autres investissements'},
  capital:{i:'🔔',l:'Capital (entrée en Bourse, émissions et rachats d’actions)'},bourse:{i:'📈',l:'Bourse (dividendes reçus, ventes d’actions)'},
  placements:{i:'💹',l:'Achats d’actions'},dividendes:{i:'🧾',l:'Dividendes versés aux actionnaires'},
  livraison:{i:'🛵',l:'Ventes en livraison (Livr’Éclair)'},commissions:{i:'🧾',l:'Commissions Livr’Éclair'},dlfrais:{i:'🛵',l:'Livraison : inscription et améliorations'},
 };
-const CAT_BY_ACT={dlsign:'dlfrais',dlup:'dlfrais',dlboost:'pub',express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
+const CAT_BY_ACT={train:'equipe',cands:'equipe',dlsign:'dlfrais',dlup:'dlfrais',dlboost:'pub',express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
 function book(cat,amt){if(!amt||!isFinite(amt)||!S.book)return;S.book[cat]=(S.book[cat]||0)+amt;R.bookVer=(R.bookVer||0)+1;}
 function bookSale(id,v){const b=S.bookSales[id]||(S.bookSales[id]={n:0,v:0});b.n++;b.v+=v;}
 function bilanData(p){
@@ -2250,8 +2261,9 @@ function maxOut(){
   rebuildItems();const cap=STOCK_CAP[STOCK_CAP.length-1];
   ITEMS.forEach(it=>{const s=S.items[it.id];s.unlocked=true;s.off=false;s.recipe=3;s.sold=Math.max(s.sold||0,MASTERY[3]);s.stock=Math.max(s.stock||0,cap);});
   // Équipe complète de stars au moral maximum, et responsable de la carte
-  const want=maxStations()-1,T=TRAITS.star;
-  while(S.staff.length<want){const c=genCandidates(S)[0];S.staff.push(Object.assign(c,{trait:'star',salary:Math.round((T.sal[0]+T.sal[1])/2),days:30,morale:100}));}
+  const want=maxStations()-1,bt=bestTrait(),T=TRAITS[bt];
+  while(S.staff.length<want){const c=genCandidates(S)[0];S.staff.push(Object.assign(c,{days:30,morale:100}));}
+  S.staff.forEach(m=>{m.trait=bt;m.lvl=T.max;m.salary=Math.round((T.sal[0]+T.sal[1])/2*Math.pow(1.12,T.max));m.days=Math.max(m.days,30);});
   S.staff.forEach(m=>{m.morale=100;});
   if(!S.chef.hired){S.chef.hired=true;S.chef.since=S.day;}
   // Société : toutes les adresses ouvertes et rénovées, tous les concurrents rachetés
@@ -3665,13 +3677,16 @@ function tabEquipe(){
   h+=`<div class="charges"><span>Charges payées chaque soir</span><b>Loyer ${eur(rentCost(),0)} · Salaires ${eur(salaryTotal(),0)}</b></div>`;
   h+=chefHtml();
   h+=`<div class="member me"><span class="avatar" style="background:#e2456b">★</span><div class="grow"><div class="item-top"><b>Toi</b><span class="chip">👑 Aux commandes</span></div><p class="muted small">Clique sur les commandes au comptoir pour les préparer plus vite.</p></div></div>`;
-  S.staff.forEach(m=>{const T=TRAITS[m.trait];const bonus=Math.round((staffSpeed(m)/T.speed-1)*100);
-    h+=`<div class="member"><span class="avatar" style="background:${m.look.shirt}">${m.name[0]}</span><div class="grow"><div class="item-top"><b>${m.name}</b><span class="chip">${T.icon} ${T.label}</span></div><p class="muted small">${m.salary} € par jour · ${m.days} j d’ancienneté${bonus?` (${bonus>0?'+':''}${bonus} % de vitesse)`:''}</p>${(()=>{const mo=Math.round(m.morale??80);const me=mo>75?'😃':mo>50?'🙂':mo>30?'😐':'😟';return `<div class="stock-row"><span class="lbl">Moral</span><div class="bar"><i class="${mo<35?'low':''}" style="width:${mo}%"></i></div><span class="num">${me} ${mo}</span></div>`;})()}<div class="btns"><button class="btn btn-sm" data-act="prime" data-id="${m.name}" data-cost="${m.salary}" ${m.primeDay===S.day?'data-lock="1"':''} title="+30 de moral">🎉 Prime · ${m.salary} €</button><button class="btn btn-sm" data-act="fire" data-id="${m.name}" ${open?'disabled':''} title="${open?'Possible après la fermeture':'Mettre fin au contrat'}">Remercier</button></div></div></div>`;});
+  S.staff.forEach(m=>{const T=TRAITS[m.trait];const bonus=Math.round((staffSpeed(m)/(T.speed*(1+.1*trainLvl(m)))-1)*100);
+    const lv=trainLvl(m),mx=T.max,tc=trainCost(m),better=TRAITS[bestTrait()].tier>T.tier;
+    h+=`<div class="member"><span class="avatar" style="background:${m.look.shirt}">${m.name[0]}</span><div class="grow"><div class="item-top"><b>${m.name}</b><span class="chip">${T.icon} ${T.label}</span><span class="pips" aria-label="Formation ${lv} sur ${mx}" title="Formation ${lv} / ${mx}">${Array.from({length:mx},(_,k)=>`<i class="${k<lv?'on':''}"></i>`).join('')}</span></div><p class="muted small">${m.salary} € par jour · vitesse ×${num2(staffSpeed(m))} · ${m.days} j d’ancienneté${bonus?` (${bonus>0?'+':''}${bonus} %)`:''}</p>${lv>=mx?`<p class="small tr-max">🎓 Formation au maximum.${better?' Pour aller plus vite, remercie-le et recrute un profil plus doué, puis forme-le à son tour.':''}</p>`:''}${(()=>{const mo=Math.round(m.morale??80);const me=mo>75?'😃':mo>50?'🙂':mo>30?'😐':'😟';return `<div class="stock-row"><span class="lbl">Moral</span><div class="bar"><i class="${mo<35?'low':''}" style="width:${mo}%"></i></div><span class="num">${me} ${mo}</span></div>`;})()}<div class="btns"><button class="btn btn-sm" data-act="prime" data-id="${m.name}" data-cost="${m.salary}" ${m.primeDay===S.day?'data-lock="1"':''} title="+30 de moral">🎉 Prime · ${m.salary} €</button>${lv<mx?`<button class="btn btn-sm btn-gold" data-act="train" data-id="${m.name}" data-cost="${tc}" title="+10 % de vitesse, +6 % de pourboires, salaire +12 %">🎓 Former (niv. ${lv+1}) · ${fmtK(tc)} €</button>`:''}<button class="btn btn-sm" data-act="fire" data-id="${m.name}" ${open?'disabled':''} title="${open?'Possible après la fermeture':'Mettre fin au contrat'}">Remercier</button></div></div></div>`;});
   h+=`<h4>Candidatures du jour</h4>`;
   if(!free)h+=`<p class="notice">Tous les postes sont occupés. Agrandis le comptoir dans « Améliorations » pour recruter.</p>`;
   S.candidates.forEach((m,i)=>{const T=TRAITS[m.trait];
-    h+=`<div class="member"><span class="avatar" style="background:${m.look.shirt}">${m.name[0]}</span><div class="grow"><div class="item-top"><b>${m.name}</b><span class="chip">${T.icon} ${T.label}</span></div><p class="muted small">${T.desc}</p><p class="small"><b>${m.salary} €</b> par jour</p></div><button class="btn btn-primary btn-sm" data-act="hire" data-i="${i}" ${free?'':'disabled'}>Recruter</button></div>`;});
+    h+=`<div class="member"><span class="avatar" style="background:${m.look.shirt}">${m.name[0]}</span><div class="grow"><div class="item-top"><b>${m.name}</b><span class="chip">${T.icon} ${T.label}</span></div><p class="muted small">${T.desc}</p><p class="small"><b>${m.salary} €</b> par jour · vitesse ×${num2(T.speed)} · formation jusqu’au niveau ${T.max}</p></div><button class="btn btn-primary btn-sm" data-act="hire" data-i="${i}" ${free?'':'disabled'}>Recruter</button></div>`;});
   if(!S.candidates.length)h+=`<p class="muted small">De nouveaux CV arriveront demain matin.</p>`;
+  const nx=Object.values(TRAITS).filter(t=>t.req&&S.level<t.req).sort((a,b)=>a.req-b.req)[0];
+  h+=`<div class="bk-btns"><button class="btn btn-sm" data-act="cands" data-cost="${candCost()}">📰 Publier une annonce · ${costTxt(candCost())}</button></div><p class="muted small">De nouveaux CV arrivent chaque matin. Les meilleurs profils débloqués se présentent plus souvent.${nx?` Prochain profil : ${nx.icon} ${nx.label} au niveau ${nx.req}.`:''}</p>`;
   return h;
 }
 function tabAmelio(){
@@ -3929,6 +3944,8 @@ function act(a,el){
     case 'unlock':{if(S.level<it.lvl)return;if(spend(it.unlock,'invest')){const s=S.items[id];s.unlocked=true;s.stock=Math.max(s.stock,10);toast(`${it.emoji} ${it.name} arrive à la carte !`,'gold');confettiBurst(70);renderPanel();}break;}
     case 'recipe':{const s=S.items[id];if(s.recipe>=3)return;if(spend(recipeCost(it,s.recipe),'invest')){s.recipe++;toast(`${it.emoji} Nouvelle recette ★${s.recipe} : les clients vont adorer !`);renderPanel();}break;}
     case 'hire':{const i=+el.dataset.i;const m=S.candidates[i];if(!m||1+S.staff.length>=maxStations())return;S.candidates.splice(i,1);S.staff.push(m);syncStations();Snd.buy();toast(`👋 ${m.name} rejoint l’équipe !`,'gold');confettiBurst(50);saveSoon();renderPanel();break;}
+    case 'train':{const m=S.staff.find(x=>x.name===id);if(!m)return;const T=TRAITS[m.trait],lv=trainLvl(m);if(lv>=T.max)return;if(spend(trainCost(m),'invest')){m.lvl=lv+1;m.salary=Math.round(m.salary*1.12);m.morale=clamp((m.morale??80)+10,0,100);toast(`🎓 ${m.name} passe au niveau ${m.lvl} de formation : plus rapide et plus efficace ! Salaire : ${m.salary} € par jour.`,'gold');Snd.level();confettiBurst(40);renderPanel();}break;}
+    case 'cands':{if(spend(candCost(),'invest')){S.candidates=genCandidates(S);toast('📰 Annonce publiée : de nouveaux CV sont arrivés !');renderPanel();}break;}
     case 'fire':{if(R.phase!=='closed')return;S.staff=S.staff.filter(m=>m.name!==id);syncStations();toast(`${id} quitte l’équipe. Bonne continuation !`);saveSoon();renderPanel();break;}
     case 'upg':{const u=UPG[id];const lvl=S.upg[id];if(lvl>=u.costs.length||S.level<u.req[lvl])return;if(spend(u.costs[lvl],'invest')){S.upg[id]++;syncSeats();toast(`${u.icon} ${u.name} : ${u.costs.length>1?`niveau ${S.upg[id]}`:'c’est installé'} !`,'gold');confettiBurst(60);renderPanel();}break;}
     case 'camp':{const c=CAMPAIGNS.find(x=>x.id===id);if(!c||S.campaigns.some(x=>x.id===id))return;if(spend(campCost(c),'invest')){addCampaign({id:c.id,name:c.name,icon:c.icon,traffic:c.traffic,days:c.days});if(c.rep)S.rep=clamp(S.rep+c.rep,1,5);toast(`${c.icon} ${c.name} : c’est parti !`);renderPanel();}break;}
