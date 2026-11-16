@@ -9,6 +9,7 @@ const cfg = JSON.parse(fs.readFileSync(path.join(root, 'config.json'), 'utf8'));
 const src = fs.readFileSync(path.join(root, 'src', 'jeu.html'), 'utf8');
 const AUDIENCE_JS = fs.readFileSync(path.join(root, 'src', 'audience.js'), 'utf8');
 const STATS_SRC = fs.readFileSync(path.join(root, 'src', 'stats.html'), 'utf8');
+const GUIDES = require('./src/guides.js');
 const out = path.join(root, 'docs');
 fs.mkdirSync(out, { recursive: true });
 
@@ -37,7 +38,8 @@ const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 const ADS_HEAD = client ? `<meta name="google-adsense-account" content="${esc(client)}">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}" crossorigin="anonymous"></script>` : '';
 
-function head(title, desc, canonPath) {
+// ads = false : pas de balise publicitaire (pages sans contenu éditorial : 404, pages légales)
+function head(title, desc, canonPath, ads = true) {
   const canon = url ? url + canonPath : '';
   return `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -53,7 +55,7 @@ ${canon ? `<link rel="canonical" href="${esc(canon)}">\n<meta property="og:url" 
 <meta name="theme-color" content="#2f5e45">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 ${FONTS}
-${ADS_HEAD}`;
+${ads ? ADS_HEAD : ''}`;
 }
 
 const SITE_CSS = `<style>
@@ -74,6 +76,11 @@ mark{background:#ffe08a;color:#2b1d16;padding:0 4px;border-radius:4px}
 .site-content .ad-slot{margin:24px 0}
 .site-footer{max-width:1380px;margin:16px auto 0;padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:700 .88rem var(--font-body);color:var(--ink-2);display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;border-top:2px dashed var(--line)}
 .site-footer a{color:var(--accent)}
+.site-nav{max-width:1380px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-block:8px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:800 .88rem var(--font-body)}
+.site-nav a{color:var(--ink-2);text-decoration:none}
+.site-nav a:hover{color:var(--accent)}
+.site-nav span{display:flex;gap:14px}
+.site-content .guide-links{padding-left:20px}
 .site-footer button{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
 </style>`;
 
@@ -98,6 +105,7 @@ mark{background:#ffe08a;color:#2b1d16;padding:0 4px;border-radius:4px}
 
 const FOOTER = `<footer class="site-footer">
   <span>© ${year} ${esc(cfg.siteName)}</span>
+  <a href="guides.html">Guides du jeu</a>
   <a href="confidentialite.html">Confidentialité</a>
   <a href="mentions-legales.html">Mentions légales</a>
   ${cloud ? '<button type="button" data-suggest>💡 Proposer une idée</button>' : ''}
@@ -126,6 +134,12 @@ const AD_SCRIPT = `<script>
 const ABOUT = `<section class="site-content" id="a-propos" aria-labelledby="about-title">
   <h2 id="about-title">${esc(cfg.siteName)}, le jeu de gestion de café</h2>
   <p>Tu reprends un minuscule café de quartier à Paris avec 150 € en caisse. Sers tes premiers clients, règle tes prix, gère ton stock et ton équipe, puis transforme ta petite adresse en une chaîne connue dans toute la France. Le jeu est gratuit, sans inscription, et fonctionne sur ordinateur comme sur téléphone.</p>
+
+  <h2>Les guides du jeu</h2>
+  <p>Pour aller plus loin, nos guides détaillent chaque aspect du jeu, chiffres à l’appui :</p>
+  <ul class="guide-links">
+${GUIDES.map(g => `    <li><a href="${g.slug}.html">${g.icon} ${esc(g.title)}</a> · ${esc(g.desc)}</li>`).join('\n')}
+  </ul>
 
   <h2>Comment jouer</h2>
   <ol>
@@ -173,6 +187,7 @@ ${gameStyle}
 ${SITE_CSS}
 </head>
 <body>
+<nav class="site-nav" aria-label="Navigation du site"><a href="./">☕ ${esc(cfg.siteName)}</a><span><a href="#a-propos">Comment jouer</a><a href="guides.html">📚 Guides</a></span></nav>
 ${gameBody}
 ${ABOUT}
 ${FOOTER}
@@ -189,7 +204,7 @@ function page(title, desc, file, inner) {
   return `<!doctype html>
 <html lang="fr">
 <head>
-${head(title + ' · ' + cfg.siteName, desc, '/' + file)}
+${head(title + ' · ' + cfg.siteName, desc, '/' + file, false)}
 <meta name="robots" content="noindex, follow">
 ${PAGE_CSS}
 </head>
@@ -262,8 +277,77 @@ const legal = page('Mentions légales', 'Informations légales sur ' + cfg.siteN
 
 const notFound = page('Page introuvable', 'Cette page n’existe pas.', '404.html', `
 <p>Oups, cette page s’est perdue entre deux commandes.</p>
-<p><a href="./">Retourner au comptoir →</a></p>
+<p><a href="./">Retourner au comptoir →</a> · <a href="guides.html">Lire les guides du jeu</a></p>
 `);
+
+// ---------- 4 bis. Guides du jeu (contenu éditorial)
+const GUIDE_CSS = `<style>
+.crumbs{font-weight:800;font-size:.9rem;color:var(--ink-2)}
+.crumbs a{text-decoration:none}
+.lead{font-size:1.08rem;color:var(--ink-2);margin:4px 0 16px}
+.guide{padding:6px 22px 20px}
+.guide h2{font-size:1.45rem;margin:24px 0 6px}
+.guide h3{font-size:1.05rem;margin:16px 0 4px}
+.guide ul,.guide ol{padding-left:22px}
+.guide li{margin:5px 0}
+.guide table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.95rem}
+.guide th,.guide td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+.guide th{font-weight:900;color:var(--ink-2);font-size:.85rem}
+.tablewrap{overflow-x:auto}
+.cta{margin:22px 0;text-align:center}
+.btn-cta{display:inline-block;background:var(--accent);color:#fff;font-weight:900;text-decoration:none;border-radius:999px;padding:12px 22px;font-size:1.05rem}
+.guide-list{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.guide-list a{display:block;height:100%;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;text-decoration:none;color:var(--ink)}
+.guide-list a:hover,.guide-list a:focus-visible{border-color:var(--accent)}
+.guide-list b{display:block;font-size:1rem;margin-bottom:4px}
+.guide-list span{font-size:.88rem;color:var(--ink-2)}
+.ad-slot{margin:20px 0;text-align:center;min-width:0}
+.ad-label{display:block;font:800 .68rem var(--font-body);letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-2);margin-bottom:4px}
+.pfoot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;font-weight:700;font-size:.88rem;color:var(--ink-2);border-top:2px dashed var(--line);margin-top:28px;padding-top:18px}
+.pfoot button{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+@media (prefers-color-scheme: dark){.btn-cta{color:#1a0d12}}
+</style>`;
+const PAGE_FOOT = `<footer class="pfoot"><span>© ${year} ${esc(cfg.siteName)}</span><a href="./">Jouer</a><a href="guides.html">Guides du jeu</a><a href="confidentialite.html">Confidentialité</a><a href="mentions-legales.html">Mentions légales</a>${client ? '<button type="button" id="cookiePrefs">Gérer mes cookies</button>' : ''}</footer>`;
+const guideCards = list => `<ul class="guide-list">${list.map(g => `<li><a href="${g.slug}.html"><b>${g.icon} ${esc(g.title)}</b><span>${esc(g.desc)}</span></a></li>`).join('')}</ul>`;
+function contentPage(file, title, desc, body, jsonld) {
+  return `<!doctype html>
+<html lang="fr">
+<head>
+${head(title, desc, '/' + file)}
+${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ''}
+${PAGE_CSS}
+${GUIDE_CSS}
+</head>
+<body>
+<main class="page">
+${body}
+${PAGE_FOOT}
+</main>
+<script>window.SITE_CONFIG=${JSON.stringify({ adsenseClient: client, adSlots: cfg.adSlots || {}, adPreview: preview })};</script>
+${AD_SCRIPT}
+</body>
+</html>
+`;
+}
+const guidePages = GUIDES.map(g => contentPage(g.slug + '.html', g.title + ' · Guide ' + cfg.siteName, g.desc, `
+<nav class="crumbs" aria-label="Fil d’Ariane"><a href="./">☕ ${esc(cfg.siteName)}</a> › <a href="guides.html">Guides</a></nav>
+<h1>${g.icon} ${esc(g.title)}</h1>
+<p class="lead">${esc(g.intro)}</p>
+<article class="card guide">
+${g.html.replace(/<table>/g, '<div class="tablewrap"><table>').replace(/<\/table>/g, '</table></div>')}
+</article>
+<div class="ad-slot" id="ad-content" hidden></div>
+<p class="cta"><a class="btn-cta" href="./">☕ Jouer gratuitement à ${esc(cfg.siteName)}</a></p>
+<h2>D’autres guides</h2>
+${guideCards(GUIDES.filter(x => x.slug !== g.slug))}`,
+  { '@context': 'https://schema.org', '@type': 'Article', headline: g.title, description: g.desc, inLanguage: 'fr', author: { '@type': 'Person', name: cfg.editorName || cfg.siteName }, publisher: { '@type': 'Organization', name: cfg.siteName }, mainEntityOfPage: url ? url + '/' + g.slug + '.html' : undefined }));
+const guidesHub = contentPage('guides.html', 'Guides du jeu · ' + cfg.siteName, 'Tous les guides de ' + cfg.siteName + ' : bien démarrer, fixer ses prix, gérer le stock, recruter, inventer des recettes, bâtir un empire et jouer en ligne.', `
+<nav class="crumbs" aria-label="Fil d’Ariane"><a href="./">☕ ${esc(cfg.siteName)}</a> › Guides</nav>
+<h1>📚 Les guides du jeu</h1>
+<p class="lead">${esc(cfg.siteName)} est un jeu de gestion de café gratuit, jouable dans le navigateur. Ces guides t’expliquent chaque mécanique, avec les vrais chiffres du jeu, pour passer du petit kiosque à l’empire mondial.</p>
+${guideCards(GUIDES)}
+<div class="ad-slot" id="ad-content" hidden></div>
+<p class="cta"><a class="btn-cta" href="./">☕ Jouer gratuitement</a></p>`);
 
 const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#e2456b"/><path d="M15 27h27v9a13.5 13.5 0 0 1-27 0z" fill="#fffaf0"/><path d="M42 30h4a6 6 0 0 1 0 12h-5" fill="none" stroke="#fffaf0" stroke-width="4"/><path d="M23 13c-2.5 3 2.5 5 0 8.5M31 11c-2.5 3 2.5 5 0 8.5" fill="none" stroke="#fffaf0" stroke-width="3" stroke-linecap="round"/></svg>`;
 
@@ -273,6 +357,8 @@ write('index.html', index);
 write('confidentialite.html', privacy);
 write('mentions-legales.html', legal);
 write('404.html', notFound);
+write('guides.html', guidesHub);
+GUIDES.forEach((g, i) => write(g.slug + '.html', guidePages[i]));
 const LEVEL_NAMES = [...((src.match(/const LEVELS=\[([\s\S]*?)\];/) || [])[1] || '').matchAll(/name:'([^']+)'/g)].map(m => m[1]);
 if (cloud) write('stats.html', STATS_SRC.replace('__CLOUD__', JSON.stringify({ url: cloudUrl, key: cloudKey })).replace('__LEVELS__', JSON.stringify(LEVEL_NAMES)));
 else if (fs.existsSync(path.join(out, 'stats.html'))) fs.unlinkSync(path.join(out, 'stats.html'));
@@ -281,7 +367,7 @@ write('.nojekyll', '');
 write('robots.txt', `User-agent: *\nAllow: /\n${url ? `Sitemap: ${url}/sitemap.xml\n` : ''}`);
 if (url) {
   const d = new Date().toISOString().slice(0, 10);
-  write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${url}/</loc><lastmod>${d}</lastmod><priority>1.0</priority></url>\n  <url><loc>${url}/confidentialite.html</loc><lastmod>${d}</lastmod><priority>0.2</priority></url>\n  <url><loc>${url}/mentions-legales.html</loc><lastmod>${d}</lastmod><priority>0.2</priority></url>\n</urlset>\n`);
+  write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${url}/</loc><lastmod>${d}</lastmod><priority>1.0</priority></url>\n  <url><loc>${url}/guides.html</loc><lastmod>${d}</lastmod><priority>0.8</priority></url>\n${GUIDES.map(g => `  <url><loc>${url}/${g.slug}.html</loc><lastmod>${d}</lastmod><priority>0.7</priority></url>\n`).join('')}  <url><loc>${url}/confidentialite.html</loc><lastmod>${d}</lastmod><priority>0.2</priority></url>\n  <url><loc>${url}/mentions-legales.html</loc><lastmod>${d}</lastmod><priority>0.2</priority></url>\n</urlset>\n`);
   const host = new URL(url).hostname;
   if (!host.endsWith('github.io')) write('CNAME', host + '\n');
 }

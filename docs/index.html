@@ -528,10 +528,16 @@ mark{background:#ffe08a;color:#2b1d16;padding:0 4px;border-radius:4px}
 .site-content .ad-slot{margin:24px 0}
 .site-footer{max-width:1380px;margin:16px auto 0;padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:700 .88rem var(--font-body);color:var(--ink-2);display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;border-top:2px dashed var(--line)}
 .site-footer a{color:var(--accent)}
+.site-nav{max-width:1380px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-block:8px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:800 .88rem var(--font-body)}
+.site-nav a{color:var(--ink-2);text-decoration:none}
+.site-nav a:hover{color:var(--accent)}
+.site-nav span{display:flex;gap:14px}
+.site-content .guide-links{padding-left:20px}
 .site-footer button{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
 </style>
 </head>
 <body>
+<nav class="site-nav" aria-label="Navigation du site"><a href="./">☕ Comptoir &amp; Cie</a><span><a href="#a-propos">Comment jouer</a><a href="guides.html">📚 Guides</a></span></nav>
 <div class="app">
   <header class="hud">
     <div class="brand">
@@ -3664,6 +3670,18 @@ if(hot&&hot.ready)hot.ready(start);else start((hot&&hot.data)||{});
   <h2 id="about-title">Comptoir &amp; Cie, le jeu de gestion de café</h2>
   <p>Tu reprends un minuscule café de quartier à Paris avec 150 € en caisse. Sers tes premiers clients, règle tes prix, gère ton stock et ton équipe, puis transforme ta petite adresse en une chaîne connue dans toute la France. Le jeu est gratuit, sans inscription, et fonctionne sur ordinateur comme sur téléphone.</p>
 
+  <h2>Les guides du jeu</h2>
+  <p>Pour aller plus loin, nos guides détaillent chaque aspect du jeu, chiffres à l’appui :</p>
+  <ul class="guide-links">
+    <li><a href="guide-debutant.html">🌱 Bien démarrer : tes premières journées</a> · Le guide du débutant de Comptoir &amp; Cie : ouvrir son café, servir vite, commander son stock, fixer ses premiers prix et réussir ses cinq premières journées.</li>
+    <li><a href="guide-prix.html">💶 Bien fixer ses prix</a> · Comment régler les prix de ta carte dans Comptoir &amp; Cie : l’indicateur de prix, la marge, la météo, les saisons, la tendance du jour et l’effet des recettes.</li>
+    <li><a href="guide-stock.html">📦 Gérer le stock et les livraisons</a> · Commandes du soir, réserve, coursier express, pertes de la nuit, pénuries et contrat fournisseur : tout pour ne jamais manquer de rien dans Comptoir &amp; Cie.</li>
+    <li><a href="guide-equipe.html">👥 Recruter et motiver son équipe</a> · Les profils à recruter dans Comptoir &amp; Cie (novice, rapide, sympa, touche-à-tout, star du latte), les salaires, le moral, le comptoir agrandi et le responsable de la carte.</li>
+    <li><a href="guide-labo.html">🧪 Le labo de création : inventer ses recettes</a> · Comment fonctionne le labo de Comptoir &amp; Cie : bases, parfums, étoiles, créations signature et quelques associations gagnantes pour démarrer.</li>
+    <li><a href="guide-empire.html">🏢 Du petit café à l’empire mondial</a> · Créer sa société, ouvrir de nouvelles adresses, racheter les concurrents, emprunter et lancer sa franchise jusqu’à l’international dans Comptoir &amp; Cie.</li>
+    <li><a href="guide-multijoueur.html">🌍 Le multijoueur : classement, défis et clubs</a> · Rejoindre le multijoueur de Comptoir &amp; Cie : vitrine, classement national, visites et pourboires, duels de ventes, clubs et règles de la terrasse.</li>
+  </ul>
+
   <h2>Comment jouer</h2>
   <ol>
     <li><b>Ouvre le café.</b> Les clients entrent, font la queue et commandent. Clique sur une commande au comptoir pour la préparer plus vite.</li>
@@ -3699,6 +3717,7 @@ if(hot&&hot.ready)hot.ready(start);else start((hot&&hot.data)||{});
 </section>
 <footer class="site-footer">
   <span>© 2026 Comptoir &amp; Cie</span>
+  <a href="guides.html">Guides du jeu</a>
   <a href="confidentialite.html">Confidentialité</a>
   <a href="mentions-legales.html">Mentions légales</a>
   <button type="button" data-suggest>💡 Proposer une idée</button>

@@ -10,6 +10,7 @@ Jeu de gestion de café gratuit, dans le navigateur. Ce dossier contient le jeu 
 | `config.json` | Les réglages du site : adresse, identifiants AdSense, informations légales. |
 | `build.js` | Fabrique le site final dans `docs/`. |
 | `serve.js` | Petit serveur pour tester le site sur ton ordinateur. |
+| `src/guides.js` | Les guides du jeu publiés sur le site (une page par guide, plus la page `guides.html`). |
 | `src/stats.html` | La page privée des statistiques. |
 | `src/audience.js` | Le comptage anonyme des visites, ajouté à la page du jeu. |
 | `supabase.sql`, `supabase-stats.sql`, `supabase-multi.sql`, `supabase-multi2.sql` | Les tables et règles à créer dans Supabase, dans cet ordre. |
@@ -158,7 +159,8 @@ Bon à savoir :
 2. Dans AdSense, active le message de consentement : **Confidentialité et messages → RGPD**. C'est obligatoire pour les visiteurs européens, et le lien « Gérer mes cookies » du site s'en sert.
 3. Copie ton identifiant `ca-pub-…` dans `"adsenseClient"` de `config.json`, puis lance `node build.js`. Le fichier `ads.txt` est généré.
 4. Une fois le site validé (cela peut prendre de quelques jours à quelques semaines), crée 3 blocs d'annonces **Display** responsives. Colle leurs identifiants dans `adSlots` (`game` sous la salle du café, `bottom` sous le jeu, `content` dans le texte « Comment jouer »), puis relance `node build.js`.
-5. Laisse les **annonces automatiques désactivées**, ou exclus-en la zone du jeu, pour qu'elles ne viennent pas se glisser dans l'interface.
+5. AdSense refuse les sites sans contenu rédigé (« Annonces Google diffusées sur des pages ou écrans sans contenu d'éditeur »). Les guides de `src/guides.js` servent à cela : ajoute-en régulièrement, et la balise publicitaire n'est placée que sur la page du jeu et les guides.
+6. Laisse les **annonces automatiques désactivées**, ou exclus-en la zone du jeu, pour qu'elles ne viennent pas se glisser dans l'interface.
 
 ## À faire avant l'ouverture au public
 
