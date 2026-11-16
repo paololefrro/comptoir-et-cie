@@ -331,3 +331,137 @@ end $$;
 
 revoke all on function public.admin_gift_many(uuid, jsonb, text) from public, anon;
 grant execute on function public.admin_gift_many(uuid, jsonb, text) to authenticated;
+
+-- 12. Actions bradées ----------------------------------------------------------
+--     Le vendeur peut proposer ses actions moins cher que le cours (jusqu'à -50 %),
+--     à tout le monde ou seulement aux membres de son club. Le cours, lui, ne change pas.
+alter table public.stock_listings add column if not exists discount numeric(4,3) not null default 0;
+alter table public.stock_listings drop constraint if exists stock_listings_discount_check;
+alter table public.stock_listings add constraint stock_listings_discount_check check (discount between 0 and 0.5);
+alter table public.stock_listings add column if not exists disc_club boolean not null default false;
+
+-- Prix payé par un acheteur : le cours bradé si la remise le concerne, sinon le cours
+create or replace function public.stock_price_for(l public.stock_listings, p_buyer uuid)
+returns numeric
+language sql stable security definer set search_path = public
+as $$
+  select case when l.discount > 0 and (not l.disc_club or exists (
+           select 1 from public.profiles b join public.profiles s on s.id = l.company
+           where b.id = p_buyer and b.club_id is not null and b.club_id = s.club_id))
+         then greatest(round(l.price * (1 - l.discount), 2), 0.01) else l.price end;
+$$;
+revoke all on function public.stock_price_for(public.stock_listings, uuid) from public, anon, authenticated;
+
+drop function if exists public.mp_stock_update(numeric, numeric, bigint, jsonb, bigint);
+create or replace function public.mp_stock_update(p_price numeric, p_div numeric, p_shares bigint,
+                                                  p_hist jsonb default '[]'::jsonb, p_offer_delta bigint default 0,
+                                                  p_discount numeric default null, p_disc_club boolean default null)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  err text := public.stock_ok(auth.uid());
+  l   public.stock_listings;
+  fv  bigint;
+  pr  numeric;
+  sh  bigint := least(greatest(coalesce(p_shares, 100000), 100000), 1000000000);
+  dv  numeric := least(greatest(coalesce(p_div, 0), 0), 0.5);
+  dc  numeric := case when p_discount is null then null else least(greatest(p_discount, 0), 0.5) end;
+  h   jsonb := case when jsonb_typeof(p_hist) = 'array' and pg_column_size(p_hist) < 2000 then p_hist else '[]'::jsonb end;
+begin
+  if err is not null then return jsonb_build_object('ok', false, 'error', err); end if;
+  if p_price is null or p_price <= 0 then
+    return jsonb_build_object('ok', false, 'error', 'Cours invalide.');
+  end if;
+  select firm_value into fv from public.profiles where id = uid;
+  pr := greatest(round(least(p_price, greatest(coalesce(fv, 0), 100000) * 5.0 / sh), 2), 0.01);
+  select * into l from public.stock_listings where company = uid for update;
+  if not found then
+    insert into public.stock_listings (company, price, prev_price, div_rate, shares, offer, hist, discount, disc_club)
+    values (uid, pr, case when jsonb_typeof(h -> -2) = 'number' then (h ->> -2)::numeric end,
+            dv, sh, least(greatest(coalesce(p_offer_delta, 0), 0), 1000000000), h, coalesce(dc, 0), coalesce(p_disc_club, false))
+    returning * into l;
+  else
+    pr := least(greatest(pr, l.price * 0.5), l.price * 2);
+    update public.stock_listings set
+      prev_price = case when pr <> l.price then l.price else prev_price end,
+      price = pr, div_rate = dv, shares = sh, hist = h,
+      offer = least(greatest(l.offer + coalesce(p_offer_delta, 0), 0), 1000000000),
+      discount = coalesce(dc, l.discount), disc_club = coalesce(p_disc_club, l.disc_club),
+      updated_at = now()
+    where company = uid
+    returning * into l;
+  end if;
+  return jsonb_build_object('ok', true, 'offer', l.offer, 'sold', l.sold, 'price', l.price,
+                            'discount', l.discount, 'disc_club', l.disc_club);
+end $$;
+
+create or replace function public.mp_stock_market()
+returns jsonb
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(jsonb_agg(r.j order by r.ord), '[]'::jsonb)
+  from (
+    select jsonb_build_object(
+             'id', l.company, 'pseudo', p.pseudo, 'firm_name', p.firm_name, 'emoji', p.emoji,
+             'price', l.price, 'prev_price', l.prev_price, 'div_rate', l.div_rate,
+             'offer', l.offer, 'sold', l.sold, 'hist', l.hist, 'me', l.company = auth.uid(),
+             'discount', l.discount, 'disc_club', l.disc_club,
+             'my_price', public.stock_price_for(l, auth.uid()),
+             'mine', coalesce((select h.qty from public.stock_holdings h
+                               where h.holder = auth.uid() and h.company = l.company), 0),
+             'holders', (select count(*) from public.stock_holdings h where h.company = l.company)) as j,
+           row_number() over (order by (l.offer > 0) desc, l.price * l.shares desc) as ord
+    from public.stock_listings l
+    join public.profiles p on p.id = l.company
+    where l.company = auth.uid()
+       or (not p.hidden and (p.cheats = 0 or p.exempt) and l.updated_at > now() - interval '30 days')
+    order by ord
+    limit 60
+  ) r;
+$$;
+
+create or replace function public.mp_stock_buy(p_company uuid, p_qty bigint, p_price numeric)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  err text := public.stock_ok(auth.uid());
+  l   public.stock_listings;
+  q   bigint := coalesce(p_qty, 0);
+  pe  numeric;
+  t   numeric;
+begin
+  if err is not null then return jsonb_build_object('ok', false, 'error', err); end if;
+  if p_company = uid then
+    return jsonb_build_object('ok', false, 'error', 'Pour reprendre tes propres actions, utilise « Racheter tes actions ».');
+  end if;
+  if q < 1 then return jsonb_build_object('ok', false, 'error', 'Quantité invalide.'); end if;
+  select * into l from public.stock_listings where company = p_company for update;
+  if not found or not exists (select 1 from public.profiles
+                              where id = p_company and not hidden and (cheats = 0 or exempt)) then
+    return jsonb_build_object('ok', false, 'error', 'Ce café n’est plus coté.');
+  end if;
+  if l.offer < q then
+    return jsonb_build_object('ok', false, 'error', case when l.offer = 0 then 'Plus aucune action en vente pour ce café.'
+                                                         else 'Il ne reste que ' || l.offer || ' actions en vente.' end);
+  end if;
+  pe := public.stock_price_for(l, uid);
+  if p_price is null or abs(pe - p_price) > 0.005 then
+    return jsonb_build_object('ok', false, 'error', 'Le prix vient de changer : vérifie le nouveau prix.', 'price', pe);
+  end if;
+  t := round(q * pe, 2);
+  update public.stock_listings set offer = offer - q, sold = sold + q where company = p_company;
+  insert into public.stock_holdings as sh (holder, company, qty, cost) values (uid, p_company, q, t)
+  on conflict (holder, company) do update
+    set qty = sh.qty + excluded.qty, cost = sh.cost + excluded.cost, updated_at = now();
+  insert into public.stock_payouts (user_id, kind, amount, qty, other) values (p_company, 'sale', t, q, uid);
+  return jsonb_build_object('ok', true, 'total', t, 'price', pe);
+end $$;
+
+revoke all on function public.mp_stock_update(numeric, numeric, bigint, jsonb, bigint, numeric, boolean),
+  public.mp_stock_market(), public.mp_stock_buy(uuid, bigint, numeric) from public, anon;
+grant execute on function public.mp_stock_update(numeric, numeric, bigint, jsonb, bigint, numeric, boolean),
+  public.mp_stock_market(), public.mp_stock_buy(uuid, bigint, numeric) to authenticated;

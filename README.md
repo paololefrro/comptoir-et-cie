@@ -31,11 +31,11 @@ Pour le tester sur ton ordinateur, lance `node serve.js`, puis ouvre http://loca
 
 ## Notes de mise à jour (patch note)
 
-Au lancement du jeu, un joueur qui revient voit une fois la fenêtre « Quoi de neuf ? ». Elle est définie dans `src/jeu.html` par la constante `PATCH` : un identifiant (`id`), une date et une liste de nouveautés (émoji, titre, texte).
+Au lancement du jeu, un joueur qui revient voit une fois la fenêtre « Quoi de neuf ? ». Elle est définie dans `src/jeu.html` par la liste `PATCHES` (la plus récente en premier) : pour chaque note, un identifiant (`id`), une date et une liste de nouveautés (émoji, titre, texte). Un joueur voit en une fois toutes les notes qu’il n’a pas encore vues.
 
-- Chaque joueur la voit **une seule fois par identifiant** : elle est marquée vue dès son affichage, dans la sauvegarde (`flags.patchSeen`) et dans le navigateur (`cc-patch-seen`).
+- Chaque joueur la voit **une seule fois par identifiant** : elle est marquée vue dès son affichage, dans la sauvegarde (`flags.patchSeenList`) et dans le navigateur (`cc-patch-seen-list`).
 - Un tout nouveau joueur ne la voit pas : elle est marquée vue avec l’écran d’accueil.
-- Pour une nouvelle note : remplace la liste et **change l’identifiant** (par exemple `2026-11-20`). Sans changement d’identifiant, personne ne la revoit.
+- Pour une nouvelle note : **ajoute une entrée en tête de `PATCHES`** avec un nouvel identifiant (par exemple `2026-11-20`). Les joueurs qui ont déjà vu les anciennes ne voient que la nouvelle.
 
 ## Codes secrets
 
@@ -172,7 +172,8 @@ L’onglet s’ouvre dès que le joueur a créé sa société. L’ancien systè
 - **Émettre ou racheter** des actions (frais de 3 % ou prime de 2 %). Le joueur garde au moins 51 % du capital.
 - **Dividendes** : 0, 10, 25 ou 50 % du bénéfice du jour, versés seulement aux autres actionnaires et seulement les jours bénéficiaires.
 - **Groupes rivaux** : achat et vente d’actions des trois groupes de la ville (frais de 1 %), avec un petit dividende chaque soir.
-- **Entre joueurs** (multijoueur) : un joueur coté propose des actions ; les autres les achètent au cours de sa dernière clôture. L’argent et les dividendes arrivent à la connexion suivante ou en fin de journée (fonction `mp_stock_claim`). Revente au marché au cours du jour moins 2 %. Si un café quitte le multijoueur, ses actionnaires sont remboursés au dernier cours. Les parties avec un code secret (hors vitrines exemptées) ne peuvent ni acheter ni proposer d’actions. Garde-fous côté serveur : cours limité à 5 fois la valeur de la vitrine, variation au plus ×2 d’une publication à l’autre, dividende au plus 5 % du cours et une fois toutes les 30 secondes.
+- **Entre joueurs** (multijoueur) : un joueur coté propose des actions ; les autres les achètent au cours de sa dernière clôture. L’argent et les dividendes arrivent à la connexion suivante ou en fin de journée (fonction `mp_stock_claim`). Revente au marché au cours du jour moins 2 %. Si un café quitte le multijoueur, ses actionnaires sont remboursés au dernier cours. Les parties avec un code secret (hors vitrines exemptées) ne peuvent ni acheter ni proposer d’actions.
+- **Actions bradées** : le vendeur peut proposer ses actions à −10, −25 ou −50 % (colonnes `discount` et `disc_club` de `stock_listings`), pour tous les joueurs ou seulement pour les membres de son club. Le cours ne change pas ; l’acheteur paie le prix bradé et la société vendeuse touche ce prix. Le prix de chaque acheteur est calculé côté serveur (`stock_price_for`). Garde-fous côté serveur : cours limité à 5 fois la valeur de la vitrine, variation au plus ×2 d’une publication à l’autre, dividende au plus 5 % du cours et une fois toutes les 30 secondes.
 
 Supabase recommande d'activer un captcha pour les comptes anonymes quand le jeu devient populaire (**Authentication → Attack Protection**).
 

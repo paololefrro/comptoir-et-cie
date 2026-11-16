@@ -378,6 +378,9 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .bk-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .bk-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bk-head p{margin:0}
+.bk-deal{color:var(--good)}
+.bk-check{display:flex;gap:7px;align-items:center;font-size:.85rem;font-weight:700;margin:6px 0 0}
+.bk-check input{width:18px;height:18px;accent-color:var(--accent)}
 .bk-help summary{cursor:pointer;font-weight:900;font-size:.88rem}
 /* ---------- Extension 2 ---------- */
 .tier{display:inline-block;margin-left:6px;font-size:.75rem;font-weight:900;background:var(--gold-soft);color:var(--ink);padding:1px 8px;border-radius:99px}
@@ -1978,7 +1981,7 @@ function tabLabo(){
 // vendues à des investisseurs. Rien n'est remis à zéro, la part du joueur baisse simplement.
 const SH0=100000,IPO_MIN=100000,MIN_OWN=.51;
 const IPO_FEE=.05,ISSUE_FEE=.03,BUYBACK_PREM=.02,TRADE_FEE=.01;
-const IPO_PCTS=[.1,.2,.3,.4,.49],DIV_RATES=[0,.1,.25,.5];
+const IPO_PCTS=[.1,.2,.3,.4,.49],DIV_RATES=[0,.1,.25,.5],DISC_RATES=[0,.1,.25,.5];
 // Cours de départ, tendance par soir, volatilité et dividende quotidien des groupes rivaux
 const RSTOCK={royal:{p:60,dr:.0035,vol:.02,y:.0012},delices:{p:24,dr:.0055,vol:.035,y:.0004},conti:{p:350,dr:.0028,vol:.015,y:.0018}};
 const MKT_EV=[
@@ -1993,7 +1996,7 @@ const MKT_EV=[
  {me:.08,listed:true,t:()=>`🗞️ La presse économique salue la gestion de ${S.firm.name} : ton action grimpe.`},
  {me:-.06,listed:true,t:()=>`📰 Un analyste juge ${S.firm.name} trop cher : ton action recule.`},
 ];
-function bourseDefault(){return {listed:false,day:0,raised:0,float:0,held:0,offer:0,hist:[],div:0,divPaid:0,divIn:0,mood:1,noise:1,ppv:0,
+function bourseDefault(){return {listed:false,day:0,raised:0,float:0,held:0,offer:0,disc:0,discClub:false,hist:[],div:0,divPaid:0,divIn:0,mood:1,noise:1,ppv:0,
   rv:Object.fromEntries(RIVALS.map(r=>[r.id,{p:RSTOCK[r.id].p,hist:[RSTOCK[r.id].p]}])),pf:{}};}
 function bourseMerge(d){
   const o=Object.assign(bourseDefault(),d&&typeof d==='object'?d:{});
@@ -2001,6 +2004,7 @@ function bourseMerge(d){
   const pf={};Object.entries(o.pf||{}).forEach(([k,v])=>{if(RSTOCK[k]&&v&&v.n>0)pf[k]={n:Math.floor(v.n),cost:+v.cost||0};});o.pf=pf;
   ['float','held','offer'].forEach(k=>o[k]=Math.max(0,Math.floor(+o[k]||0)));
   if(!Array.isArray(o.hist))o.hist=[];if(!DIV_RATES.includes(o.div))o.div=0;
+  if(!DISC_RATES.includes(o.disc))o.disc=0;o.discClub=!!o.discClub;
   o.mood=clamp(+o.mood||1,.7,1.35);o.noise=clamp(+o.noise||1,.8,1.25);
   return o;
 }
@@ -2102,7 +2106,7 @@ async function bkLoad(force){
 // Publie le cours, le dividende et l'historique ; p_delta ajoute ou retire des actions proposées aux joueurs
 async function bkPush(delta){
   const B=S.bourse;if(!MP.me||!B.listed)return null;
-  try{const r=await mpRpc('mp_stock_update',{p_price:B.hist[B.hist.length-1]||Math.round(stockPrice()*100)/100,p_div:B.div,p_shares:shN(),p_hist:B.hist.slice(-30),p_offer_delta:Math.round(delta||0)});
+  try{const r=await mpRpc('mp_stock_update',{p_price:B.hist[B.hist.length-1]||Math.round(stockPrice()*100)/100,p_div:B.div,p_shares:shN(),p_hist:B.hist.slice(-30),p_offer_delta:Math.round(delta||0),p_discount:B.disc,p_disc_club:!!B.discClub});
     if(r&&r.ok)B.offer=+r.offer||0;return r;}catch(e){return null;}
 }
 async function bkClaim(){
@@ -2124,6 +2128,9 @@ async function bkSync(sm){
 async function bkMpAction(a,el){
   const B=S.bourse,id=el.dataset.id,q=Math.floor(+el.dataset.q||0);
   if(a==='bkreload'){BK.t=0;bkLoad(true);return;}
+  if(a==='bkdisc'){const d=clamp(q/100,0,.5);if(!DISC_RATES.includes(d))return;B.disc=d;saveSoon();renderPanel();const r=await bkPush(0);
+    if(r&&r.ok)toast(d?`🏷️ Tes actions sont bradées à −${Math.round(d*100)} %${B.discClub?' pour les membres de ton club':' pour tous les joueurs'}.`:'🏷️ Tes actions sont de nouveau au prix normal.','gold');else toast('🌍 '+((r&&r.error)||'Impossible de mettre à jour ton offre pour l’instant.'),'bad');
+    BK.t=0;bkLoad(true);return;}
   if(a==='bkbuy'){const p=+el.dataset.p;if(q<1)return;if(S.money<q*p){toast('Pas assez de trésorerie.','bad');return;}
     el.disabled=true;let r=null;try{r=await mpRpc('mp_stock_buy',{p_company:id,p_qty:q,p_price:p});}catch(e){r=null;}
     if(r&&r.ok){const t=+r.total;S.money-=t;book('placements',-t);toast(`📈 ${fmtN(q)} actions achetées pour ${money(t)} ! Les dividendes arriveront chaque soir où ce café en verse.`,'gold');Snd.buy();saveSoon();updateHud();}
@@ -2179,7 +2186,7 @@ function playerStocksHtml(){
   const ko=!!MP.me.cheater;
   let h=ko?'<p class="notice">🔐 Ta partie a utilisé des codes secrets : tu peux suivre le marché et revendre tes actions, mais plus en acheter ni proposer les tiennes aux joueurs.</p>':'';
   if(B.listed&&!ko){const N=shN(),km=issueMax();const add=[.01,.05].map(f=>Math.min(km,Math.round(N*f)));
-    h+=`<div class="upg"><div class="upg-ic" aria-hidden="true">🤝</div><div class="grow"><b>Proposer tes actions aux joueurs</b><p class="muted small">Ils achètent au cours de ta dernière clôture (${pr2(B.hist[B.hist.length-1]||stockPrice())}). L’argent arrive dans ta caisse à ta prochaine connexion ou à la fin de la journée. ${B.offer?`En vente : <b>${fmtN(B.offer)}</b> actions.`:'Aucune action en vente pour l’instant.'}${B.held?` ${fmtN(B.held)} actions déjà chez des joueurs.`:''}</p><div class="bk-btns">${add.map(k=>`<button class="btn btn-sm btn-gold" data-mp="bkoffer" data-q="${k}" ${k>0?'':'disabled'}>Proposer ${fmtN(k)}</button>`).join('')}${B.offer?`<button class="btn btn-sm" data-mp="bkoffer" data-q="${-B.offer}">Retirer l’offre</button>`:''}</div></div></div>`;}
+    h+=`<div class="upg"><div class="upg-ic" aria-hidden="true">🤝</div><div class="grow"><b>Proposer tes actions aux joueurs</b><p class="muted small">Ils achètent au cours de ta dernière clôture (${pr2(B.hist[B.hist.length-1]||stockPrice())}). L’argent arrive dans ta caisse à ta prochaine connexion ou à la fin de la journée. ${B.offer?`En vente : <b>${fmtN(B.offer)}</b> actions.`:'Aucune action en vente pour l’instant.'}${B.held?` ${fmtN(B.held)} actions déjà chez des joueurs.`:''}</p><div class="bk-btns">${add.map(k=>`<button class="btn btn-sm btn-gold" data-mp="bkoffer" data-q="${k}" ${k>0?'':'disabled'}>Proposer ${fmtN(k)}</button>`).join('')}${B.offer?`<button class="btn btn-sm" data-mp="bkoffer" data-q="${-B.offer}">Retirer l’offre</button>`:''}</div>${(()=>{const base=B.hist[B.hist.length-1]||stockPrice(),club=!!MP.me.club_id;return `<p class="lbl-full">🏷️ Brader tes actions</p><div class="seg" role="group" aria-label="Remise sur tes actions">${DISC_RATES.map(d=>`<button data-mp="bkdisc" data-q="${Math.round(d*100)}" aria-pressed="${B.disc===d}">${d?'−'+Math.round(d*100)+' %':'Prix normal'}</button>`).join('')}</div><label class="bk-check"><input type="checkbox" id="bkDiscClub" ${B.discClub?'checked':''} ${club?'':'disabled'}> Remise seulement pour les membres de mon club${club?'':' (rejoins un club pour l’activer)'}</label><p class="muted small">Prix pour les joueurs : <b>${pr2(base*(1-B.disc))}</b>${B.disc?` au lieu de ${pr2(base)}${B.discClub&&club?', seulement pour ton club (les autres paient le prix normal)':', pour tout le monde'}`:''}. Le cours de ton action ne change pas : seule ton offre est bradée, et tu touches le prix bradé.</p>`;})()}</div></div>`;}
   else if(!ko)h+='<p class="muted small">Entre en Bourse pour proposer tes propres actions aux autres joueurs.</p>';
   const P=BK.port,M=BK.market;
   h+='<p class="lbl-full">Ton portefeuille</p>';
@@ -2188,8 +2195,9 @@ function playerStocksHtml(){
   h+='<p class="lbl-full">Actions proposées par les joueurs</p>';
   const L=M&&M.filter(x=>!x.me&&x.offer>0);
   h+=M==null?'<p class="muted small">Chargement…</p>':L.length?L.map(x=>{const ch=x.prev_price>0?x.price/x.prev_price-1:0;
-    const qs=[.1,.5].map(f=>Math.min(x.offer,Math.floor(Math.max(0,S.money)*f/x.price)));
-    return `<div class="upg"><div class="upg-ic" aria-hidden="true">${esc(x.emoji)}</div><div class="grow"><div class="bk-head"><div><b>${esc(x.firm_name)}</b><p class="muted small">${esc(x.pseudo)} · ${pr2(x.price)} <span class="${ch>=0?'bk-up':'bk-down'}">${pctTxt(ch)}</span> · dividende ${x.div_rate>0?Math.round(x.div_rate*100)+' % du bénéfice':'aucun'} · ${fmtN(x.offer)} en vente</p></div>${sparkSvg(x.hist||[],'',true)}</div>${x.mine?`<p class="small">Tu en détiens déjà ${fmtN(x.mine)}.</p>`:''}<div class="bk-btns">${qs.map(q=>`<button class="btn btn-sm btn-primary" data-mp="bkbuy" data-id="${x.id}" data-q="${q}" data-p="${x.price}" ${q>0&&!ko?'':'disabled'}>Acheter ${fmtN(q)} · ${fmtK(q*x.price)} €</button>`).join('')}</div></div></div>`;}).join(''):'<p class="muted small">Aucun joueur ne propose d’actions pour l’instant.</p>';
+    const mp=+(x.my_price??x.price)||x.price,brade=mp<x.price-.004,offC=x.discount>0&&x.disc_club&&!brade;
+    const qs=[.1,.5].map(f=>Math.min(x.offer,Math.floor(Math.max(0,S.money)*f/mp)));
+    return `<div class="upg"><div class="upg-ic" aria-hidden="true">${esc(x.emoji)}</div><div class="grow"><div class="bk-head"><div><b>${esc(x.firm_name)}</b><p class="muted small">${esc(x.pseudo)} · ${brade?`<s>${pr2(x.price)}</s> <b class="bk-deal">${pr2(mp)}</b> <span class="tag up">🏷️ −${Math.round((1-mp/x.price)*100)} %${x.disc_club?' club':''}</span>`:pr2(x.price)} <span class="${ch>=0?'bk-up':'bk-down'}">${pctTxt(ch)}</span>${offC?' · 🤝 remise réservée à son club':''} · dividende ${x.div_rate>0?Math.round(x.div_rate*100)+' % du bénéfice':'aucun'} · ${fmtN(x.offer)} en vente</p></div>${sparkSvg(x.hist||[],'',true)}</div>${x.mine?`<p class="small">Tu en détiens déjà ${fmtN(x.mine)}.</p>`:''}<div class="bk-btns">${qs.map(q=>`<button class="btn btn-sm btn-primary" data-mp="bkbuy" data-id="${x.id}" data-q="${q}" data-p="${mp}" ${q>0&&!ko?'':'disabled'}>Acheter ${fmtN(q)} · ${fmtK(q*mp)} €</button>`).join('')}</div></div></div>`;}).join(''):'<p class="muted small">Aucun joueur ne propose d’actions pour l’instant.</p>';
   h+='<button class="btn btn-sm" data-mp="bkreload">🔄 Actualiser</button>';
   return h;
 }
@@ -2353,8 +2361,13 @@ function tabLivraison(){
 }
 
 /* ---------- Notes de mise à jour (une seule fois par version) ---------- */
-// Pour une nouvelle note : change PATCH.id et la liste. Chaque joueur la verra une fois, au lancement suivant.
-const PATCH={id:'2026-11-16b',date:'16 novembre',items:[
+// Pour une nouvelle note : ajoute en tête de PATCHES une entrée avec un nouvel id. Chaque joueur la verra une fois, au lancement suivant.
+// La plus récente en premier. Un joueur voit en une fois toutes les notes qu'il n'a pas encore vues.
+const PATCHES=[
+{id:'2026-11-16c',date:'16 novembre',items:[
+ ['🏷️','Actions bradées','Dans l’onglet Bourse, tu peux maintenant brader tes actions proposées aux joueurs (−10 %, −25 % ou −50 %), pour tout le monde ou seulement pour les membres de ton club. Le cours de ton action ne change pas.'],
+]},
+{id:'2026-11-16b',date:'16 novembre',items:[
  ['📈','Une toute nouvelle Bourse','Entrer en Bourse ne fait plus rien perdre : tu lèves de l’argent et tu gardes tout. Cours en direct, dividendes, placements dans les groupes rivaux, et tu peux acheter les actions des cafés des autres joueurs. Tes anciennes parts de fondateur ont été converties en argent.'],
  ['🛵','La livraison à domicile','Nouvel onglet Livraison dès le niveau 4 : inscris ton café sur Livr’Éclair, prépare les commandes et regarde les livreurs passer les chercher.'],
  ['🏛️','50 niveaux','Le café monte maintenant jusqu’au niveau 50, le Panthéon du café. Après le niveau 12, chaque client rapporte plus d’expérience.'],
@@ -2363,10 +2376,15 @@ const PATCH={id:'2026-11-16b',date:'16 novembre',items:[
  ['💬','Un chat plus lisible','La terrasse et les salons de club ont des bulles de discussion, des émojis rapides et un bouton « Nouveaux messages ».'],
  ['☁️','Sauvegarde en ligne plus sûre','Ta partie n’est plus perdue quand le lien de l’e-mail s’ouvre dans un autre navigateur, et une partie plus avancée n’est plus jamais écrasée sans te demander.'],
  ['🐞','Corrigé','Le panneau ne saute plus quand tu améliores une recette.'],
-]};
-function patchSeen(){let ls=null;try{ls=localStorage.getItem('cc-patch-seen');}catch(e){}return ls===PATCH.id||S.flags.patchSeen===PATCH.id;}
-function markPatchSeen(){S.flags.patchSeen=PATCH.id;try{localStorage.setItem('cc-patch-seen',PATCH.id);}catch(e){}save();}
+]}];
+function patchSeenSet(){const set=new Set();try{JSON.parse(localStorage.getItem('cc-patch-seen-list')||'[]').forEach(x=>set.add(x));const one=localStorage.getItem('cc-patch-seen');if(one)set.add(one);}catch(e){}
+  (Array.isArray(S.flags.patchSeenList)?S.flags.patchSeenList:[]).forEach(x=>set.add(x));if(S.flags.patchSeen)set.add(S.flags.patchSeen);return set;}
+const patchUnseen=()=>{const set=patchSeenSet();return PATCHES.filter(p=>!set.has(p.id));};
+function patchSeen(){return !patchUnseen().length;}
+function markPatchSeen(){const set=patchSeenSet();PATCHES.forEach(p=>set.add(p.id));const arr=[...set].slice(-40);S.flags.patchSeenList=arr;S.flags.patchSeen=PATCHES[0].id;
+  try{localStorage.setItem('cc-patch-seen-list',JSON.stringify(arr));localStorage.setItem('cc-patch-seen',PATCHES[0].id);}catch(e){}save();}
 function showPatch(next){
+  const list=patchUnseen(),items=[].concat(...list.map(p=>p.items)),PATCH={date:(list[0]||PATCHES[0]).date,items:items.length?items:PATCHES[0].items};
   markPatchSeen(); // marquée vue dès l'affichage : elle ne revient jamais, même si la page est rechargée
   openModal(`<div class="modal-head"><span class="modal-ic">🎉</span><div><p class="eyebrow">Mise à jour du ${PATCH.date}</p><h2>Quoi de neuf ?</h2></div></div>
   <ul class="patch-list">${PATCH.items.map(([i,t,d])=>`<li><span class="pi" aria-hidden="true">${i}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ul>
@@ -4185,6 +4203,7 @@ function bindUI(){
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;R.confirmReset=false;R.confirmSell=null;R.bkConfirm=null;renderPanel();$('#tabBody').scrollTop=0;}));
   $('#tabBody').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;Snd.init();act(b.dataset.act,b);});
   $('#tabBody').addEventListener('change',e=>{const t=e.target;if(t.id==='postItem')R.postItem=t.value;
+    if(t.id==='bkDiscClub'){S.bourse.discClub=t.checked;saveSoon();bkPush(0).then(r=>{if(r&&r.ok&&S.bourse.disc)toast(t.checked?'🤝 Ta remise est réservée aux membres de ton club.':'🏷️ Ta remise vaut maintenant pour tous les joueurs.','gold');BK.t=0;bkLoad(true);});}
     if(t.id&&t.id.startsWith('chefT-')){S.chef.tasks[t.id.slice(6)]=t.checked;saveSoon();}
     if(t.id==='chefReserve'){S.chef.reserve=+t.value;saveSoon();}if(t.id==='labBase'||t.id==='labTwist'){R[t.id]=t.value;renderPanel();}});
   $('#tabBody').addEventListener('input',e=>{if(e.target.id==='firmName'){R.firmName=e.target.value;return;}if(e.target.id==='frRate'){S.fr.rate=+e.target.value;const v=$('#frRateV');if(v)v.textContent=S.fr.rate+' %';const hh=$('#frRateHint');if(hh)hh.textContent=rateHint();saveSoon();return;}const id=e.target.dataset&&e.target.dataset.price;if(!id)return;S.items[id].price=Math.round(+e.target.value*10)/10;updatePriceUI(id);saveSoon();});
