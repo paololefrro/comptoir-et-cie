@@ -2256,8 +2256,9 @@ function mpBoardHtml(limit){
   if(!limit)h+=`<div class="seg mp-wrap" role="group" aria-label="Type de classement">${[['value','💰 Valeur'],['followers','📱 Abonnés'],['tips','💝 Pourboires'],['duels','⚔️ Duels'],['clubs','👥 Clubs']].map(([k,l])=>`<button type="button" data-mp="kind" data-v="${k}" aria-pressed="${MP.kind===k}">${l}</button>`).join('')}</div>`;
   if(!limit&&MP.kind==='clubs'){
     if(!MP.clubs)return h+'<p class="hint">Chargement du classement des clubs…</p>';
-    if(!MP.clubs.length)return h+'<p class="hint">Aucun club pour l’instant. Fonde le premier dans la rubrique Club !</p>';
-    return h+`<ol class="mp-list">${MP.clubs.map(mpClubRowHtml).join('')}</ol><p class="muted small">Valeur cumulée des membres classés (sans code secret, actifs ces 30 derniers jours).</p>`;
+    const go=MP.me?`<button type="button" class="btn btn-primary btn-sm" data-mp="view" data-v="club">👥 ${MP.me.club_id?'Voir mon club':'Fonder ou rejoindre un club'}</button>`:'';
+    if(!MP.clubs.length)return h+`<p class="hint">Aucun club pour l’instant : fonde le tout premier !</p>${go}`;
+    return h+`<ol class="mp-list">${MP.clubs.map(mpClubRowHtml).join('')}</ol><p class="muted small">Valeur cumulée des membres classés (sans code secret, actifs ces 30 derniers jours).</p>${go}`;
   }
   if(!MP.board)return h+'<p class="hint">Chargement du classement…</p>';
   if(!MP.board.length)return h+'<p class="hint">Le classement est encore vide : ta vitrine peut être la toute première !</p>';
