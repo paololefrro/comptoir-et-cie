@@ -2649,10 +2649,20 @@ function openSaveBox(){
 const Cloud={sb:null,user:null,meta:null,
   init(){
     const C=window.SITE_CONFIG&&window.SITE_CONFIG.cloud;if(!C||!C.url||!C.key||!window.supabase)return;
+    const h=location.hash||'';this.viaLink=/access_token=/.test(h);
+    const le=/error_code=|error_description=/.test(h)?(h.match(/error_code=([^&]*)/)||[])[1]||'error':'';
+    // Compte qu'avait cet appareil avant le lien : si c'est le même, c'est la même partie (compte provisoire devenu compte e-mail)
+    try{const j=JSON.parse(localStorage.getItem('sb-'+new URL(C.url).hostname.split('.')[0]+'-auth-token')||'null');this.prevId=(j&&j.user&&j.user.id)||null;}catch(e){this.prevId=null;}
     try{this.sb=window.supabase.createClient(C.url,C.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});}catch(e){this.sb=null;return;}
-    this.sb.auth.getSession().then(({data})=>{this.user=data&&data.session?data.session.user:null;if(this.user)this.fetchMeta();}).catch(()=>{});
+    if(le){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}
+      setTimeout(()=>toast(/expired|otp/i.test(le)?'📧 Ce lien a expiré ou a déjà servi. Redemande un lien dans 💾 Sauvegarde : il marche sur n’importe quel appareil.':'📧 Ce lien de connexion n’a pas marché. Redemande un lien dans 💾 Sauvegarde.','bad'),1200);}
+    // Arrivée par le lien de l'e-mail (sur cet appareil ou un autre) : on ouvre le compte relié à l'adresse et on propose sa partie
+    const viaLink=()=>{if(!this.viaLink||this._linkDone||!this.linked())return false;this._linkDone=true;
+      toast(`☁️ Connecté : ${this.user.email}`,'gold');const same=!!this.prevId&&this.prevId===this.user.id;setTimeout(()=>this.afterLogin(false,{link:true,same}),300);return true;};
+    this.sb.auth.getSession().then(({data})=>{this.user=data&&data.session?data.session.user:null;if(!this.user)return;if(!viaLink()){this.fetchMeta().then(()=>{if(this.linked()&&this.held())this.afterLogin(true,{link:true});});}}).catch(()=>{});
     this.sb.auth.onAuthStateChange((ev,session)=>{const was=this.user;this.user=session?session.user:null;
-      if(this.linked()&&(!was||!was.email||was.is_anonymous)&&ev!=='INITIAL_SESSION'){toast(`☁️ Connecté : ${this.user.email}`,'gold');setTimeout(()=>this.afterLogin(),300);}
+      if(viaLink()){}
+      else if(this.linked()&&was&&(!was.email||was.is_anonymous)&&ev!=='INITIAL_SESSION'){toast(`☁️ Connecté : ${this.user.email}`,'gold');const same=!!was&&was.id===this.user.id;setTimeout(()=>this.afterLogin(false,{link:!same,same}),300);}
       else if(this.linked()&&!this.meta)this.fetchMeta();
       if((was&&was.id)!==(this.user&&this.user.id))mpOnAuth();});
     // Le lien a été ouvert ailleurs (autre onglet, autre navigateur) : en revenant ici, on rafraîchit la session pour voir que le compte est confirmé
@@ -2678,22 +2688,29 @@ const Cloud={sb:null,user:null,meta:null,
     const {error}=await this.sb.auth.signInWithOtp({email,options:{emailRedirectTo:redirect}});if(error)throw error;
     try{localStorage.setItem('cc-cloud-pending',email);}catch(e){}return 'existing';},
   // Après la connexion : rien en ligne → on envoie cette partie ; partie neuve ici → on reprend celle en ligne ; sinon on demande
-  async afterLogin(quiet){
-    if(this._rc)return;this._rc=true;try{await this._afterLogin(quiet);}finally{this._rc=false;}
+  async afterLogin(quiet,o){
+    if(this._rc)return;this._rc=true;try{await this._afterLogin(quiet,o);}finally{this._rc=false;}
   },
-  async _afterLogin(quiet){
+  async _afterLogin(quiet,o){o=o||{};
     try{localStorage.removeItem('cc-cloud-pending');}catch(e){}
     await this.fetchMeta();const m=this.meta;
-    if(!m){if(!quiet)this.push(true,true);return;}
-    if(m.day<=S.day)return;
+    if(!m){this.hold(false);if(!quiet)this.push(true,true);return;}
     const fresh=S.stats.days<1&&S.day<=1;
-    if(fresh){try{const row=await this.pull();if(row&&row.data){loadSave(row.data);if(!$('#modal').hidden)closeModal();toast(`☁️ Ta partie a été retrouvée : jour ${row.day}, ${money(row.money||0)} !`,'gold');confettiBurst(90);}}catch(e){}return;}
-    cloudChoice(m);
+    const same=m.day===S.day&&Math.abs((m.money||0)-Math.round(S.money))<=1;
+    // Lien ouvert sur un autre appareil (ou compte déjà existant) : la partie du compte n'est jamais écrasée sans demander
+    if(o.link&&!o.same&&!fresh){if(same){this.hold(false);return;}this.hold(true);whenModalFree(()=>{if(this.meta)cloudChoice(this.meta);});return;}
+    if(!fresh&&m.day<=S.day)return;
+    if(fresh){try{const row=await this.pull();if(row&&row.data){loadSave(row.data);this.hold(false);if(!$('#modal').hidden)closeModal();toast(`☁️ Ta partie a été retrouvée : jour ${row.day}, ${money(row.money||0)} !`,'gold');confettiBurst(90);}}catch(e){}return;}
+    whenModalFree(()=>cloudChoice(m));
   },
+  // Choix en attente entre la partie du compte et celle de l'appareil : pas d'envoi automatique tant qu'il n'est pas fait
+  hold(on){try{if(on&&this.user)localStorage.setItem('cc-cloud-hold',this.user.id);else localStorage.removeItem('cc-cloud-hold');}catch(e){}},
+  held(){try{return !!this.user&&localStorage.getItem('cc-cloud-hold')===this.user.id;}catch(e){return false;}},
   linked(){return !!(this.user&&!this.user.is_anonymous);},
-  async logout(){await this.sb.auth.signOut();this.user=null;this.meta=null;},
+  async logout(){this.hold(false);await this.sb.auth.signOut();this.user=null;this.meta=null;},
   async push(silent,force){
     if(!this.user)return false;save();
+    if(!force&&this.held())return false;
     if(!force&&this.meta&&this.meta.day>S.day+1){if(!this.warned){this.warned=true;toast(`☁️ Ta partie en ligne (jour ${this.meta.day}) est plus avancée que celle-ci : elle n’a pas été remplacée. Ouvre 💾 Sauvegarde pour choisir.`,'bad');}return false;}
     const row={user_id:this.user.id,data:S,day:S.day,money:Math.round(S.money),updated_at:new Date().toISOString()};
     const {error}=await this.sb.from('saves').upsert(row);
@@ -2704,14 +2721,15 @@ const Cloud={sb:null,user:null,meta:null,
   async remove(){const {error}=await this.sb.from('saves').delete().eq('user_id',this.user.id);if(error)throw error;this.meta=null;},
   async fetchMeta(){try{const {data}=await this.sb.from('saves').select('day,money,updated_at').eq('user_id',this.user.id).maybeSingle();this.meta=data||null;}catch(e){}},
 };
+function whenModalFree(fn,n){n=n||0;if($('#modal').hidden||n>=240){fn();return;}setTimeout(()=>whenModalFree(fn,n+1),500);}
 function cloudChoice(m){
   openModal(`<div class="modal-head"><span class="modal-ic">☁️</span><div><p class="eyebrow">Sauvegarde en ligne</p><h2>Deux parties trouvées</h2></div></div>
-  <p class="ev-text">Ta partie en ligne est au <b>jour ${m.day}</b>, avec ${money(m.money||0)}. Celle de cet appareil est au <b>jour ${S.day}</b>, avec ${money(S.money)}. Laquelle veux-tu garder ?</p>
+  <p class="ev-text">La partie de ton compte${Cloud.user&&Cloud.user.email?` <b>${esc(Cloud.user.email)}</b>`:''} est au <b>jour ${m.day}</b>, avec ${money(m.money||0)}. Celle de cet appareil est au <b>jour ${S.day}</b>, avec ${money(S.money)}. Laquelle veux-tu garder ?</p>
   <div class="btns"><button class="btn btn-primary" type="button" id="ccCloud">☁️ Reprendre ma partie en ligne</button><button class="btn" type="button" id="ccLocal">📱 Garder celle de cet appareil</button></div>
   <p class="muted small" id="ccMsg" aria-live="polite" style="margin:0">La partie que tu ne gardes pas sera remplacée.</p>`);
   const b1=document.getElementById('ccCloud'),b2=document.getElementById('ccLocal'),out=document.getElementById('ccMsg');
-  b1.addEventListener('click',async()=>{b1.disabled=b2.disabled=true;try{const row=await Cloud.pull();if(!row||!row.data)throw 0;loadSave(row.data);closeModal();toast('☁️ Partie en ligne récupérée !','gold');confettiBurst(80);}catch(e){out.textContent='❌ Impossible de récupérer la partie en ligne. Réessaie dans un instant.';b1.disabled=b2.disabled=false;}});
-  b2.addEventListener('click',async()=>{b1.disabled=b2.disabled=true;const ok=await Cloud.push(true,true);if(ok){closeModal();toast('☁️ La partie de cet appareil est maintenant ta partie en ligne.','gold');}else{out.textContent='❌ L’envoi a échoué. Réessaie dans un instant.';b1.disabled=b2.disabled=false;}});
+  b1.addEventListener('click',async()=>{b1.disabled=b2.disabled=true;try{const row=await Cloud.pull();if(!row||!row.data)throw 0;loadSave(row.data);Cloud.hold(false);closeModal();toast('☁️ Partie en ligne récupérée !','gold');confettiBurst(80);}catch(e){out.textContent='❌ Impossible de récupérer la partie en ligne. Réessaie dans un instant.';b1.disabled=b2.disabled=false;}});
+  b2.addEventListener('click',async()=>{b1.disabled=b2.disabled=true;const ok=await Cloud.push(true,true);if(ok){Cloud.hold(false);closeModal();toast('☁️ La partie de cet appareil est maintenant ta partie en ligne.','gold');}else{out.textContent='❌ L’envoi a échoué. Réessaie dans un instant.';b1.disabled=b2.disabled=false;}});
 }
 function cloudBoxHtml(){
   if(!Cloud.linked())return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecte-toi avec ton e-mail pour retrouver ta partie sur tous tes appareils. Pas de mot de passe : tu reçois un lien de connexion.${Cloud.user?' Ta vitrine du multijoueur reste attachée à ce compte.':''}</p><div class="cloud-row"><input type="email" id="cloudEmail" class="txt" placeholder="ton@email.fr" autocomplete="email" aria-label="Ton adresse e-mail"><button class="btn btn-primary" type="button" id="cloudLogin">Recevoir le lien</button></div></div>`;
@@ -2721,10 +2739,10 @@ function cloudBoxHtml(){
 function bindCloudBox(msg){
   const q=id=>document.getElementById(id);let armPull=false,armDel=false;
   const li=q('cloudLogin');if(li)li.addEventListener('click',async()=>{const em=(q('cloudEmail').value||'').trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent='❌ Cette adresse e-mail ne semble pas valide.';return;}li.disabled=true;msg.textContent='Envoi du lien…';try{const mode=await Cloud.login(em);msg.textContent=mode==='new'?'📧 Lien envoyé ! Ta partie est déjà à l’abri en ligne : clique sur le lien de l’e-mail pour confirmer ton adresse. Tu la retrouveras même si le lien s’ouvre sur un autre appareil ou dans un autre navigateur.':'📧 Lien envoyé ! Clique sur le lien de l’e-mail pour te connecter à ton compte : on te proposera de reprendre ta partie en ligne.';}catch(e){msg.textContent='❌ Impossible d’envoyer le lien pour le moment. Réessaie dans quelques minutes.';li.disabled=false;}});
-  const pu=q('cloudPush');if(pu)pu.addEventListener('click',async()=>{pu.disabled=true;msg.textContent='Envoi en cours…';const ok=await Cloud.push(true,true);msg.textContent=ok?'✅ Partie enregistrée en ligne.':'❌ La sauvegarde en ligne a échoué. Réessaie dans un instant.';pu.disabled=false;});
+  const pu=q('cloudPush');if(pu)pu.addEventListener('click',async()=>{pu.disabled=true;msg.textContent='Envoi en cours…';const ok=await Cloud.push(true,true);if(ok)Cloud.hold(false);msg.textContent=ok?'✅ Partie enregistrée en ligne.':'❌ La sauvegarde en ligne a échoué. Réessaie dans un instant.';pu.disabled=false;});
   const pl=q('cloudPull');if(pl)pl.addEventListener('click',async()=>{
     if(!armPull){const m=Cloud.meta;armPull=true;msg.textContent=`⚠️ Ta partie actuelle sera remplacée par ta partie en ligne (jour ${m?m.day:'?'}). Clique encore pour confirmer.`;return;}
-    pl.disabled=true;try{const row=await Cloud.pull();if(!row||!row.data)throw 0;loadSave(row.data);closeModal();toast('☁️ Partie en ligne récupérée !','gold');confettiBurst(80);}catch(e){msg.textContent='❌ Impossible de récupérer la partie en ligne.';pl.disabled=false;armPull=false;}});
+    pl.disabled=true;try{const row=await Cloud.pull();if(!row||!row.data)throw 0;loadSave(row.data);Cloud.hold(false);closeModal();toast('☁️ Partie en ligne récupérée !','gold');confettiBurst(80);}catch(e){msg.textContent='❌ Impossible de récupérer la partie en ligne.';pl.disabled=false;armPull=false;}});
   const lo=q('cloudOut');if(lo)lo.addEventListener('click',async()=>{await Cloud.logout();closeModal();toast('Déconnecté de la sauvegarde en ligne.');});
   const de=q('cloudDel');if(de)de.addEventListener('click',async()=>{
     if(!armDel){armDel=true;msg.textContent='⚠️ Ta sauvegarde en ligne sera effacée définitivement (ta partie sur cet appareil est conservée). Clique encore pour confirmer.';return;}
