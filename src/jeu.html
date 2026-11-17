@@ -2526,14 +2526,16 @@ const Cloud={sb:null,user:null,meta:null,
     const h=location.hash||'';this.viaLink=/access_token=/.test(h);
     const le=/error_code=|error_description=/.test(h)?(h.match(/error_code=([^&]*)/)||[])[1]||'error':'';
     // Compte qu'avait cet appareil avant le lien : si c'est le même, c'est la même partie (compte provisoire devenu compte e-mail)
-    try{const j=JSON.parse(localStorage.getItem('sb-'+new URL(C.url).hostname.split('.')[0]+'-auth-token')||'null');this.prevId=(j&&j.user&&j.user.id)||null;}catch(e){this.prevId=null;}
+    try{const j=JSON.parse(localStorage.getItem('sb-'+new URL(C.url).hostname.split('.')[0]+'-auth-token')||'null');this.prevId=(j&&j.user&&j.user.id)||null;
+      this.prevSess=(j&&j.user&&!j.user.is_anonymous&&j.user.email&&j.refresh_token)?{id:j.user.id,email:j.user.email,access_token:j.access_token,refresh_token:j.refresh_token}:null;}catch(e){this.prevId=null;this.prevSess=null;}
     try{this.sb=window.supabase.createClient(C.url,C.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});}catch(e){this.sb=null;return;}
     if(le){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}
       setTimeout(()=>toast(/expired|otp/i.test(le)?'📧 Ce lien a expiré ou a déjà servi. Redemande un lien dans 💾 Sauvegarde : il marche sur n’importe quel appareil.':'📧 Ce lien de connexion n’a pas marché. Redemande un lien dans 💾 Sauvegarde.','bad'),1200);}
     // Arrivée par le lien de l'e-mail (sur cet appareil ou un autre) : on ouvre le compte relié à l'adresse et on propose sa partie
     const viaLink=()=>{if(!this.viaLink||this._linkDone||!this.linked())return false;this._linkDone=true;
+      const ps=this.prevSess;if(ps&&ps.id!==this.user.id){this.hold(true);setTimeout(()=>whenModalFree(()=>accountSwitch(ps)),300);return true;}
       toast(`☁️ Connecté : ${this.user.email}`,'gold');const same=!!this.prevId&&this.prevId===this.user.id;setTimeout(()=>this.afterLogin(false,{link:true,same}),300);return true;};
-    this.sb.auth.getSession().then(({data})=>{this.user=data&&data.session?data.session.user:null;if(!this.user)return;if(!viaLink()){this.fetchMeta().then(()=>{if(this.linked()&&this.held())this.afterLogin(true,{link:true});});}}).catch(()=>{});
+    this.sb.auth.getSession().then(({data})=>{this.user=data&&data.session?data.session.user:null;if(!this.user)return;if(!viaLink()&&!this.viaLink){this.fetchMeta().then(()=>{if(this.linked()&&this.held())this.afterLogin(true,{link:true});});}}).catch(()=>{});
     this.sb.auth.onAuthStateChange((ev,session)=>{const was=this.user;this.user=session?session.user:null;
       if(viaLink()){}
       else if(this.linked()&&was&&(!was.email||was.is_anonymous)&&ev!=='INITIAL_SESSION'){toast(`☁️ Connecté : ${this.user.email}`,'gold');const same=!!was&&was.id===this.user.id;setTimeout(()=>this.afterLogin(false,{link:!same,same}),300);}
@@ -2572,10 +2574,10 @@ const Cloud={sb:null,user:null,meta:null,
     const fresh=S.stats.days<1&&S.day<=1;
     const same=m.day===S.day&&Math.abs((m.money||0)-Math.round(S.money))<=1;
     // Lien ouvert sur un autre appareil (ou compte déjà existant) : la partie du compte n'est jamais écrasée sans demander
-    if(o.link&&!o.same&&!fresh){if(same){this.hold(false);return;}this.hold(true);whenModalFree(()=>{if(this.meta)cloudChoice(this.meta);});return;}
+    if(o.link&&!o.same&&!fresh){if(same){this.hold(false);return;}this.hold(true);const uid=this.user.id;whenModalFree(()=>{if(this.meta&&this.user&&this.user.id===uid)cloudChoice(this.meta);});return;}
     if(!fresh&&m.day<=S.day)return;
     if(fresh){try{const row=await this.pull();if(row&&row.data){loadSave(row.data);this.hold(false);if(!$('#modal').hidden)closeModal();toast(`☁️ Ta partie a été retrouvée : jour ${row.day}, ${money(row.money||0)} !`,'gold');confettiBurst(90);}}catch(e){}return;}
-    whenModalFree(()=>cloudChoice(m));
+    const uid=this.user.id;whenModalFree(()=>{if(this.user&&this.user.id===uid)cloudChoice(m);});
   },
   // Choix en attente entre la partie du compte et celle de l'appareil : pas d'envoi automatique tant qu'il n'est pas fait
   hold(on){try{if(on&&this.user)localStorage.setItem('cc-cloud-hold',this.user.id);else localStorage.removeItem('cc-cloud-hold');}catch(e){}},
@@ -2595,6 +2597,19 @@ const Cloud={sb:null,user:null,meta:null,
   async remove(){const {error}=await this.sb.from('saves').delete().eq('user_id',this.user.id);if(error)throw error;this.meta=null;},
   async fetchMeta(){try{const {data}=await this.sb.from('saves').select('day,money,updated_at').eq('user_id',this.user.id).maybeSingle();this.meta=data||null;}catch(e){}},
 };
+function accountSwitch(ps){
+  const nu=Cloud.user;if(!nu)return;
+  openModal(`<div class="modal-head"><span class="modal-ic">🔐</span><div><p class="eyebrow">Sauvegarde en ligne</p><h2>Changer de compte ?</h2></div></div>
+  <p class="ev-text">Ce lien ouvre le compte <b>${esc(nu.email||'')}</b>. Ce navigateur était connecté à <b>${esc(ps.email)}</b> : ta partie en ligne, ton profil et ta place au classement sont sur ce compte-là.</p>
+  <div class="btns"><button class="btn btn-primary" type="button" id="swGo">Passer sur ${esc(nu.email||'')}</button><button class="btn" type="button" id="swStay">↩️ Rester sur ${esc(ps.email)}</button></div>
+  <p class="muted small" id="swMsg" aria-live="polite" style="margin:0">Si tu passes sur l’autre compte, le jeu te demandera quelle partie garder.</p>`);
+  const st=document.getElementById('swStay'),go=document.getElementById('swGo'),out=document.getElementById('swMsg');
+  st.addEventListener('click',async()=>{st.disabled=go.disabled=true;out.textContent='Retour sur ton compte…';
+    let err=null;try{const r=await Cloud.sb.auth.setSession({access_token:ps.access_token,refresh_token:ps.refresh_token});err=r.error;}catch(e){err=e;}
+    if(err||!Cloud.user||Cloud.user.id!==ps.id){out.textContent=`❌ Impossible de revenir sur ${ps.email}. Ouvre 💾 Sauvegarde, déconnecte-toi, puis redemande un lien pour cette adresse.`;go.disabled=false;return;}
+    Cloud.hold(false);Cloud.meta=null;Cloud.fetchMeta();closeModal();toast(`☁️ Tu restes connecté à ${ps.email}.`,'gold');});
+  go.addEventListener('click',()=>{closeModal();Cloud.hold(false);toast(`☁️ Connecté : ${nu.email}`,'gold');Cloud.afterLogin(false,{link:true,same:false});});
+}
 function whenModalFree(fn,n){n=n||0;if($('#modal').hidden||n>=240){fn();return;}setTimeout(()=>whenModalFree(fn,n+1),500);}
 function cloudChoice(m){
   openModal(`<div class="modal-head"><span class="modal-ic">☁️</span><div><p class="eyebrow">Sauvegarde en ligne</p><h2>Deux parties trouvées</h2></div></div>
