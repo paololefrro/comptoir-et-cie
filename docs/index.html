@@ -2733,6 +2733,11 @@ const Cloud={sb:null,user:null,meta:null,
     setInterval(()=>{if(!this.linked()||document.hidden)return;const n=Date.now();
       if(this.active()){if(n-(this._lp||0)>=30000&&this.changed()){this._lp=n;this.reconcile(true);}}
       else if(n-(this._lc||0)>=20000){this._lc=n;this.reconcile(false);}},10000);
+    // Présence : le jeu affiché à l'écran signale qu'il est ouvert, une fois par minute (comptes du jeu seulement, pas si le comptage est refusé)
+    const ua=navigator.userAgent||'',dev=(/iPad|Tablet/i.test(ua)||(/Android/i.test(ua)&&!/Mobile/i.test(ua))||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1))?'tablette':(/Mobi|iPhone|iPod|Android/i.test(ua)?'mobile':'ordinateur');
+    const ping=()=>{if(!this.user||document.hidden||Date.now()-(this._pg||0)<55000)return;try{if(localStorage.getItem('cc-noaudit')==='1')return;}catch(e){return;}
+      this._pg=Date.now();try{this.sb.rpc('cc_ping',{p_device:dev}).then(()=>{},()=>{});}catch(e){}};
+    setInterval(ping,15000);document.addEventListener('visibilitychange',ping);setTimeout(ping,4000);
   },
   on(){return !!this.sb;},
   async login(email){

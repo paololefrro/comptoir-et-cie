@@ -32,6 +32,9 @@ h1{font-family:var(--font-display);font-weight:400;font-size:2rem;margin:0;line-
 .live{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.88rem;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:5px 12px}
 .live i{width:9px;height:9px;border-radius:50%;background:var(--data);animation:pulse 2s infinite}
 .live.zero i{background:var(--ink-3);animation:none}
+a.live{color:inherit;text-decoration:none}
+a.live:hover{border-color:var(--data)}
+a.live:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--data) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 @media (prefers-reduced-motion: reduce){.live i{animation:none}}
 .card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
@@ -107,6 +110,12 @@ th:first-child,td:first-child{text-align:left}
 .mod-row.off .body{text-decoration:line-through;color:var(--ink-2)}
 .chip{display:inline-block;font-weight:800;font-size:.75rem;border:1.5px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--ink-2)}
 .chip.warn{border-color:var(--accent);color:var(--accent)}
+.chip.ok{border-color:var(--data);color:var(--data-hi)}
+#onl{margin:0 0 12px;scroll-margin-top:12px}
+.onl-sum{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.onl-sum:empty{display:none}
+.onl-sum span{background:var(--card-2);border-radius:999px;padding:4px 12px;font-weight:800;font-size:.85rem}
+.mod-row .mail{overflow-wrap:anywhere}
 .btn.sm{padding:4px 10px;font-size:.8rem}
 a{color:var(--accent);font-weight:800}
 </style>
@@ -119,7 +128,7 @@ a{color:var(--accent);font-weight:800}
       <div class="sub">Comptoir &amp; Cie · page privée · <a href="./">retour au jeu</a></div>
     </div>
     <span class="grow"></span>
-    <span class="live" id="live" hidden><i aria-hidden="true"></i><span></span></span>
+    <a class="live" id="live" href="#onl" hidden><i aria-hidden="true"></i><span></span></a>
     <div class="seg" id="period" role="group" aria-label="Période" hidden>
       <button type="button" data-d="7" aria-pressed="false">7 jours</button>
       <button type="button" data-d="30" aria-pressed="true">30 jours</button>
@@ -143,6 +152,13 @@ a{color:var(--accent);font-weight:800}
 
   <main id="dash" hidden>
     <section class="kpis" id="kpis" aria-label="Chiffres clés"></section>
+
+    <section class="card" id="onl" hidden>
+      <h2>🟢 En ligne en ce moment</h2>
+      <p class="hint">Les joueurs qui ont un compte (e-mail ou multijoueur) apparaissent ici. Ceux qui n’ont pas de compte sont seulement comptés.</p>
+      <div class="onl-sum" id="onlSum"></div>
+      <div id="onlList"></div>
+    </section>
 
     <section class="card">
       <h2>Personnes venues chaque jour</h2>
@@ -335,7 +351,75 @@ a{color:var(--accent);font-weight:800}
     }).join('');
   }
 
-  var last = null;
+  var last = null, onl = null;
+  // ---------- Joueurs en ligne, avec ou sans e-mail
+  var DEV_ICON = { mobile: '📱 téléphone', tablette: '📱 tablette', ordinateur: '💻 ordinateur' };
+  function ago(iso) {
+    if (!iso) return 'jamais';
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return 'à l’instant';
+    if (s < 3600) return 'il y a ' + Math.round(s / 60) + ' min';
+    if (s < 86400) return 'il y a ' + Math.round(s / 3600) + ' h';
+    return 'le ' + when(iso);
+  }
+  function eur(n) {
+    n = Math.round(n || 0);
+    if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(1).replace('.', ',') + ' Md€';
+    if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',') + ' M€';
+    return fmt(n) + ' €';
+  }
+  function gameMeta(p) {
+    var m = [];
+    if (p.firm_name) m.push(esc(p.firm_name));
+    if (p.level) m.push('niv. ' + p.level);
+    if (p.day) m.push('jour ' + fmt(p.day));
+    if (p.money != null) m.push(eur(p.money));
+    return m.join(' · ');
+  }
+  function onlRow(p) {
+    var who = p.pseudo ? (p.emoji ? p.emoji + ' ' : '') + esc(p.pseudo) : 'Sans pseudo';
+    var meta = gameMeta(p), dev = DEV_ICON[p.device] || '';
+    return '<div class="mod-row"><span class="who">' + who + '</span>' + (meta ? '<span class="meta">' + meta + '</span>' : '') +
+      (p.email ? '<span class="chip ok mail">✉️ ' + esc(p.email) + '</span>' : '<span class="chip warn">⚠️ pas d’e-mail : partie non protégée</span>') +
+      '<span class="body meta">' + (dev ? dev + ' · ' : '') + ago(p.seen_at) + '</span></div>';
+  }
+  function renderAcc() {
+    if (!onl) return;
+    var det = $('acc').querySelector('details'), open = !!(det && det.open), L = onl.linked || [];
+    $('acc').innerHTML = '<p class="big">' + plural(onl.emails, 'joueur', 'joueurs') + ' avec e-mail</p>' +
+      '<p class="hint">Ils ont relié leur adresse : leur partie est à l’abri et les suit sur tous leurs appareils. ' +
+      (onl.mp_no_email ? plural(onl.mp_no_email, 'joueur du multijoueur n’a', 'joueurs du multijoueur n’ont') + ' pas encore relié d’e-mail.' : 'Tous les joueurs du multijoueur ont relié leur e-mail.') + '</p>' +
+      (L.length ? '<details' + (open ? ' open' : '') + '><summary>Voir qui a relié son e-mail</summary>' + L.map(function (p) {
+        var meta = gameMeta(p);
+        return '<div class="mod-row"><span class="who mail">✉️ ' + esc(p.email) + '</span>' +
+          (p.pseudo ? '<span class="meta">' + (p.emoji ? p.emoji + ' ' : '') + esc(p.pseudo) + '</span>' : '') +
+          '<span class="body meta">' + (meta ? meta + ' · ' : '') + 'vu ' + ago(p.seen_at) + '</span></div>';
+      }).join('') + '</details>' : '');
+  }
+  function renderOnline(o) {
+    onl = o;
+    var on = o.online || [], mail = on.filter(function (p) { return p.email; }).length, noMail = on.length - mail;
+    var liveN = (last && last.live) || 0, total = Math.max(liveN, on.length), rest = Math.max(0, liveN - on.length);
+    var live = $('live');
+    live.classList.toggle('zero', !total);
+    live.lastChild.textContent = total ? plural(total, 'personne', 'personnes') + ' en ce moment' + (on.length ? ' · ✉️ ' + fmt(mail) + ' avec e-mail' : '') : 'Personne en ce moment';
+    $('onl').hidden = false;
+    $('onlSum').innerHTML = total ? '<span>🟢 ' + plural(total, 'personne', 'personnes') + '</span>' +
+      '<span>✉️ ' + fmt(mail) + ' avec e-mail</span>' +
+      (noMail ? '<span>⚠️ ' + fmt(noMail) + ' sans e-mail</span>' : '') +
+      (rest ? '<span>👤 ' + fmt(rest) + ' sans compte</span>' : '') : '';
+    $('onlList').innerHTML = on.length ? on.map(onlRow).join('') +
+      (rest ? '<p class="empty">+ ' + plural(rest, 'personne', 'personnes') + ' sans compte (ni e-mail ni multijoueur) : on ne sait pas qui c’est.</p>' : '')
+      : '<p class="empty">' + (total ? 'Les personnes en ligne n’ont pas de compte (ni e-mail ni multijoueur) : on ne sait pas qui c’est.' : 'Personne ne joue en ce moment.') + '</p>';
+    renderAcc();
+  }
+  async function loadOnline() {
+    try {
+      var r = await sb.rpc('admin_online');
+      if (r.error) { $('onl').hidden = true; return; }
+      renderOnline(r.data || {});
+    } catch (e) {}
+  }
   function render(d) {
     last = d;
     var p = d.period || {}, t = d.today || {}, prev = d.previous || {}, n = d.days || 30;
@@ -400,7 +484,7 @@ a{color:var(--accent);font-weight:800}
     var s = d.suggestions || {};
     $('sugg').innerHTML = '<p class="big">' + plural(s.new, 'nouvelle idée', 'nouvelles idées') + '</p><p class="hint">' + plural(s.total, 'idée reçue', 'idées reçues') + ' en tout.</p>' +
       (ref ? '<a href="https://supabase.com/dashboard/project/' + ref + '/editor" target="_blank" rel="noopener">Les lire dans Supabase →</a>' : '');
-    $('acc').innerHTML = '<p class="big">' + plural(d.accounts, 'compte', 'comptes') + '</p><p class="hint">Personnes qui ont activé la sauvegarde en ligne avec leur e-mail.</p>';
+    if (!onl) $('acc').innerHTML = '<p class="big">' + plural(d.accounts, 'compte', 'comptes') + '</p><p class="hint">Personnes qui ont activé la sauvegarde en ligne avec leur e-mail.</p>';
 
     var g = new Date(d.generated_at || Date.now());
     $('foot').textContent = 'Mis à jour à ' + pad(g.getHours()) + ':' + pad(g.getMinutes()) + ' · actualisation automatique chaque minute tant que la page est ouverte.';
@@ -570,6 +654,8 @@ a{color:var(--accent);font-weight:800}
       $('msg').textContent = '';
       ui('dash');
       render(r.data || {});
+      if (onl) renderOnline(onl);
+      loadOnline();
       loadMod();
       loadGifts();
     } catch (e) {

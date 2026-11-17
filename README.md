@@ -234,6 +234,15 @@ Bon à savoir :
 - Pour savoir d'où viennent les joueurs, ajoute `?ref=nom` à tes liens, par exemple `https://www.comptoir-et-cie.fr/?ref=tiktok`.
 - Les visites faites depuis ton ordinateur en local (`node serve.js`) ne sont pas comptées. Ajoute `?track=1` à l'adresse pour tester.
 - Les joueurs peuvent refuser le comptage sur la page Confidentialité.
+
+#### Joueurs en ligne et e-mails reliés
+
+La carte **🟢 En ligne en ce moment** (et la pastille en haut de `stats.html`) dit qui joue en ce moment, et si chacun a relié son adresse e-mail (✉️) ou non (⚠️ partie non protégée). La carte **☁️ Sauvegardes en ligne** donne le nombre de joueurs avec e-mail et leur liste.
+
+- Le jeu affiché à l'écran appelle `cc_ping` une fois par minute pour les comptes du jeu (e-mail ou multijoueur). La table `presence` ne garde que la dernière présence de chaque compte et le type d'appareil. Un joueur en ligne = vu dans les 5 dernières minutes.
+- Les joueurs sans compte ne sont que comptés (mesure d'audience anonyme) : la page ne peut pas dire qui ils sont.
+- Pas de signal si le joueur a refusé le comptage sur la page Confidentialité.
+- Installation : colle `supabase-enligne.sql` dans **SQL Editor**, puis **Run** (déjà fait le 17 novembre 2026).
 - Les visites de plus de 25 mois sont effacées automatiquement, comme le recommande la CNIL.
 
 ## Mise en ligne avec GitHub Pages (gratuit)
