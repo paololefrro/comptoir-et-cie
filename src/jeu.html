@@ -340,6 +340,12 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;margin:0;letter-spac
 .cheat-form{display:flex;flex-direction:column;gap:8px}
 .cheat-form .txt{font-family:var(--font-display);font-size:1.3rem;letter-spacing:2px;text-transform:uppercase;text-align:center;padding:10px}
 .logo{cursor:default;user-select:none;-webkit-user-select:none}
+.tax-box{background:var(--card,#fff);border:2px solid var(--line,#e3e3e3);border-radius:16px;padding:10px 12px;margin:10px 0}
+.tax-box h4{margin:0 0 6px}.tax-box p{margin:6px 0 0}
+.tax-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:6px 0;border-top:1px dashed var(--line,#e3e3e3)}
+.tax-row small{display:block;font-size:12px;color:var(--ink2,#67584d);font-weight:600;margin-top:1px}
+.tax-row>b{white-space:nowrap}.tax-ok{color:var(--good,#2f7d4f);font-weight:800}
+.tax-note{background:var(--gold-soft,#fbecce);border-radius:12px;padding:8px 10px}.tax-gift .btn{margin-left:4px}
 .cloud-box{display:flex;flex-direction:column;gap:8px;background:var(--pist-soft);border-radius:16px;padding:12px}
 .cloud-box p{margin:0}
 .cloud-row{display:flex;flex-wrap:wrap;gap:8px}
@@ -657,6 +663,7 @@ const UPGRADES=[
  {id:'fournisseur',icon:'🚚',name:'Contrat fournisseur',desc:'Chaque soir, une commande part toute seule pour remplir la réserve le lendemain matin.',costs:[1400],req:[3]},
  {id:'vitrine',icon:'🧊',name:'Vitrine réfrigérée',desc:'Les pâtisseries et le brunch invendus se gardent mieux : 5 % de pertes par nuit au lieu de 18 %.',costs:[380],req:[2]},
  {id:'alarme',icon:'🚨',name:'Alarme et caméras',desc:'Les voleurs passent leur chemin : beaucoup moins de cambriolages la nuit et de clients qui partent sans payer.',costs:[900],req:[4]},
+ {id:'comptable',icon:'🧮',name:'Expert-comptable',desc:'Il épluche ta compta : −15 % d’impôt sur les bénéfices et −10 % de cotisations URCAF par niveau.',costs:[2500,60000],req:[4,18]},
  {id:'brasdroit',icon:'🤵',name:'Bras droit',desc:'Ramasse les pourboires, répond aux avis négatifs et débloque le mode continu (les journées s’enchaînent toutes seules).',costs:[4500],req:[5]},
 ];
 const UPG=Object.fromEntries(UPGRADES.map(u=>[u.id,u]));
@@ -1028,7 +1035,7 @@ function defaultState(){
     fr:{launched:false,rate:6,charte:'standard',list:[],cands:[],natCampaign:0,centrale:false,academie:false,lastRoy:0,prospect:{},seq:0},
     trophies:{},login:{last:'',streak:0,total:0},missions:{day:0,list:[],bonus:false},
     lab:{pending:null,tried:{}},sig:[],passiveDaily:0,lastSeen:0,auto:false,tierIdx:0,life:{served:0,revenue:0,missions:0},
-    dl:{on:false,pause:false,rating:4.2,zone:0,fee:0,pack:0,fleet:0,boost:0,total:0,last:null},bourse:bourseDefault(),book:{},bookSales:{},bookHist:[],chef:{hired:false,since:0,tasks:{carte:true,recettes:true,labo:true},reserve:2500,log:[]},custom:{}};
+    dl:{on:false,pause:false,rating:4.2,zone:0,fee:0,pack:0,fleet:0,boost:0,total:0,last:null},bourse:bourseDefault(),book:{},bookSales:{},bookHist:[],chef:{hired:false,since:0,tasks:{carte:true,recettes:true,labo:true},reserve:2500,log:[]},custom:{},tax:taxDefault()};
 }
 function mergeState(d){
   const b=defaultState();const out=Object.assign(b,d);
@@ -1039,6 +1046,7 @@ function mergeState(d){
   out.stats=Object.assign({served:0,revenue:0,bestDay:0,days:0},d.stats||{});
   out.flags=Object.assign({},d.flags||{});out.mods=Object.assign({},d.mods||{});
   out.ledger=Object.assign({stock:0,invest:0},d.ledger||{});
+  out.tax=Object.assign(taxDefault(),d.tax||{});
   if(!WEATHERS[out.weather])out.weather='soleil';if(!WEATHERS[out.forecast])out.forecast='nuageux';
   if(!Array.isArray(out.staff))out.staff=[];
   if(!Array.isArray(out.campaigns))out.campaigns=[];
@@ -1636,7 +1644,7 @@ const BOOK={
  franchise:{i:'🗺️',l:'Services de la franchise'},invest:{i:'💼',l:'Autres investissements'},
  capital:{i:'🔔',l:'Capital (entrée en Bourse, émissions et rachats d’actions)'},bourse:{i:'📈',l:'Bourse (dividendes reçus, ventes d’actions)'},
  placements:{i:'💹',l:'Achats d’actions'},dividendes:{i:'🧾',l:'Dividendes versés aux actionnaires'},
- vols:{i:'🦹',l:'Vols'},livraison:{i:'🛵',l:'Ventes en livraison (Livr’Éclair)'},commissions:{i:'🧾',l:'Commissions Livr’Éclair'},dlfrais:{i:'🛵',l:'Livraison : inscription et améliorations'},
+ vols:{i:'🦹',l:'Vols'},impots:{i:'🏛️',l:'Impôt sur les bénéfices'},urcaf:{i:'🧾',l:'URCAF (cotisations sociales)'},livraison:{i:'🛵',l:'Ventes en livraison (Livr’Éclair)'},commissions:{i:'🧾',l:'Commissions Livr’Éclair'},dlfrais:{i:'🛵',l:'Livraison : inscription et améliorations'},
 };
 const CAT_BY_ACT={train:'equipe',cands:'equipe',dlsign:'dlfrais',dlup:'dlfrais',dlboost:'pub',express:'express',unlock:'carte',recipe:'carte',upg:'travaux',camp:'pub',post:'pub',prime:'equipe',chefhire:'equipe',buycomp:'rachats',openloc:'adresses',reno:'adresses',manager:'adresses',firm:'societe',labgo:'labo',labexpress:'labo',frlaunch:'franchise',frprospect:'franchise',frcentrale:'franchise',fracademie:'franchise',frnat:'franchise'};
 function book(cat,amt){if(!amt||!isFinite(amt)||!S.book)return;S.book[cat]=(S.book[cat]||0)+amt;R.bookVer=(R.bookVer||0)+1;}
@@ -1665,10 +1673,49 @@ function bilanTips(D,tin,tout,L){
   if(!t.length&&tin>tout)t.push('👏 Ton café est rentable sur cette période. Continue comme ça !');
   return t;
 }
+/* ---------- Impôts et URCAF ---------- */
+// URCAF : Union de recouvrement des cotisations des cafés (cotisations sociales sur les salaires, chaque dimanche)
+const URCAF={rate:.25};
+// Impôt sur les bénéfices de la saison (tous les 14 jours) : 15 % jusqu'à 50 000 €, 25 % au-delà ; les pertes de la saison viennent en déduction
+const TAX={t1:.15,t2:.25,cap:50000,innov:.04,innovMax:.2};
+function taxDefault(){return {acc:0,wages:0,exempt:0,sigSeason:0,paidTax:0,paidUrcaf:0,last:null};}
+const taxRed=()=>Math.min(.5,(S.upg.comptable||0)*.15+Math.min(TAX.innovMax,(S.tax.sigSeason||0)*TAX.innov));
+const urcafRed=()=>(S.upg.comptable||0)*.1;
+function taxEstimate(extra){const base=Math.max(0,S.tax.acc+(extra||0));const brut=Math.min(base,TAX.cap)*TAX.t1+Math.max(0,base-TAX.cap)*TAX.t2;const red=taxRed();return {base,brut,red,net:Math.round(brut*(1-red))};}
+const taxDaysLeft=()=>SEASON_LEN-dayInSeason(S.day);
+function urcafDaysLeft(){for(let k=0;k<7;k++)if(weekday(S.day+k).n==='Dimanche')return k;return 0;}
+const urcafEstimate=()=>Math.round((S.tax.wages+salaryTotal()*(urcafDaysLeft()+1))*URCAF.rate*(1-urcafRed()));
+function taxNight(sm){
+  const T=S.tax;T.acc+=sm.profit;T.wages+=sm.salaries;sm.urcaf=0;sm.impots=0;
+  if(sm.wd==='Dimanche'&&T.wages>0){const due=Math.round(T.wages*URCAF.rate*(1-urcafRed()));T.wages=0;
+    if(due>0){S.money-=due;book('urcaf',-due);T.paidUrcaf+=due;sm.urcaf=due;}}
+  if(dayInSeason(S.day)===SEASON_LEN){const e=taxEstimate();let due=e.net;const exempt=T.exempt>0&&due>0;if(exempt){T.exempt--;due=0;}
+    T.last={day:S.day,season:seasonOf().name,icon:seasonOf().icon,base:Math.round(e.base),brut:Math.round(e.brut),red:e.red,due,exempt,gift:exempt?e.net:0};
+    T.acc=0;T.sigSeason=0;if(due>0){S.money-=due;book('impots',-due);T.paidTax+=due;sm.impots=due;}sm.taxNote=T.last;}
+  sm.profit-=sm.urcaf+sm.impots;
+}
+// Relier son e-mail : la prochaine échéance d'impôts est offerte (une fois par partie)
+function cloudGift(){if(!Cloud.linked()||S.flags.cloudGift)return;S.flags.cloudGift=true;S.tax.exempt=(S.tax.exempt||0)+1;saveSoon();
+  setTimeout(()=>toast('🎁 Merci d’avoir mis ta partie à l’abri : ta prochaine échéance d’impôts est offerte !','gold'),1800);}
+const saveNudge=()=>Cloud.on()&&!Cloud.linked();
+const giftLine=()=>saveNudge()&&!S.flags.cloudGift?'<p class="notice tax-gift">🎁 <b>Relie ton e-mail dans 💾 Sauvegarde</b> : ta prochaine échéance d’impôts est offerte, et ta partie est à l’abri, la même sur ton téléphone et ton PC. <button class="btn btn-sm btn-gold" type="button" data-cta="protect" data-modal-ok>☁️ Sauvegarder ma partie</button></p>':'';
+function taxBoxHtml(){
+  const T=S.tax,e=taxEstimate(),dl=taxDaysLeft(),ud=urcafDaysLeft(),u=urcafEstimate(),se=seasonOf();
+  const when=n=>n===0?'ce soir':n===1?'demain soir':`dans ${n} jours`;
+  const reds=[];if(S.upg.comptable)reds.push(`🧮 expert-comptable −${S.upg.comptable*15} %`);if(T.sigSeason)reds.push(`🧪 crédit d’impôt innovation −${Math.round(Math.min(TAX.innovMax,T.sigSeason*TAX.innov)*100)} % (${T.sigSeason} création${T.sigSeason>1?'s':''} cette saison)`);
+  return `<div class="tax-box"><h4>🏛️ Impôts et cotisations</h4>
+   <div class="tax-row"><span><b>🏛️ Impôt sur les bénéfices</b><small>${se.icon} ${se.name} · ${when(dl)} · bénéfice de la saison : ${money(Math.round(T.acc))}<br>15 % jusqu’à 50 000 €, 25 % au-delà</small></span><b class="v-neg">≈ ${money(T.exempt>0?0:e.net)}</b></div>
+   <div class="tax-row"><span><b>🧾 URCAF</b><small>Union de recouvrement des cotisations des cafés · ${ud===0?'ce soir':`dimanche, ${when(ud)}`}<br>25 % des salaires de la semaine</small></span><b class="v-neg">≈ ${money(u)}</b></div>
+   ${T.exempt>0?`<p class="small tax-ok">🎁 Ta prochaine échéance d’impôts est offerte.</p>`:''}
+   <p class="muted small">${reds.length?'Réductions : '+reds.join(' · ')+'.':'Pour payer moins : l’<b>expert-comptable</b> (onglet Travaux) et le <b>crédit d’impôt innovation</b> (−4 % par création du labo dans la saison, jusqu’à −20 %).'}</p>
+   ${T.last?`<p class="muted small">Dernier avis : ${T.last.icon||''} ${T.last.season}, ${T.last.exempt?`impôt offert (${money(T.last.gift)})`:`${money(T.last.due)} payés`}.</p>`:''}
+   ${giftLine()}</div>`;
+}
 function tabBilan(){
   const P=R.bilanP||'today';const D=bilanData(P);
   let h=`<div class="sec-head"><div><h3>Bilan</h3><p class="muted small">D’où vient ton argent, et où il part.</p></div></div>`;
   h+=`<div class="seg" role="group" aria-label="Période du bilan">${[['today','Aujourd’hui'],['yesterday','Hier'],['week','7 jours']].map(([k,l])=>`<button type="button" data-act="bilanp" data-id="${k}" aria-pressed="${P===k}">${l}</button>`).join('')}</div>`;
+  h+=taxBoxHtml();
   if(!D)return h+`<p class="hint">Pas encore de données pour cette période : termine au moins une journée.</p>`;
   const ent=Object.entries(D.book||{}).filter(([,v])=>v>.004).sort((a,b)=>b[1]-a[1]);
   const sor=Object.entries(D.book||{}).filter(([,v])=>v<-.004).sort((a,b)=>a[1]-b[1]);
@@ -1887,7 +1934,7 @@ function comboStars(b,t){const k=b+':'+t;if(COMBO[k])return COMBO[k];let h=0;for
 function createSig(b,t,st){
   const B=LB[b],T=LT[t];const id=`sig_${b}_${t}`;const lvlF=1+.12*Math.max(0,lvE()-3);const base=Math.round(LAB_REF[B.type]*lvlF*(.7+st*.15)*10)/10;
   const def={id,name:`${B.name} ${T.name}`,short:`${B.name} ${T.name}`,emoji:B.emoji,type:B.type,cost:Math.round(base*.24*100)/100,base,prep:LAB_PREP[B.type],unlock:0,lvl:1,pop:.55+st*.19,sig:true,stars:st};
-  S.sig=S.sig.filter(x=>x.id!==id);S.sig.push(def);
+  S.sig=S.sig.filter(x=>x.id!==id);S.sig.push(def);S.tax.sigSeason=(S.tax.sigSeason||0)+1;
   S.items[id]={unlocked:true,price:base,stock:10,recipe:1,sold:(S.items[id]&&S.items[id].sold)||0};
   rebuildItems();
 }
@@ -2328,6 +2375,12 @@ function tabLivraison(){
 // Pour une nouvelle note : ajoute en tête de PATCHES une entrée avec un nouvel id. Chaque joueur la verra une fois, au lancement suivant.
 // La plus récente en premier. Un joueur voit en une fois toutes les notes qu'il n'a pas encore vues.
 const PATCHES=[
+{id:'2026-11-17b',date:'17 novembre (soir)',items:[
+ ['🏛️','Impôts et URCAF','Chaque dimanche, l’URCAF prélève 25 % de cotisations sur les salaires de la semaine. À la fin de chaque saison tombe l’impôt sur les bénéfices : 15 % jusqu’à 50 000 €, 25 % au-delà. Tout est suivi dans l’onglet Bilan.'],
+ ['🧮','Payer moins d’impôts','Nouvel aménagement : l’expert-comptable réduit l’impôt de 15 % et les cotisations de 10 % par niveau. Et chaque création du labo donne −4 % d’impôt sur la saison (crédit d’impôt innovation, jusqu’à −20 %).'],
+ ['☁️','Une seule partie sur tous tes appareils','Relie ton e-mail dans 💾 Sauvegarde : ta partie est la même sur ton téléphone et ton PC et s’enregistre toute seule pendant que tu joues. Sur téléphone, tape le code reçu par e-mail.'],
+ ['🎁','Ta prochaine échéance d’impôts offerte','Mets ta partie à l’abri en reliant ton e-mail : ta prochaine échéance d’impôts est offerte. Déjà fait ? Le cadeau est pour toi aussi.'],
+]},
 {id:'2026-11-17',date:'17 novembre',items:[
  ['🏆','Deviens le n° 1 !','Choisis un pseudo dans l’onglet 🌍 En ligne : ton café entre dans le classement national, tu vois qui est juste devant toi et combien il te manque pour le dépasser, et tu peux défier les autres en duel. Ajoute ton e-mail pour garder ton compte sur tous tes appareils.'],
  ['🏙️','Plus de bâtiments','8 nouveaux quartiers à acheter, du front de mer au hall d’un palace, et des rénovations jusqu’au niveau 10.'],
@@ -2367,7 +2420,7 @@ function showPatch(next){
   openModal(`<div class="modal-head"><span class="modal-ic">🎉</span><div><p class="eyebrow">Mise à jour du ${PATCH.date}</p><h2>Quoi de neuf ?</h2></div></div>
   <ul class="patch-list">${PATCH.items.map(([i,t,d])=>`<li><span class="pi" aria-hidden="true">${i}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ul>
   <p class="muted small" style="margin:0">Une idée ou un bug ? Dis-le-nous avec le bouton 💡 Proposer une idée.</p>
-  ${mpOn()&&!mpMember()?'<button class="btn btn-gold btn-lg" data-modal-ok data-cta="join">🏆 Rejoindre le classement</button>':''}
+  ${saveNudge()?'<button class="btn btn-gold btn-lg" data-modal-ok data-cta="protect">☁️ Sauvegarder ma partie · impôts offerts 🎁</button>':mpOn()&&!mpMember()?'<button class="btn btn-gold btn-lg" data-modal-ok data-cta="join">🏆 Rejoindre le classement</button>':''}
   <button class="btn btn-primary btn-lg" data-modal-ok>C’est parti !</button>`,next);
 }
 
@@ -2580,13 +2633,13 @@ const Cloud={sb:null,user:null,meta:null,
     try{localStorage.removeItem('cc-cloud-pending');}catch(e){}this.hold(false);
     await this.fetchMeta();const m=this.meta;
     // Rien en ligne : la partie de cet appareil devient celle du compte
-    if(!m){await this.push(true,true);return;}
+    if(!m){await this.push(true,true);cloudGift();return;}
     const same=m.day===S.day&&Math.abs((m.money||0)-Math.round(S.money))<=1;
-    if(same){this.setSync(m.updated_at,m.day);this._pk=S.day+':'+Math.round(S.money);return;}
+    if(same){this.setSync(m.updated_at,m.day);this._pk=S.day+':'+Math.round(S.money);cloudGift();return;}
     // Même appareil (compte provisoire devenu compte e-mail) : la partie d'ici est la plus récente
-    if(o.same){await this.push(true,true);return;}
+    if(o.same){cloudGift();await this.push(true,true);return;}
     // Nouvel appareil : une seule partie par compte, on reprend celle du compte (celle d'ici reste en secours)
-    const uid=this.user.id;whenModalFree(()=>{if(this.user&&this.user.id===uid)this.adopt(true);});
+    const uid=this.user.id;whenModalFree(async()=>{if(this.user&&this.user.id===uid){await this.adopt(true);cloudGift();}});
   },
   // Choix en attente entre la partie du compte et celle de l'appareil : pas d'envoi automatique tant qu'il n'est pas fait
   hold(on){try{if(on&&this.user)localStorage.setItem('cc-cloud-hold',this.user.id);else localStorage.removeItem('cc-cloud-hold');}catch(e){}},
@@ -2613,7 +2666,7 @@ const Cloud={sb:null,user:null,meta:null,
       const keepLocal=(act===undefined?this.active():act)?S.day>=m.day:S.day>m.day;
       if(keepLocal){await this.push(true,true);return;}
       const uid=this.user.id;whenModalFree(()=>{if(this.user&&this.user.id===uid)this.adopt(false);});
-    }catch(e){}finally{this._sy=false;}
+    }catch(e){}finally{this._sy=false;cloudGift();}
   },
   async adopt(first){
     if(this._ad)return;this._ad=true;
@@ -2663,7 +2716,7 @@ function cloudChoice(m){
 }
 function cloudBackup(){try{const b=JSON.parse(localStorage.getItem('cc-cloud-backup')||'null');return b&&b.data?b:null;}catch(e){return null;}}
 function cloudBoxHtml(){
-  if(!Cloud.linked())return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecte-toi avec ton e-mail pour retrouver ta partie sur tous tes appareils. Pas de mot de passe : tu reçois un lien de connexion.${Cloud.user?' Ta vitrine du multijoueur reste attachée à ce compte.':''}</p><div class="cloud-row"><input type="email" id="cloudEmail" class="txt" placeholder="ton@email.fr" autocomplete="email" aria-label="Ton adresse e-mail"><button class="btn btn-primary" type="button" id="cloudLogin">Recevoir le lien</button></div></div>`;
+  if(!Cloud.linked())return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecte-toi avec ton e-mail pour retrouver ta partie sur tous tes appareils. Pas de mot de passe : tu reçois un lien de connexion.${Cloud.user?' Ta vitrine du multijoueur reste attachée à ce compte.':''}</p>${S.flags.cloudGift?'':'<p class="small tax-ok">🎁 Bonus : ta prochaine échéance d’impôts est offerte dès que ton e-mail est relié. Et ta partie devient la même sur ton téléphone et ton PC.</p>'}<div class="cloud-row"><input type="email" id="cloudEmail" class="txt" placeholder="ton@email.fr" autocomplete="email" aria-label="Ton adresse e-mail"><button class="btn btn-primary" type="button" id="cloudLogin">Recevoir le lien</button></div></div>`;
   const m=Cloud.meta;const when=m&&m.updated_at?new Date(m.updated_at).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
   return `<div class="cloud-box"><b>☁️ Sauvegarde en ligne</b><p class="small">Connecté : <b>${esc(Cloud.user.email||'')}</b>. ${m?`Dernière sauvegarde en ligne : jour ${m.day}, ${money(m.money||0)} (${when}).`:'Aucune partie en ligne pour l’instant.'} Elle s’enregistre toute seule pendant que tu joues.</p><p class="small">📱💻 <b>Une seule partie sur tous tes appareils</b> : connecte-toi avec la même adresse sur ton téléphone et ton PC. Ce que tu fais sur l’un se retrouve sur l’autre.</p><div class="cloud-row"><button class="btn btn-primary" type="button" id="cloudPush">☁️ Enregistrer maintenant</button><button class="btn btn-gold" type="button" id="cloudPull" ${m?'':'disabled'}>Récupérer ma partie en ligne</button></div>${(()=>{const b=cloudBackup();return b?`<div class="cloud-row"><button class="btn btn-sm" type="button" id="cloudBak">↩️ Remettre la partie qui était sur cet appareil avant (jour ${b.day}, ${money(b.money||0)})</button></div>`:'';})()}<div class="cloud-row"><button class="btn btn-sm" type="button" id="cloudOut">Se déconnecter de cet appareil</button><button class="btn btn-sm" type="button" id="cloudDel" ${m?'':'disabled'}>Supprimer ma sauvegarde en ligne</button></div></div>`;
 }
@@ -2870,12 +2923,15 @@ function mpWouldRank(){const b=MPR.board;if(!b)return null;const v=firmValue(),o
 const mpMember=()=>{let m=null;try{m=localStorage.getItem('cc-mp-member');}catch(e){}return MP.me?true:m==='1';};
 function mpPaintCta(){
   const el=$('#mpCta');if(!el)return;let hide=0;try{hide=+localStorage.getItem('cc-cta-hide')||0;}catch(e){}
-  if(!mpOn()||!MP.ready||Date.now()<hide||!S.flags.welcome||S.stats.days<1){el.hidden=true;return;}
+  if(Date.now()<hide||!S.flags.welcome||S.stats.days<1){el.hidden=true;return;}
   let h='';
-  if(!MP.me){const r=S.flags.cheats?null:mpWouldRank();
+  const nudge=saveNudge()&&!(Cloud.user&&Cloud.user.is_anonymous)&&S.stats.days>=2&&(!mpOn()||!MP.ready||S.day%2===0);
+  if(nudge)h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">💾</span><div class="grow"><b>Ta partie n’est que sur cet appareil</b><span>Relie ton e-mail en 30 secondes : elle est à l’abri, la même sur ton téléphone et ton PC, et 🎁 ta prochaine échéance d’impôts est offerte.</span></div><button class="btn btn-gold btn-sm" type="button" data-cta="protect">Sauvegarder</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;
+  else if(!mpOn()||!MP.ready){el.hidden=true;return;}
+  else if(!MP.me){const r=S.flags.cheats?null:mpWouldRank();
     h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">🏆</span><div class="grow"><b>${r?(r.pos===1?`Tu serais n° 1 sur ${r.total} au classement national !`:`Tu serais n° ${r.pos} sur ${r.total} au classement national !`):'Rejoins le classement national !'}</b><span>${r&&r.pos===1?'Personne ne fait mieux que toi : viens prendre la première place.':r&&r.above?`Juste derrière ${esc(r.above.pseudo)}. Choisis un pseudo en 10 secondes, montre ton café et défie les autres en duel.`:'Choisis un pseudo en 10 secondes, montre ton café et défie les autres en duel.'}</span></div><button class="btn btn-primary btn-sm" type="button" data-cta="join">🏆 Je rejoins</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;}
   else if(Cloud.user&&Cloud.user.is_anonymous)
-    h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">🔒</span><div class="grow"><b>Garde ta place au classement !</b><span>Ton compte n’existe que sur cet appareil. Ajoute ton e-mail pour ne jamais le perdre et retrouver ton café partout.</span></div><button class="btn btn-gold btn-sm" type="button" data-cta="protect">Protéger mon compte</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;
+    h=`<div class="mp-cta"><span class="mp-cta-ic" aria-hidden="true">🔒</span><div class="grow"><b>Garde ta place au classement !</b><span>Ton compte n’existe que sur cet appareil. Ajoute ton e-mail pour ne jamais le perdre et retrouver ton café partout. 🎁 Ta prochaine échéance d’impôts est offerte.</span></div><button class="btn btn-gold btn-sm" type="button" data-cta="protect">Protéger mon compte</button><button class="mp-cta-x" type="button" data-cta="hide" aria-label="Masquer pendant 3 jours" title="Masquer pendant 3 jours">✕</button></div>`;
   el.innerHTML=h;el.hidden=!h;
 }
 function mpSummaryLine(){
@@ -3380,6 +3436,7 @@ function endDay(){
   sm.dl=S.dl.on?{n:d.dlN||0,done:d.dlDone||0,cancel:d.dlCancel||0,gross:d.dlGross||0,fee:d.dlFee||0,tips:d.dlTips||0,rating:S.dl.rating}:null;
   sm.thefts=d.thefts||0;
   if(sm.dl){sm.profit+=sm.dl.gross-sm.dl.fee+sm.dl.tips;S.dl.last=Object.assign({day:S.day},sm.dl);}
+  taxNight(sm);
   evalMissionsEnd(d);sm.mis=S.missions.list.filter(m=>m.done).length;sm.misN=S.missions.list.length;
   if(d.served>=40&&d.lost===0)S.flags.perfect=true;
   const unanswered=S.social.feed.filter(p=>p.neg&&!p.answered&&p.day===S.day).length;
@@ -3894,8 +3951,14 @@ function showSummary(sm,next){
     <div><span>Salaires</span><b class="neg">−${eur(sm.salaries)}</b></div>
     <div><span>Loyer</span><b class="neg">−${eur(sm.rent)}</b></div>
     ${sm.loans>0?`<div><span>Remboursement d’emprunt</span><b class="neg">−${eur(sm.loans)}</b></div>`:''}
+    ${sm.urcaf?`<div><span>🧾 URCAF : cotisations de la semaine</span><b class="neg">−${eur(sm.urcaf)}</b></div>`:''}
+    ${sm.impots?`<div><span>🏛️ Impôt sur les bénéfices (${sm.taxNote.season.toLowerCase()})</span><b class="neg">−${eur(sm.impots)}</b></div>`:''}
+    ${sm.taxNote&&sm.taxNote.exempt?`<div><span>🏛️ Impôt de la saison offert 🎁</span><b class="pos">${eur(0)}</b></div>`:''}
     <div class="tot"><span>Bénéfice</span><b class="${good?'pos':'neg'}">${good?'+':'−'}${eur(Math.abs(sm.profit))}</b></div>
   </div>
+  ${sm.taxNote?`<p class="small tax-note">🏛️ <b>Avis d’imposition · ${sm.taxNote.icon} ${sm.taxNote.season}</b> : bénéfice de la saison ${eur(sm.taxNote.base,0)}, impôt ${eur(sm.taxNote.brut,0)}${sm.taxNote.red?` − ${Math.round(sm.taxNote.red*100)} % de réductions`:''}${sm.taxNote.exempt?' · <b>offert</b> 🎁':` = <b>${eur(sm.taxNote.due,0)}</b>`}.</p>`:
+    `<p class="muted small">🏛️ Impôts : environ ${eur(taxEstimate().net,0)} ${taxDaysLeft()===0?'demain soir':`dans ${taxDaysLeft()+1} jours`}${S.tax.exempt>0?' (offerts 🎁)':''} · 🧾 URCAF : environ ${eur(urcafEstimate(),0)} dimanche.</p>`}
+  ${(sm.taxNote||sm.urcaf)?giftLine():''}
   <p class="muted small">📊 Le détail, catégorie par catégorie et produit par produit, est dans l’onglet Bilan. Tu peux aussi cliquer sur ton argent, en haut.</p>
   ${sm.misN?`<p class="muted small">🎯 Missions du jour réussies : ${sm.mis} / ${sm.misN}${sm.mis===sm.misN?' · coffre ouvert 🎁':''}</p>`:''}
   ${sm.waste.n?`<p class="muted small">🗑️ Invendus jetés cette nuit : ${sm.waste.n} portions (${eur(sm.waste.val)}).</p>`:''}

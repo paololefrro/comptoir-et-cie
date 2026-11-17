@@ -108,6 +108,15 @@ La clé « anon » est faite pour être publique. Ce sont les règles du fichier
 
 Tant que ces deux champs sont vides, la sauvegarde en ligne n'apparaît pas : seuls le code et le fichier de sauvegarde sont proposés.
 
+### Impôts et URCAF (mise à jour du 17 novembre, soir)
+
+- **URCAF** (Union de recouvrement des cotisations des cafés, clin d’œil à l’Urssaf) : chaque dimanche soir, 25 % des salaires de la semaine (`URCAF.rate`).
+- **Impôt sur les bénéfices** : à la fin de chaque saison (`SEASON_LEN` = 14 jours), 15 % jusqu’à 50 000 € de bénéfice sur la saison, 25 % au-delà (`TAX`). Le bénéfice s’accumule dans `S.tax.acc`, pertes comprises.
+- **Réductions** : amélioration `comptable` (−15 % d’impôt, −10 % de cotisations par niveau, 2 niveaux) et crédit d’impôt innovation (−4 % par création du labo dans la saison, jusqu’à −20 %), plafonnées à −50 %.
+- **Cadeau** : relier son e-mail offre la prochaine échéance d’impôts (`cloudGift`, une fois par partie, `S.flags.cloudGift`, `S.tax.exempt`).
+- Affichage : encadré « Impôts et cotisations » en haut de l’onglet Bilan, lignes et avis d’imposition dans le bilan du soir, catégories `impots` et `urcaf` dans le bilan.
+- Incitation à sauvegarder : carte « Ta partie n’est que sur cet appareil » (un jour sur deux pour qui n’a pas relié d’e-mail), bouton dans la note de mise à jour, rappel dans le bilan des soirs d’échéance.
+
 ### E-mails de connexion aux couleurs du jeu
 
 Le dossier `emails/` contient les modèles d’e-mails de Supabase aux couleurs de Comptoir & Cie (généré par `node emails/generer.js`, aperçu dans `emails/apercu.html`).
