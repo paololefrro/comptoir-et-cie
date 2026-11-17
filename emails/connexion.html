@@ -29,6 +29,10 @@
           <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 30px;font-family:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:20px;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:16px;">☕ Retrouver ma partie</a>
         </td>
       </tr></table>
+      <div style="text-align:center;margin:0 0 20px;">
+        <div style="font-size:13.5px;line-height:1.45;font-weight:800;color:#67584d;">📱 Ou tape ce code dans le jeu (💾 Sauvegarde) :</div>
+        <div style="display:inline-block;margin-top:8px;padding:10px 18px;background:#ffffff;border:2px solid #d0dfc4;border-radius:14px;font-family:'Lilita One','Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:30px;line-height:1.1;letter-spacing:6px;color:#2f5e45;">{{ .Token }}</div>
+      </div>
       <div style="background:#fbecce;border:2px dashed #f0ad3c;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;font-weight:800;color:#2b1d16;">⏱️ Ce lien ne sert qu’une fois et expire au bout d’une heure. Tu peux l’ouvrir sur n’importe quel appareil : ta partie en ligne t’y attend.</div>
       <p style="margin:18px 0 0;font-size:12.5px;line-height:1.5;color:#67584d;">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><a href="{{ .ConfirmationURL }}" style="color:#2f5e45;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
     </td></tr>

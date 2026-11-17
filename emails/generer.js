@@ -42,6 +42,10 @@ function email({ preheader, eyebrow, title, text, button, info }) {
           <a href="${URL}" style="display:inline-block;padding:15px 30px;font-family:${DISPLAY};font-size:20px;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:16px;">${button}</a>
         </td>
       </tr></table>
+      <div style="text-align:center;margin:0 0 20px;">
+        <div style="font-size:13.5px;line-height:1.45;font-weight:800;color:${C.ink2};">📱 Ou tape ce code dans le jeu (💾 Sauvegarde) :</div>
+        <div style="display:inline-block;margin-top:8px;padding:10px 18px;background:#ffffff;border:2px solid ${C.line};border-radius:14px;font-family:${DISPLAY};font-size:30px;line-height:1.1;letter-spacing:6px;color:${C.frame};">{{ .Token }}</div>
+      </div>
       <div style="background:${C.goldSoft};border:2px dashed ${C.gold};border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;font-weight:800;color:${C.ink};">${info}</div>
       <p style="margin:18px 0 0;font-size:12.5px;line-height:1.5;color:${C.ink2};">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><a href="${URL}" style="color:${C.frame};word-break:break-all;">${URL}</a></p>
     </td></tr>
@@ -85,7 +89,7 @@ const dir = __dirname;
 MAILS.forEach(m => fs.writeFileSync(path.join(dir, m.file), email(m)));
 
 // Page d'aperçu : les trois e-mails avec des exemples à la place des variables de Supabase
-const sample = h => h.split('{{ .ConfirmationURL }}').join('https://www.comptoir-et-cie.fr/').split('{{ .NewEmail }}').join('toi@exemple.fr');
+const sample = h => h.split('{{ .ConfirmationURL }}').join('https://www.comptoir-et-cie.fr/').split('{{ .NewEmail }}').join('toi@exemple.fr').split('{{ .Token }}').join('482913');
 const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 fs.writeFileSync(path.join(dir, 'apercu.html'), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aperçu des e-mails</title>
 <style>body{margin:0;background:#cfd9c8;font-family:Nunito,Segoe UI,Arial,sans-serif;color:#2b1d16}h1{font-size:20px;margin:18px 16px 4px}p{margin:0 16px 12px;color:#4a3c32}

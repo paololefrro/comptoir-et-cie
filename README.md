@@ -94,6 +94,9 @@ Comment ça se passe :
 - **Après la connexion** : s’il n’y a rien en ligne, la partie de l’appareil est envoyée ; si l’appareil a une partie toute neuve, la partie en ligne est reprise automatiquement ; si les deux parties diffèrent, le jeu demande laquelle garder.
 - **Chaque soir**, la partie est envoyée en ligne, sauf si la partie en ligne est plus avancée de plus d’un jour : elle n’est jamais écrasée sans demander.
 - Si l’adresse a déjà un compte, le joueur reçoit un lien de connexion à ce compte et retrouve la partie qui y est enregistrée.
+- **Plusieurs appareils en même temps** (PC + téléphone) : chacun garde sa propre session ; « Se déconnecter de cet appareil » ne déconnecte que celui-là. Chaque appareil retient la dernière sauvegarde qu’il a écrite ou reprise (`cc-cloud-sync`). Si l’autre appareil a enregistré depuis, le jeu reprend sa partie tout seul quand rien n’a bougé ici, sinon il demande laquelle garder, et l’envoi automatique n’écrase jamais la partie de l’autre appareil.
+- **Code dans l’e-mail** : en plus du lien, l’e-mail contient un code (`{{ .Token }}`) à taper dans 💾 Sauvegarde. Utile sur téléphone, quand le lien s’ouvre dans le navigateur de l’appli mail au lieu de celui du jeu.
+- **Lien d’un autre compte** : si le navigateur était déjà connecté à un autre compte e-mail, le jeu demande « Changer de compte ? » et peut revenir sur le compte d’avant.
 - Les e-mails partent de `Comptoir & Cie <noreply@comptoir-et-cie.fr>` par le SMTP de Resend (voir plus bas), avec les modèles du dossier `emails/`.
 
 1. Crée un compte sur https://supabase.com, puis un projet. Choisis une région en Europe (par exemple Paris ou Francfort).
